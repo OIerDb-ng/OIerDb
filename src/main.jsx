@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
+import 'semantic-ui-css/semantic.min.css';
+import { Container } from 'semantic-ui-react';
 
 ReactDOM.render(
     <React.StrictMode>
-        <App />
+        <Container>
+            <div>Hello World!</div>
+        </Container>
     </React.StrictMode>,
-    document.getElementById('root')
+    document.getElementById('app')
 );
