@@ -6,7 +6,11 @@ import 'semantic-ui-css/semantic.min.css';
 import { Container } from 'semantic-ui-react';
 
 // Components
-import { NotSupportIndexedDB, ErrorWhenLoadingOIerDB } from './components/Home';
+import {
+    Loading,
+    NotSupportIndexedDB,
+    ErrorWhenLoadingOIerDB,
+} from './components/Home';
 
 // OIerDB
 import './utils/OIerDB';
@@ -50,12 +54,12 @@ class App extends React.Component {
             return <ErrorWhenLoadingOIerDB />;
         }
 
-        // 加载成功时的提示信息
-        return (
-            <>
-                <div>Hello World!</div>
-            </>
-        );
+        // 加载时的提示信息
+        if (!this.state.loadedOIerDB) {
+            return <Loading />;
+        }
+
+        return <>Loaded OIerDB.</>;
     }
 }
 

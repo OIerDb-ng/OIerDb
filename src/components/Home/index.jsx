@@ -1,5 +1,16 @@
 import { Header, Message, Icon } from 'semantic-ui-react';
 
+export function Loading() {
+    return (
+        <div style={{ padding: '1.5rem 0' }}>
+            <Message info>
+                <Icon loading name="sync alternate" />
+                正在初始化 OIerDB...
+            </Message>
+        </div>
+    );
+}
+
 export function ErrorWhenLoadingOIerDB() {
     return (
         <div style={{ padding: '1.5rem 0' }}>
