@@ -1,14 +1,14 @@
 (() => {
-    let OIerDB = Object.create(null),
+    let OIerDb = Object.create(null),
         first_init = true,
         origin_schools;
 
-    Object.defineProperty(globalThis, 'OIerDB', {
+    Object.defineProperty(globalThis, 'OIerDb', {
         enumerable: true,
-        value: OIerDB,
+        value: OIerDb,
     });
 
-    Object.defineProperty(OIerDB, 'provinces', {
+    Object.defineProperty(OIerDb, 'provinces', {
         enumerable: true,
         value: [
             '安徽',
@@ -48,7 +48,7 @@
         ],
     });
 
-    Object.defineProperty(OIerDB, 'award_levels', {
+    Object.defineProperty(OIerDb, 'award_levels', {
         enumerable: true,
         value: [
             '金牌',
@@ -71,7 +71,7 @@
         return typeof n === 'number' ? all.slice(0, n) : all;
     }
 
-    Object.defineProperty(OIerDB, 'Counter', {
+    Object.defineProperty(OIerDb, 'Counter', {
         enumerable: true,
         value: class Counter {
             constructor() {
@@ -101,14 +101,14 @@
         },
     });
 
-    Object.defineProperty(OIerDB, 'Contest', {
+    Object.defineProperty(OIerDb, 'Contest', {
         enumerable: true,
         value: class Contest {
             constructor(id, settings) {
                 this.id = id;
                 for (let setting in settings) this[setting] = settings[setting];
                 this.contestants = [];
-                this.level_counts = new OIerDB.Counter();
+                this.level_counts = new OIerDb.Counter();
             }
 
             school_year() {
@@ -121,7 +121,7 @@
         },
     });
 
-    Object.defineProperty(OIerDB, 'School', {
+    Object.defineProperty(OIerDb, 'School', {
         enumerable: true,
         value: class School {
             constructor(id, settings) {
@@ -131,12 +131,12 @@
                 this.members = [];
                 this.records = [];
                 this.award_counts = {};
-                OIerDB.contests.forEach((contest) => {
+                OIerDb.contests.forEach((contest) => {
                     if (!(contest.type in this.award_counts))
                         this.award_counts[contest.type] = {};
                     if (!(contest.year in this.award_counts[contest.type]))
                         this.award_counts[contest.type][contest.year] =
-                            new OIerDB.Counter();
+                            new OIerDb.Counter();
                 });
             }
         },
@@ -145,13 +145,13 @@
     async function load_from_indexDB() {
         if (
             !(await indexedDB.databases()).find(
-                (database) => database.name === 'OIerDB'
+                (database) => database.name === 'OIerDb'
             )
         ) {
             throw Error('未找到数据库');
         }
         let db = await new Promise((fulfill, reject) => {
-            let request = indexedDB.open('OIerDB');
+            let request = indexedDB.open('OIerDb');
             request.onerror = reject;
             request.onsuccess = () => fulfill(request.result);
             request.onupgradeneeded = () => reject('数据库版本不符');
@@ -170,7 +170,7 @@
             penalty = 0;
         for (;;) {
             db = await new Promise((fulfill, reject) => {
-                let request = indexedDB.open('OIerDB');
+                let request = indexedDB.open('OIerDb');
                 request.onerror = reject;
                 request.onsuccess = () => fulfill(request.result);
                 request.onupgradeneeded = () => {
@@ -186,7 +186,7 @@
                 `数据库结构损坏，正在修复中，请稍等直至修复完成的消息 (${penalty}/10) ...`
             );
             await new Promise((fulfill, reject) => {
-                let request = indexedDB.deleteDatabase('OIerDB');
+                let request = indexedDB.deleteDatabase('OIerDb');
                 request.onerror = reject;
                 request.onsuccess = fulfill;
             });
@@ -214,33 +214,33 @@
             ].update(record.level);
         };
 
-        OIerDB.contests.forEach((contest) => {
+        OIerDb.contests.forEach((contest) => {
             contest.length = 0;
             contest.level_counts.clear();
         });
-        OIerDB.schools.forEach((school) => {
+        OIerDb.schools.forEach((school) => {
             school.members.length = 0;
             school.records.length = 0;
-            OIerDB.contests.forEach((contest) =>
+            OIerDb.contests.forEach((contest) =>
                 school.award_counts[contest.type][contest.year].clear()
             );
         });
-        OIerDB.oiers.forEach((oier) => {
+        OIerDb.oiers.forEach((oier) => {
             oier.provinces = Array.from(
                 new Set(oier.records.map((record) => record.province))
             );
             oier.records.forEach((record) => {
-                record.contest = OIerDB.contests[record.contest];
+                record.contest = OIerDb.contests[record.contest];
                 record.school = origin_schools[record.school];
                 record.oier = oier;
                 add_contestant(record.contest, record);
                 add_school_record(record.school, record);
             });
         });
-        OIerDB.contests.forEach((contest) =>
+        OIerDb.contests.forEach((contest) =>
             contest.contestants.sort((x, y) => x.rank - y.rank)
         );
-        OIerDB.schools.forEach(
+        OIerDb.schools.forEach(
             (school) => (school.members = Array.from(new Set(school.members)))
         );
         return true;
@@ -277,12 +277,12 @@
                     ...(score !== '' && { score: parseFloat(score) }),
                     rank: parseInt(rank),
                     province:
-                        province_id in OIerDB.provinces
-                            ? OIerDB.provinces[province_id]
+                        province_id in OIerDb.provinces
+                            ? OIerDb.provinces[province_id]
                             : province_id,
                     level:
-                        award_level_id in OIerDB.award_levels
-                            ? OIerDB.award_levels[award_level_id]
+                        award_level_id in OIerDb.award_levels
+                            ? OIerDb.award_levels[award_level_id]
                             : award_level_id,
                 };
             });
@@ -308,36 +308,36 @@
         return data;
     }
 
-    OIerDB.init = async function () {
+    OIerDb.init = async function () {
         let support_timing = console.time && console.timeEnd;
         if (support_timing) console.time('预处理时长');
         if (first_init) {
-            OIerDB.contests = OIerDB.contests.map(
-                (x, id) => new OIerDB.Contest(id, x)
+            OIerDb.contests = OIerDb.contests.map(
+                (x, id) => new OIerDb.Contest(id, x)
             );
-            OIerDB.schools = OIerDB.schools.map(
-                (x, id) => new OIerDB.School(id, x)
+            OIerDb.schools = OIerDb.schools.map(
+                (x, id) => new OIerDb.School(id, x)
             );
-            origin_schools = OIerDB.schools.concat();
-            OIerDB.schools = OIerDB.schools
+            origin_schools = OIerDb.schools.concat();
+            OIerDb.schools = OIerDb.schools
                 .filter((school) => school.name)
                 .sort((x, y) => {
                     if (x.score !== y.score) return y.score - x.score;
                     return x.id - y.id;
                 });
-            OIerDB.schools.forEach(
+            OIerDb.schools.forEach(
                 (x, id) =>
                     (x.rank =
-                        id && x.score === OIerDB.schools[id - 1].score
-                            ? OIerDB.schools[id - 1].rank
+                        id && x.score === OIerDb.schools[id - 1].score
+                            ? OIerDb.schools[id - 1].rank
                             : id)
             );
             first_init = false;
         }
         try {
-            if (localStorage.data_sha512 === OIerDB.upstream_sha512) {
+            if (localStorage.data_sha512 === OIerDb.upstream_sha512) {
                 try {
-                    OIerDB.oiers = await load_from_indexDB();
+                    OIerDb.oiers = await load_from_indexDB();
                     return link();
                 } catch (e1) {
                     console.log(
@@ -347,12 +347,12 @@
             }
             let response = await (
                 await fetch(
-                    'https://renbaoshuo.github.io/OIerDB-data-generator/result.txt'
+                    'https://renbaoshuo.github.io/OIerDb-data-generator/result.txt'
                 )
             ).text();
-            OIerDB.oiers = text_to_raw(response);
-            await save_to_indexDB(OIerDB.oiers);
-            if (link()) localStorage.data_sha512 = OIerDB.upstream_sha512;
+            OIerDb.oiers = text_to_raw(response);
+            await save_to_indexDB(OIerDb.oiers);
+            if (link()) localStorage.data_sha512 = OIerDb.upstream_sha512;
             return true;
         } catch (e) {
             console.log(`预处理失败，原因：${e.message}`);
@@ -363,8 +363,8 @@
     };
 
     // syntactic sugars
-    OIerDB.ofInitials = function (initials, rank = 0) {
-        let all = OIerDB.oiers.filter((oier) => oier.initials === initials);
+    OIerDb.ofInitials = function (initials, rank = 0) {
+        let all = OIerDb.oiers.filter((oier) => oier.initials === initials);
         if (rank < 0) rank += all.length;
         return all[rank] ?? all;
     };

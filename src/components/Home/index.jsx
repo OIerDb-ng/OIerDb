@@ -5,18 +5,18 @@ export function Loading() {
         <>
             <Message info>
                 <Icon loading name="sync alternate" />
-                正在初始化 OIerDB...
+                正在初始化 OIerDb...
             </Message>
         </>
     );
 }
 
-export function ErrorWhenLoadingOIerDB() {
+export function ErrorWhenLoadingOIerDb() {
     return (
         <>
             <Message error>
                 <Icon name="remove" />
-                初始化 OIerDB 时出现了错误，请打开控制台以获取详细信息。
+                初始化 OIerDb 时出现了错误，请打开控制台以获取详细信息。
             </Message>
         </>
     );
@@ -38,7 +38,7 @@ export function NotSupportIndexedDB() {
                     <a href="https://www.google.cn/chrome/" target="_blank">
                         Google Chrome 浏览器
                     </a>{' '}
-                    访问 OIerDB NG。
+                    访问 OIerDb NG。
                 </p>
             </div>
         </>

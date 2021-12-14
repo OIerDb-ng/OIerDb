@@ -10,16 +10,16 @@ import Header from './components/Header';
 import {
     Loading,
     NotSupportIndexedDB,
-    ErrorWhenLoadingOIerDB,
+    ErrorWhenLoadingOIerDb,
 } from './components/Home';
 
 // Styles
 import './main.css';
 
-// OIerDB
-import './utils/OIerDB';
-import 'https://renbaoshuo.github.io/OIerDB-data-generator/static.js';
-import 'https://renbaoshuo.github.io/OIerDB-data-generator/result.sha512.js';
+// OIerDb
+import './utils/OIerDb';
+import 'https://renbaoshuo.github.io/OIerDb-data-generator/static.js';
+import 'https://renbaoshuo.github.io/OIerDb-data-generator/result.sha512.js';
 
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
@@ -27,22 +27,22 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            loadedOIerDB: false,
-            errorWhenLoadingOIerDB: false,
+            loadedOIerDb: false,
+            errorWhenLoadingOIerDb: false,
         };
     }
 
     async componentDidMount() {
-        // 加载 OIerDB
-        if (await OIerDB.init()) {
+        // 加载 OIerDb
+        if (await OIerDb.init()) {
             this.setState({
-                loadedOIerDB: true,
-                errorWhenLoadingOIerDB: false,
+                loadedOIerDb: true,
+                errorWhenLoadingOIerDb: false,
             });
         } else {
             this.setState({
-                loadedOIerDB: false,
-                errorWhenLoadingOIerDB: true,
+                loadedOIerDb: false,
+                errorWhenLoadingOIerDb: true,
             });
         }
     }
@@ -54,18 +54,18 @@ class App extends React.Component {
         }
 
         // 加载失败时的提示信息
-        if (!this.state.loadedOIerDB && this.state.errorWhenLoadingOIerDB) {
-            return <ErrorWhenLoadingOIerDB />;
+        if (!this.state.loadedOIerDb && this.state.errorWhenLoadingOIerDb) {
+            return <ErrorWhenLoadingOIerDb />;
         }
 
         // 加载时的提示信息
-        if (!this.state.loadedOIerDB) {
+        if (!this.state.loadedOIerDb) {
             return <Loading />;
         }
 
         return (
             <>
-                <div>Loaded OIerDB.</div>
+                <div>Loaded OIerDb.</div>
             </>
         );
     }

@@ -7,13 +7,13 @@ export default () => (
             <Container>
                 <Menu.Item>
                     <div style={{ fontSize: '20px' }}>
-                        <b>OIerDB</b>
+                        <b>OIerDb</b>
                     </div>
                 </Menu.Item>
                 <Menu.Item
                     position="right"
                     as="a"
-                    href="https://github.com/renbaoshuo/OIerDB-frontend"
+                    href="https://github.com/renbaoshuo/OIerDb-frontend"
                     target="_blank"
                     style={{ fontSize: '1.25rem' }}
                     icon
