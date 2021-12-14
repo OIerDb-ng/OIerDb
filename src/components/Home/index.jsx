@@ -2,29 +2,29 @@ import { Header, Message, Icon } from 'semantic-ui-react';
 
 export function Loading() {
     return (
-        <div style={{ padding: '1.5rem 0' }}>
+        <>
             <Message info>
                 <Icon loading name="sync alternate" />
                 正在初始化 OIerDB...
             </Message>
-        </div>
+        </>
     );
 }
 
 export function ErrorWhenLoadingOIerDB() {
     return (
-        <div style={{ padding: '1.5rem 0' }}>
+        <>
             <Message error>
                 <Icon name="remove" />
                 初始化 OIerDB 时出现了错误，请打开控制台以获取详细信息。
             </Message>
-        </div>
+        </>
     );
 }
 
 export function NotSupportIndexedDB() {
     return (
-        <div style={{ padding: '1.5rem 0' }}>
+        <>
             <Header as="h3" dividing>
                 请更新浏览器
             </Header>
@@ -41,6 +41,6 @@ export function NotSupportIndexedDB() {
                     访问 OIerDB NG。
                 </p>
             </div>
-        </div>
+        </>
     );
 }

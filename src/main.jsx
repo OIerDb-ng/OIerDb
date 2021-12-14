@@ -6,11 +6,15 @@ import 'semantic-ui-css/semantic.min.css';
 import { Container } from 'semantic-ui-react';
 
 // Components
+import Header from './components/Header';
 import {
     Loading,
     NotSupportIndexedDB,
     ErrorWhenLoadingOIerDB,
 } from './components/Home';
+
+// Styles
+import './main.css';
 
 // OIerDB
 import './utils/OIerDB';
@@ -59,13 +63,18 @@ class App extends React.Component {
             return <Loading />;
         }
 
-        return <>Loaded OIerDB.</>;
+        return (
+            <>
+                <div>Loaded OIerDB.</div>
+            </>
+        );
     }
 }
 
 ReactDOM.render(
     <React.StrictMode>
-        <Container>
+        <Header />
+        <Container style={{ paddingTop: '15px' }}>
             <App />
         </Container>
     </React.StrictMode>,
