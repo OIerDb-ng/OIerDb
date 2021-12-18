@@ -16,11 +16,6 @@ import {
 // Styles
 import './main.css';
 
-// OIerDb
-import './utils/OIerDb';
-import 'https://renbaoshuo.github.io/OIerDb-data-generator/static.js';
-import 'https://renbaoshuo.github.io/OIerDb-data-generator/result.sha512.js';
-
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
 class App extends React.Component {
