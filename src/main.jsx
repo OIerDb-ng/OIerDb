@@ -12,6 +12,7 @@ import {
     NotSupportIndexedDB,
     ErrorWhenLoadingOIerDb,
 } from './components/Home';
+import Search from './components/Search';
 
 // Styles
 import './main.css';
@@ -60,7 +61,7 @@ class App extends React.Component {
 
         return (
             <>
-                <div>Loaded OIerDb.</div>
+                <Search />
             </>
         );
     }
