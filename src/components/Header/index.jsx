@@ -13,7 +13,7 @@ export default () => (
                 <Menu.Item
                     position="right"
                     as="a"
-                    href="https://github.com/renbaoshuo/OIerDb-frontend"
+                    href="https://github.com/renbaoshuo/OIerDb"
                     target="_blank"
                     style={{ fontSize: '1.25rem' }}
                     icon
