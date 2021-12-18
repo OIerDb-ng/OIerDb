@@ -7,6 +7,7 @@ import { Container } from 'semantic-ui-react';
 
 // Components
 import Header from './components/Header';
+import Footer from './components/Footer';
 import {
     Loading,
     NotSupportIndexedDB,
@@ -75,6 +76,7 @@ ReactDOM.render(
             <App />
             <FAQ />
         </Container>
+        <Footer />
     </React.StrictMode>,
     document.getElementById('app')
 );
