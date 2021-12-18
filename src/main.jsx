@@ -13,6 +13,7 @@ import {
     ErrorWhenLoadingOIerDb,
 } from './components/Home';
 import Search from './components/Search';
+import FAQ from './components/FAQ';
 
 // Styles
 import './main.css';
@@ -72,6 +73,7 @@ ReactDOM.render(
         <Header />
         <Container style={{ paddingTop: '15px' }}>
             <App />
+            <FAQ />
         </Container>
     </React.StrictMode>,
     document.getElementById('app')
