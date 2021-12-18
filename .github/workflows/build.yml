@@ -1,0 +1,30 @@
+name: Build Site from Source Code
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          cache: yarn
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build Site
+        run: yarn build
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          cname: oier.baoshuo.dev
+          user_name: BaoshuoBot
+          user_email: 79077260+BaoshuoBot@users.noreply.github.com
