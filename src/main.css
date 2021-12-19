@@ -1,3 +1,7 @@
+body {
+    overflow-y: scroll;
+}
+
 body:not(.dimmed) {
     padding-top: 50px;
 }
