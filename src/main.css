@@ -5,3 +5,7 @@ body {
 body:not(.dimmed) {
     padding-top: 50px;
 }
+
+body.dimmed > #app > .ui.container {
+    margin-top: 50px;
+}
