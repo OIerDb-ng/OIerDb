@@ -71,7 +71,7 @@ class Search extends Component {
                     />
                     {this.state.result && this.state.result.length ? (
                         <>
-                            <Table basic="very">
+                            <Table basic="very" unstackable>
                                 <Table.Header>
                                     <Table.Row>
                                         <Table.HeaderCell>
@@ -85,8 +85,8 @@ class Search extends Component {
                                         </Table.HeaderCell>
                                     </Table.Row>
                                 </Table.Header>
-                                {this.state.result.map((oier) => (
-                                    <Table.Body>
+                                <Table.Body>
+                                    {this.state.result.map((oier) => (
                                         <Table.Row key={oier.uid}>
                                             <Table.Cell>{oier.name}</Table.Cell>
                                             <Table.Cell>
@@ -96,8 +96,8 @@ class Search extends Component {
                                                 {getGrade(oier.enroll_middle)}
                                             </Table.Cell>
                                         </Table.Row>
-                                    </Table.Body>
-                                ))}
+                                    ))}
+                                </Table.Body>
                             </Table>
                         </>
                     ) : (
