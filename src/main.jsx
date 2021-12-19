@@ -12,9 +12,9 @@ import {
     Loading,
     NotSupportIndexedDB,
     ErrorWhenLoadingOIerDb,
+    FAQ,
 } from './components/Home';
 import Search from './components/Search';
-import FAQ from './components/FAQ';
 
 // Styles
 import './main.css';
