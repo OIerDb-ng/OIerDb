@@ -72,7 +72,7 @@ class App extends React.Component {
 ReactDOM.render(
     <React.StrictMode>
         <Header />
-        <Container style={{ paddingTop: '15px' }}>
+        <Container style={{ paddingTop: '1.5rem' }}>
             <App />
             <FAQ />
         </Container>
