@@ -1,30 +1,50 @@
 import { Component } from 'react';
 
 // Components
-import { Header, Input, Segment, Table } from 'semantic-ui-react';
+import { Header, Input, Segment, Table, Modal } from 'semantic-ui-react';
+import Person from '../Person';
 
 // Styles
 import styles from './index.module.less';
+import './index.css';
 
-const getGrade = (enroll_middle) => {
-    const nowYear = new Date().getFullYear();
-    const years1 = ['初一', '初二', '初三', '高一', '高二', '高三'];
-    const years2 = ['六年级', '五年级', '四年级', '三年级', '二年级', '一年级'];
+// Utils
+import getGrade from '../../utils/getGrade';
 
-    let grade = null;
-    const year = nowYear - enroll_middle;
-
-    if (year < 0) {
-        grade = years2[-(year + 1)];
-    } else if (year >= 6) {
-        grade = '高中毕业 ' + (year - 5) + ' 年';
-    } else {
-        grade = years1[year];
+class PersonCard extends Component {
+    constructor(props) {
+        super(props);
     }
 
-    if (!grade) grade = '(未知)';
-    return grade;
-};
+    render() {
+        const trigger = (
+            <Table.Row style={{ cursor: 'pointer' }}>
+                <Table.Cell>{this.props.oier.name}</Table.Cell>
+                <Table.Cell>{this.props.oier.provinces.join('/')}</Table.Cell>
+                <Table.Cell>
+                    {getGrade(this.props.oier.enroll_middle)}
+                </Table.Cell>
+            </Table.Row>
+        );
+
+        return (
+            <>
+                <Modal
+                    closeOnEscape
+                    closeOnDimmerClick
+                    closeIcon
+                    trigger={trigger}
+                    dimmer={{ inverted: true }}
+                >
+                    <Modal.Header>{this.props.oier.name}</Modal.Header>
+                    <Modal.Content>
+                        <Person oier={this.props.oier} />
+                    </Modal.Content>
+                </Modal>
+            </>
+        );
+    }
+}
 
 class Search extends Component {
     constructor(props) {
@@ -87,15 +107,10 @@ class Search extends Component {
                                 </Table.Header>
                                 <Table.Body>
                                     {this.state.result.map((oier) => (
-                                        <Table.Row key={oier.uid}>
-                                            <Table.Cell>{oier.name}</Table.Cell>
-                                            <Table.Cell>
-                                                {oier.provinces.join('/')}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {getGrade(oier.enroll_middle)}
-                                            </Table.Cell>
-                                        </Table.Row>
+                                        <PersonCard
+                                            key={oier.uid}
+                                            oier={oier}
+                                        />
                                     ))}
                                 </Table.Body>
                             </Table>
