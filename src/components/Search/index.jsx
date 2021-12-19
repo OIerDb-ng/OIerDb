@@ -30,8 +30,8 @@ class Search extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            searched: false,
             searching: false,
+            input: '',
             result: null,
         };
     }
@@ -45,7 +45,7 @@ class Search extends Component {
             (oier) => oier.name === data.value || oier.initials === data.value
         );
         this.setState({
-            searched: true,
+            input: data.value,
             searching: false,
             result,
         });
@@ -101,7 +101,15 @@ class Search extends Component {
                             </Table>
                         </>
                     ) : (
-                        <></>
+                        <>
+                            {this.state.input.length ? (
+                                <div style={{ paddingTop: '1rem' }}>
+                                    未找到结果
+                                </div>
+                            ) : (
+                                <></>
+                            )}
+                        </>
                     )}
                 </Segment>
             </>
