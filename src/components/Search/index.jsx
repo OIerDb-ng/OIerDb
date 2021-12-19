@@ -88,6 +88,7 @@ class Search extends Component {
                         placeholder="键入学生姓名或其拼音首字母..."
                         loading={this.state.searching}
                         onChange={this.doSearch.bind(this)}
+                        spellcheck="false"
                     />
                     {this.state.result && this.state.result.length ? (
                         <>
