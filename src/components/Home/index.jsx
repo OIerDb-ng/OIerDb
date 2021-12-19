@@ -1,12 +1,20 @@
-import { Header, Message, Icon } from 'semantic-ui-react';
+import {
+    Header,
+    Message,
+    Icon,
+    Segment,
+    Dimmer,
+    Loader,
+} from 'semantic-ui-react';
 
 export function Loading() {
     return (
         <>
-            <Message info>
-                <Icon loading name="sync alternate" />
-                正在初始化 OIerDb...
-            </Message>
+            <Segment style={{ height: 100 }}>
+                <Dimmer active inverted>
+                    <Loader indeterminate>正在加载 OIerDb...</Loader>
+                </Dimmer>
+            </Segment>
         </>
     );
 }
