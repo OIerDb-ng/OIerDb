@@ -347,7 +347,7 @@
             }
             let response = await (
                 await fetch(
-                    'https://renbaoshuo.github.io/OIerDb-data-generator/result.txt'
+                    'https://oierdb-ng.github.io/OIerDb-data-generator/result.txt'
                 )
             ).text();
             OIerDb.oiers = text_to_raw(response);
