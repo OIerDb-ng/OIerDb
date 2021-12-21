@@ -66,9 +66,10 @@ class App extends React.Component {
         }
 
         return (
-            <>
-                <Home />
-            </>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="*" element={<NotFound />} />
+            </Routes>
         );
     }
 }
@@ -78,10 +79,7 @@ ReactDOM.render(
         <BrowserRouter>
             <Header />
             <Container style={{ paddingTop: '1.5rem' }}>
-                <Routes>
-                    <Route path="/" element={<App />} />
-                    <Route path="*" element={<NotFound />} />
-                </Routes>
+                <App />
             </Container>
             <Footer />
         </BrowserRouter>
