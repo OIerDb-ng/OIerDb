@@ -4,7 +4,7 @@ import { Component } from 'react';
 import { Table } from 'semantic-ui-react';
 
 // Utils
-import getGrade from '../../utils/getGrade';
+import getGrade from '@/utils/getGrade';
 
 class Person extends Component {
     constructor(props) {

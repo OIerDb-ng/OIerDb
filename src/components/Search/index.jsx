@@ -2,14 +2,14 @@ import { Component } from 'react';
 
 // Components
 import { Header, Input, Segment, Table, Modal } from 'semantic-ui-react';
-import Person from '../Person';
+import Person from '@/components/Person';
 
 // Styles
 import styles from './index.module.less';
 import './index.css';
 
 // Utils
-import getGrade from '../../utils/getGrade';
+import getGrade from '@/utils/getGrade';
 
 class PersonCard extends Component {
     constructor(props) {

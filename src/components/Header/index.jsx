@@ -2,7 +2,7 @@ import React from 'react';
 import { Container, Icon, Menu } from 'semantic-ui-react';
 
 // Logo
-import logo from '../../assets/logo-white.png';
+import logo from '@/assets/logo-white.png';
 
 export default () => (
     <>
