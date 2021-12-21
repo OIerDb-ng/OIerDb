@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Semantic UI
 import 'semantic-ui-css/semantic.min.css';
@@ -77,7 +77,9 @@ ReactDOM.render(
         <BrowserRouter>
             <Header />
             <Container style={{ paddingTop: '1.5rem' }}>
-                <App />
+                <Routes>
+                    <Route path="/" element={<App />} />
+                </Routes>
             </Container>
             <Footer />
         </BrowserRouter>
