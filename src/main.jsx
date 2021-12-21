@@ -17,6 +17,7 @@ import {
 
 // Pages
 import Home from '@/pages/Home';
+import NotFound from '@/pages/404';
 
 // Styles
 import './main.css';
@@ -79,6 +80,7 @@ ReactDOM.render(
             <Container style={{ paddingTop: '1.5rem' }}>
                 <Routes>
                     <Route path="/" element={<App />} />
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </Container>
             <Footer />
