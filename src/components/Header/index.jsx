@@ -28,3 +28,9 @@ export default () => (
         </Menu>
     </>
 );
+
+// Favicon
+let favicon = document.createElement('link');
+favicon.rel = 'shortcut icon';
+favicon.href = logo;
+document.head.appendChild(favicon);
