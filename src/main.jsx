@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { BrowserRouter } from 'react-router-dom';
 
 // Semantic UI
 import 'semantic-ui-css/semantic.min.css';
@@ -73,11 +74,13 @@ class App extends React.Component {
 
 ReactDOM.render(
     <React.StrictMode>
-        <Header />
-        <Container style={{ paddingTop: '1.5rem' }}>
-            <App />
-        </Container>
-        <Footer />
+        <BrowserRouter>
+            <Header />
+            <Container style={{ paddingTop: '1.5rem' }}>
+                <App />
+            </Container>
+            <Footer />
+        </BrowserRouter>
     </React.StrictMode>,
     document.getElementById('app')
 );
