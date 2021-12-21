@@ -1,4 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+
+// Components
 import { Container, Icon, Menu } from 'semantic-ui-react';
 
 // Logo
@@ -8,7 +11,7 @@ export default () => (
     <>
         <Menu fixed="top" borderless>
             <Container>
-                <Menu.Item>
+                <Menu.Item as={Link} to="/">
                     <img src={logo} style={{ marginRight: '0.75em' }} />
                     <div style={{ fontSize: '20px' }}>
                         <b>OIerDb</b>
