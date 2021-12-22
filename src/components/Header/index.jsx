@@ -17,6 +17,10 @@ export default () => (
                         <b>OIerDb</b>
                     </div>
                 </Menu.Item>
+                <Menu.Item as={Link} to="/">
+                    <Icon name="home" />
+                    首页
+                </Menu.Item>
                 <Menu.Item
                     position="right"
                     as="a"
