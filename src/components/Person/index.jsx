@@ -38,7 +38,7 @@ class Person extends Component {
                     </Table.Header>
                     <Table.Body>
                         {oier.records.map((data) => (
-                            <Table.Row>
+                            <Table.Row key={`${oier.uid}c${data.contest.id}`}>
                                 <Table.Cell>
                                     {data.contest.name}
                                     {data.level}
