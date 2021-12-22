@@ -1,0 +1,26 @@
+name: Code Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CI: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          cache: yarn
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: Check Code Format
+        run: yarn format:check
+      - name: Build Site
+        run: yarn build
