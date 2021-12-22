@@ -1,7 +1,8 @@
 import { Component } from 'react';
+import { Link } from 'react-router-dom';
 
 // Components
-import { Header, Input, Segment, Table, Modal } from 'semantic-ui-react';
+import { Header, Input, Segment, Table, Modal, Icon } from 'semantic-ui-react';
 import Person from '@/components/Person';
 
 // Styles
@@ -17,13 +18,13 @@ class PersonCard extends Component {
     }
 
     render() {
+        const { oier } = this.props;
+
         const trigger = (
             <Table.Row style={{ cursor: 'pointer' }}>
-                <Table.Cell>{this.props.oier.name}</Table.Cell>
-                <Table.Cell>{this.props.oier.provinces.join('/')}</Table.Cell>
-                <Table.Cell>
-                    {getGrade(this.props.oier.enroll_middle)}
-                </Table.Cell>
+                <Table.Cell>{oier.name}</Table.Cell>
+                <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
+                <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
             </Table.Row>
         );
 
@@ -36,9 +37,22 @@ class PersonCard extends Component {
                     trigger={trigger}
                     dimmer={{ inverted: true }}
                 >
-                    <Modal.Header>{this.props.oier.name}</Modal.Header>
+                    <Modal.Header>
+                        {oier.name}
+                        <Link
+                            style={{
+                                paddingLeft: 5,
+                                fontSize: 12,
+                                color: 'black',
+                                verticalAlign: 'bottom',
+                            }}
+                            to={'/oier/' + oier.uid}
+                        >
+                            <Icon name="linkify" />
+                        </Link>
+                    </Modal.Header>
                     <Modal.Content>
-                        <Person oier={this.props.oier} />
+                        <Person oier={oier} />
                     </Modal.Content>
                 </Modal>
             </>
