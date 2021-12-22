@@ -1,10 +1,11 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
 
 // Components
 import Person from '@/components/Person';
 import NotFound from '@/pages/404';
 
-export default () => {
+const PersonPage: React.FC = () => {
     // 获取参数
     const params = useParams();
     const uid = Number(params.uid) || -1;
@@ -20,3 +21,5 @@ export default () => {
         </>
     );
 };
+
+export default PersonPage;

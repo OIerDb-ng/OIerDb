@@ -5,7 +5,7 @@
   "license": "AGPL-3.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "format": "prettier --write \"**/*.{ts,js,tsx,jsx}\"",
     "format:check": "prettier --check \"**/*.{ts,js,tsx,jsx}\""
@@ -18,9 +18,12 @@
     "semantic-ui-react": "^2.0.4"
   },
   "devDependencies": {
+    "@types/react": "^17.0.37",
+    "@types/react-dom": "^17.0.11",
     "@vitejs/plugin-react": "^1.0.7",
     "less": "^4.1.2",
     "prettier": "^2.5.1",
+    "typescript": "^4.5.4",
     "vite": "^2.7.0",
     "vite-plugin-html": "^2.1.1"
   }

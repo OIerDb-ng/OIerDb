@@ -12,7 +12,11 @@ import './index.css';
 // Utils
 import getGrade from '@/utils/getGrade';
 
-function PersonCard(props) {
+interface PersonCardProps {
+    oier: any;
+}
+
+const PersonCard: React.FC<PersonCardProps> = (props) => {
     const { oier } = props;
 
     const trigger = (
@@ -52,14 +56,14 @@ function PersonCard(props) {
             </Modal>
         </>
     );
-}
+};
 
-export default function Search() {
+const Search: React.FC = () => {
     const [searching, setSearching] = useState(false);
     const [input, setInput] = useState('');
     const [result, setResult] = useState(null);
 
-    function onSearchInputChange(value) {
+    function onSearchInputChange(value: string) {
         setSearching(true);
         setResult(null);
         setInput(value);
@@ -119,4 +123,6 @@ export default function Search() {
             </Segment>
         </>
     );
-}
+};
+
+export default Search;

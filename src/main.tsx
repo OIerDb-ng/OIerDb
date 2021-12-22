@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Semantic UI
@@ -26,7 +27,7 @@ import './main.css';
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
-export default function App() {
+const App: React.FC = () => {
     const [loadedOIerDb, setLoadedOIerDb] = useState(false);
     const [errorLoadingOIerDb, setErrorLoadingOIerDb] = useState(false);
 
@@ -63,7 +64,7 @@ export default function App() {
             <Route path="/oier/:uid" element={<Person />} />
         </Routes>
     );
-}
+};
 
 ReactDOM.render(
     <React.StrictMode>

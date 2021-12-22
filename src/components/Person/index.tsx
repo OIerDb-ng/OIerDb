@@ -4,8 +4,13 @@ import { Table } from 'semantic-ui-react';
 // Utils
 import getGrade from '@/utils/getGrade';
 
-export default function Person(props) {
+interface PersonProps {
+    oier: any;
+}
+
+const Person: React.FC<PersonProps> = (props) => {
     const { oier } = props;
+
     return (
         <>
             <h4>选手信息</h4>
@@ -47,4 +52,6 @@ export default function Person(props) {
             </Table>
         </>
     );
-}
+};
+
+export default Person;

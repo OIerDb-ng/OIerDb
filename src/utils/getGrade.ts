@@ -1,4 +1,4 @@
-export default (enroll_middle, contestYear) => {
+export default (enroll_middle: number, contestYear?: number) => {
     const nowYear = contestYear || new Date().getFullYear();
     const years1 = ['初一', '初二', '初三', '高一', '高二', '高三'];
     const years2 = ['六年级', '五年级', '四年级', '三年级', '二年级', '一年级'];
