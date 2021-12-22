@@ -17,6 +17,7 @@ import {
 
 // Pages
 import Home from '@/pages/Home';
+import Person from '@/pages/Person';
 import NotFound from '@/pages/404';
 
 // Styles
@@ -69,6 +70,7 @@ class App extends React.Component {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="*" element={<NotFound />} />
+                <Route path="/oier/:uid" element={<Person />} />
             </Routes>
         );
     }
@@ -78,7 +80,7 @@ ReactDOM.render(
     <React.StrictMode>
         <BrowserRouter>
             <Header />
-            <Container style={{ paddingTop: '1.5rem' }}>
+            <Container style={{ padding: '1.5rem' }}>
                 <App />
             </Container>
             <Footer />
