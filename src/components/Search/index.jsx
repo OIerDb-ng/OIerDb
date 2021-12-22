@@ -56,13 +56,13 @@ function PersonCard(props) {
 
 export default function Search() {
     const [searching, setSearching] = useState(false);
-    const [input, setInput] = useState("");
+    const [input, setInput] = useState('');
     const [result, setResult] = useState(null);
 
     function onSearchInputChange(value) {
         setSearching(true);
         setResult(null);
-        setInput(value)
+        setInput(value);
 
         const result = OIerDb.oiers.filter(
             (oier) => oier.name === value || oier.initials === value
@@ -95,23 +95,14 @@ export default function Search() {
                         <Table basic="very" unstackable>
                             <Table.Header>
                                 <Table.Row>
-                                    <Table.HeaderCell>
-                                        姓名
-                                    </Table.HeaderCell>
-                                    <Table.HeaderCell>
-                                        省份
-                                    </Table.HeaderCell>
-                                    <Table.HeaderCell>
-                                        年级
-                                    </Table.HeaderCell>
+                                    <Table.HeaderCell>姓名</Table.HeaderCell>
+                                    <Table.HeaderCell>省份</Table.HeaderCell>
+                                    <Table.HeaderCell>年级</Table.HeaderCell>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
                                 {result.map((oier) => (
-                                    <PersonCard
-                                        key={oier.uid}
-                                        oier={oier}
-                                    />
+                                    <PersonCard key={oier.uid} oier={oier} />
                                 ))}
                             </Table.Body>
                         </Table>
@@ -119,9 +110,7 @@ export default function Search() {
                 ) : (
                     <>
                         {input.length ? (
-                            <div style={{ paddingTop: '1rem' }}>
-                                未找到结果
-                            </div>
+                            <div style={{ paddingTop: '1rem' }}>未找到结果</div>
                         ) : (
                             <></>
                         )}
