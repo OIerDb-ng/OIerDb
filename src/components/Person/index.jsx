@@ -16,11 +16,7 @@ class Person extends Component {
         return (
             <>
                 <h4>选手信息</h4>
-                <p>
-                    性别
-                    {oier.gender < 0 ? '女' : oier.gender > 0 ? '男' : '其他'}
-                    ，现在{getGrade(oier.enroll_middle)}。
-                </p>
+                <p>现在{getGrade(oier.enroll_middle)}。</p>
                 <p>
                     OIerDb 排名：{oier.rank + 1}（{oier.oierdb_score} 分）。
                 </p>
