@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -26,54 +26,43 @@ import './main.css';
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
-class App extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            loadedOIerDb: false,
-            errorWhenLoadingOIerDb: false,
-        };
+export default function App() {
+    const [loadedOIerDb, setLoadedOIerDb] = useState(false);
+    const [errorLoadingOIerDb, setErrorLoadingOIerDb] = useState(false);
+
+    useEffect(() => {
+        (async () => {
+            // 加载 OIerDb
+            if (await OIerDb.init()) {
+                setLoadedOIerDb(true);
+            } else {
+                setErrorLoadingOIerDb(true);
+            }
+        })();
+    }, []);
+
+    // 不支持 indexedDB
+    if (notSupportIndexedDB) {
+        return <NotSupportIndexedDB />;
     }
 
-    async componentDidMount() {
-        // 加载 OIerDb
-        if (await OIerDb.init()) {
-            this.setState({
-                loadedOIerDb: true,
-                errorWhenLoadingOIerDb: false,
-            });
-        } else {
-            this.setState({
-                loadedOIerDb: false,
-                errorWhenLoadingOIerDb: true,
-            });
-        }
+    // 加载失败时的提示信息
+    if (!loadedOIerDb && errorLoadingOIerDb) {
+        return <ErrorWhenLoadingOIerDb />;
     }
 
-    render() {
-        // 不支持 indexedDB
-        if (notSupportIndexedDB) {
-            return <NotSupportIndexedDB />;
-        }
-
-        // 加载失败时的提示信息
-        if (!this.state.loadedOIerDb && this.state.errorWhenLoadingOIerDb) {
-            return <ErrorWhenLoadingOIerDb />;
-        }
-
-        // 加载中
-        if (!this.state.loadedOIerDb) {
-            return <Loading />;
-        }
-
-        return (
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="*" element={<NotFound />} />
-                <Route path="/oier/:uid" element={<Person />} />
-            </Routes>
-        );
+    // 加载中
+    if (!loadedOIerDb) {
+        return <Loading />;
     }
+
+    return (
+        <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="*" element={<NotFound />} />
+            <Route path="/oier/:uid" element={<Person />} />
+        </Routes>
+    );
 }
 
 ReactDOM.render(
