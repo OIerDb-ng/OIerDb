@@ -23,6 +23,7 @@ import NotFound from '@/pages/404';
 
 // Styles
 import './main.css';
+import styles from './main.module.less';
 
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
@@ -70,7 +71,7 @@ ReactDOM.render(
     <React.StrictMode>
         <BrowserRouter>
             <Header />
-            <Container style={{ padding: '1.5rem' }}>
+            <Container className={styles.container}>
                 <App />
             </Container>
             <Footer />

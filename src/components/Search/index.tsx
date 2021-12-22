@@ -20,7 +20,7 @@ const PersonCard: React.FC<PersonCardProps> = (props) => {
     const { oier } = props;
 
     const trigger = (
-        <Table.Row style={{ cursor: 'pointer' }}>
+        <Table.Row className={styles.row}>
             <Table.Cell>{oier.name}</Table.Cell>
             <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
             <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
@@ -38,15 +38,7 @@ const PersonCard: React.FC<PersonCardProps> = (props) => {
             >
                 <Modal.Header>
                     {oier.name}
-                    <Link
-                        style={{
-                            paddingLeft: 5,
-                            fontSize: 12,
-                            color: 'black',
-                            verticalAlign: 'bottom',
-                        }}
-                        to={'/oier/' + oier.uid}
-                    >
+                    <Link className={styles.link} to={'/oier/' + oier.uid}>
                         <Icon name="linkify" />
                     </Link>
                 </Modal.Header>
