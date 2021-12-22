@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Components
 import {
     Header,
@@ -8,7 +10,7 @@ import {
     Loader,
 } from 'semantic-ui-react';
 
-export function Loading() {
+export const Loading: React.FC = () => {
     return (
         <>
             <Segment style={{ height: 100 }}>
@@ -18,9 +20,9 @@ export function Loading() {
             </Segment>
         </>
     );
-}
+};
 
-export function ErrorWhenLoadingOIerDb() {
+export const ErrorWhenLoadingOIerDb: React.FC = () => {
     return (
         <>
             <Message error>
@@ -29,9 +31,9 @@ export function ErrorWhenLoadingOIerDb() {
             </Message>
         </>
     );
-}
+};
 
-export function NotSupportIndexedDB() {
+export const NotSupportIndexedDB: React.FC = () => {
     return (
         <>
             <Header as="h3" dividing>
@@ -52,4 +54,4 @@ export function NotSupportIndexedDB() {
             </div>
         </>
     );
-}
+};

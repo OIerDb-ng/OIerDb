@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Components
 import { Header, Segment } from 'semantic-ui-react';
 
@@ -5,7 +7,7 @@ import { Header, Segment } from 'semantic-ui-react';
 import styles from './index.module.less';
 
 // FAQ
-export function FAQ() {
+export const FAQ: React.FC = () => {
     return (
         <>
             <Header
@@ -35,4 +37,4 @@ export function FAQ() {
             </Segment>
         </>
     );
-}
+};

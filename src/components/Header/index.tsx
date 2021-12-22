@@ -7,7 +7,7 @@ import { Container, Icon, Menu } from 'semantic-ui-react';
 // Logo
 import logo from '@/assets/logo-white.png';
 
-export default () => (
+const Header: React.FC = () => (
     <>
         <Menu fixed="top" borderless>
             <Container>
@@ -36,8 +36,10 @@ export default () => (
     </>
 );
 
+export default Header;
+
 // Favicon
-let favicon = document.createElement('link');
+const favicon = document.createElement('link');
 favicon.rel = 'shortcut icon';
 favicon.href = logo;
 document.head.appendChild(favicon);

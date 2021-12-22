@@ -1,8 +1,10 @@
+import React from 'react';
+
 import { Container, Segment } from 'semantic-ui-react';
 
 // Emoji from Twitter Emoji (MIT License)
 // https://github.com/twitter/twemoji/blob/793a6a93f303c08877dd6eb589b2fabb3d1c45ee/assets/svg/1f496.svg
-const LoveEmoji = () => (
+const LoveEmoji: React.FC = () => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 36 36"
@@ -21,7 +23,7 @@ const LoveEmoji = () => (
     </svg>
 );
 
-export default () => (
+const Footer: React.FC = () => (
     <>
         <Segment vertical>
             <Container textAlign="center">
@@ -39,3 +41,5 @@ export default () => (
         </Segment>
     </>
 );
+
+export default Footer;
