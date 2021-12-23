@@ -1,40 +1,116 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 // Components
-import { Container, Icon, Menu } from 'semantic-ui-react';
+import {
+    Container,
+    Icon,
+    Menu,
+    SemanticICONS,
+    Sidebar,
+} from 'semantic-ui-react';
+
+// Styles
+import styles from './index.module.less';
 
 // Logo
 import logo from '@/assets/logo-white.png';
 
-const Header: React.FC = () => (
-    <>
-        <Menu fixed="top" borderless>
-            <Container>
-                <Menu.Item as={Link} to="/">
-                    <img src={logo} style={{ marginRight: '0.75em' }} />
-                    <div style={{ fontSize: '20px' }}>
-                        <b>OIerDb</b>
-                    </div>
-                </Menu.Item>
-                <Menu.Item as={Link} to="/">
-                    <Icon name="home" />
-                    首页
-                </Menu.Item>
-                <Menu.Item
-                    position="right"
-                    as="a"
-                    href="https://github.com/renbaoshuo/OIerDb"
-                    target="_blank"
-                    style={{ fontSize: '1.25rem' }}
-                    icon
-                >
-                    <Icon name="github"></Icon>
-                </Menu.Item>
-            </Container>
-        </Menu>
-    </>
-);
+// Utils
+import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+
+// Header Buttons
+const headerButtons: [{ name: string; to: string; icon: SemanticICONS }] = [
+    {
+        name: '首页',
+        to: '/',
+        icon: 'home',
+    },
+];
+
+const Header: React.FC = () => {
+    const wide = useScreenWidthWithin(768, Infinity);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (
+            sidebarOpen !==
+            document.documentElement.classList.contains(styles.sidebarOpen)
+        )
+            document.documentElement.classList.toggle(styles.sidebarOpen);
+    }, [sidebarOpen]);
+
+    const sidebarOpenStatusClassName = sidebarOpen
+        ? ' ' + styles.sidebarOpen
+        : '';
+
+    return (
+        <>
+            <Menu fixed="top" borderless>
+                <Container>
+                    <Menu.Item as={Link} to="/">
+                        <img src={logo} style={{ marginRight: '0.75em' }} />
+                        <div style={{ fontSize: '20px' }}>
+                            <b>OIerDb</b>
+                        </div>
+                    </Menu.Item>
+                    {(wide &&
+                        headerButtons.map((button) => (
+                            <Menu.Item as={Link} to={button.to}>
+                                <Icon name={button.icon} />
+                                {button.name}
+                            </Menu.Item>
+                        ))) || (
+                        <Menu.Item
+                            position="right"
+                            icon="bars"
+                            onClick={() => setSidebarOpen(true)}
+                        ></Menu.Item>
+                    )}
+                </Container>
+            </Menu>
+            {!wide && (
+                <>
+                    <div
+                        className={
+                            styles.sidebarDimmer + sidebarOpenStatusClassName
+                        }
+                        onClick={() => setSidebarOpen(false)}
+                    ></div>
+                    <Sidebar
+                        as={Menu}
+                        className={
+                            styles.sidebarMenu + sidebarOpenStatusClassName
+                        }
+                        animation="push"
+                        direction="right"
+                        vertical
+                        visible
+                    >
+                        <Menu.Item
+                            as={Link}
+                            to="/"
+                            style={{ fontSize: '20px', textAlign: 'center' }}
+                            onClick={() => setSidebarOpen(false)}
+                        >
+                            <b>OIerDb</b>
+                        </Menu.Item>
+                        {headerButtons.map((button) => (
+                            <Menu.Item
+                                as={Link}
+                                to={button.to}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Icon name={button.icon} />
+                                {button.name}
+                            </Menu.Item>
+                        ))}
+                    </Sidebar>
+                </>
+            )}
+        </>
+    );
+};
 
 export default Header;
 

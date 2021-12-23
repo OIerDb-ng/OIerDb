@@ -57,6 +57,10 @@ declare global {
     }
 
     const OIerDb: OIerDb;
+
+    interface Window {
+        appVersion: string;
+    }
 }
 
 export {};

@@ -1,6 +1,10 @@
 import React from 'react';
 
-import { Container, Segment } from 'semantic-ui-react';
+// Components
+import { Container, Segment, Icon } from 'semantic-ui-react';
+
+// Styles
+import styles from './index.module.less';
 
 // Emoji from Twitter Emoji (MIT License)
 // https://github.com/twitter/twemoji/blob/793a6a93f303c08877dd6eb589b2fabb3d1c45ee/assets/svg/1f496.svg
@@ -27,7 +31,19 @@ const Footer: React.FC = () => (
     <>
         <Segment vertical>
             <Container textAlign="center">
-                <div>
+                <div className={styles.footerIcons}>
+                    <code>{window.appVersion.substring(0, 7)}</code>
+                    <a
+                        href="https://github.com/renbaoshuo/OIerDb"
+                        title="GitHub"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                    >
+                        <Icon name="github" style={{ margin: '0 .25rem 0' }} />
+                        Source Code
+                    </a>
+                </div>
+                <div className={styles.footerText}>
                     Made with &nbsp;
                     <i>
                         <LoveEmoji />

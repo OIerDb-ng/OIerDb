@@ -11,6 +11,7 @@
     "format:check": "prettier --check \"**/*.{ts,js,tsx,jsx}\""
   },
   "dependencies": {
+    "less": "^4.1.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^6.2.1",
@@ -21,7 +22,6 @@
     "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
     "@vitejs/plugin-react": "^1.0.7",
-    "less": "^4.1.2",
     "prettier": "^2.5.1",
     "typescript": "^4.5.4",
     "vite": "^2.7.0",
