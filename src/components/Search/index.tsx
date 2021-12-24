@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 // Components
 import { Header, Input, Segment, Table, Modal, Icon } from 'semantic-ui-react';
-import {Person} from '@/components/Person';
+import { Person } from '@/components/Person';
 
 // Styles
 import styles from './index.module.less';
