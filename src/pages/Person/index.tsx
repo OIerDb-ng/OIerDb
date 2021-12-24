@@ -2,10 +2,10 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 
 // Components
-import Person from '@/components/Person';
-import NotFound from '@/pages/404';
+import { Person as PersonInfo } from '@/components/Person';
+import { NotFound } from '@/pages/404';
 
-const PersonPage: React.FC = () => {
+export const Person: React.FC = () => {
     // 获取参数
     const params = useParams();
     const uid = Number(params.uid) || -1;
@@ -17,9 +17,7 @@ const PersonPage: React.FC = () => {
     return (
         <>
             <h2>{oier.name}</h2>
-            <Person oier={oier} />
+            <PersonInfo oier={oier} />
         </>
     );
 };
-
-export default PersonPage;

@@ -8,7 +8,7 @@ interface PersonProps {
     oier: any;
 }
 
-const Person: React.FC<PersonProps> = (props) => {
+export const Person: React.FC<PersonProps> = (props) => {
     const { oier } = props;
 
     return (
@@ -53,5 +53,3 @@ const Person: React.FC<PersonProps> = (props) => {
         </>
     );
 };
-
-export default Person;

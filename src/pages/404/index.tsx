@@ -4,7 +4,7 @@ import React from 'react';
 import { Message, Icon } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 
-const NotFoundPage: React.FC = () => (
+export const NotFound: React.FC = () => (
     <>
         <Message icon error>
             <Icon name="remove" />
@@ -16,5 +16,3 @@ const NotFoundPage: React.FC = () => (
         </Message>
     </>
 );
-
-export default NotFoundPage;

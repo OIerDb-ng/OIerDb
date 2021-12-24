@@ -8,8 +8,8 @@ import 'semantic-ui-css/semantic.min.css';
 import { Container } from 'semantic-ui-react';
 
 // Components
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import {
     Loading,
     NotSupportIndexedDB,
@@ -17,14 +17,14 @@ import {
 } from '@/components/App';
 
 // Pages
-import Home from '@/pages/Home';
-import Person from '@/pages/Person';
-import NotFound from '@/pages/404';
+import { Home } from '@/pages/Home';
+import { Person } from '@/pages/Person';
+import { NotFound } from '@/pages/404';
+import { About } from '@/pages/About';
 
 // Styles
 import './main.css';
 import styles from './main.module.less';
-import About from '@/pages/About';
 
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;

@@ -6,7 +6,7 @@ import { FAQ } from '@/components/Home';
 // Logo
 import logo from '@/assets/logo-white.png';
 
-const About: React.FC = () => (
+const AboutHeader: React.FC = () => (
     <>
         <img
             width={128}
@@ -23,11 +23,9 @@ const About: React.FC = () => (
     </>
 );
 
-const AboutPage: React.FC = () => (
+export const About: React.FC = () => (
     <>
-        <About />
+        <AboutHeader />
         <FAQ />
     </>
 );
-
-export default AboutPage;

@@ -37,7 +37,7 @@ const headerButtons: {
     },
 ];
 
-const Header: React.FC = () => {
+export const Header: React.FC = () => {
     const wide = useScreenWidthWithin(768, Infinity);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -120,8 +120,6 @@ const Header: React.FC = () => {
         </>
     );
 };
-
-export default Header;
 
 // Favicon
 const favicon = document.createElement('link');

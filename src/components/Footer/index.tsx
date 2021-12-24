@@ -27,7 +27,7 @@ const LoveEmoji: React.FC = () => (
     </svg>
 );
 
-const Footer: React.FC = () => (
+export const Footer: React.FC = () => (
     <>
         <Segment vertical>
             <Container textAlign="center">
@@ -57,5 +57,3 @@ const Footer: React.FC = () => (
         </Segment>
     </>
 );
-
-export default Footer;
