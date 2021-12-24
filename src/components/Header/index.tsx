@@ -20,11 +20,20 @@ import logo from '@/assets/logo-white.png';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
 // Header Buttons
-const headerButtons: [{ name: string; to: string; icon: SemanticICONS }] = [
+const headerButtons: {
+    name: string;
+    to: string;
+    icon: SemanticICONS;
+}[] = [
     {
         name: '首页',
         to: '/',
         icon: 'home',
+    },
+    {
+        name: '关于',
+        to: '/about',
+        icon: 'info circle',
     },
 ];
 

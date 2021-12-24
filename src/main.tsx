@@ -24,6 +24,7 @@ import NotFound from '@/pages/404';
 // Styles
 import './main.css';
 import styles from './main.module.less';
+import About from '@/pages/About';
 
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
@@ -61,8 +62,9 @@ const App: React.FC = () => {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="*" element={<NotFound />} />
             <Route path="/oier/:uid" element={<Person />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };

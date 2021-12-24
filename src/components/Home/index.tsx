@@ -14,7 +14,7 @@ export const FAQ: React.FC = () => {
                 className={styles.header}
                 block
                 as="h4"
-                content="关于"
+                content="常见问题"
                 attached="top"
                 icon="info"
             />
