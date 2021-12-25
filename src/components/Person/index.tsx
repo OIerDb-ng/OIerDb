@@ -5,7 +5,7 @@ import { Table } from 'semantic-ui-react';
 import getGrade from '@/utils/getGrade';
 
 interface PersonProps {
-    oier: any;
+    oier: OIer;
 }
 
 export const Person: React.FC<PersonProps> = (props) => {

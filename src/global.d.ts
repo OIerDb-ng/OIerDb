@@ -38,6 +38,7 @@ declare global {
         name: string;
         type: string;
         year: number;
+        school_year(): number;
     }
 
     interface School {

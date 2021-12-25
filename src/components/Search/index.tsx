@@ -13,7 +13,7 @@ import './index.css';
 import getGrade from '@/utils/getGrade';
 
 interface PersonCardProps {
-    oier: any;
+    oier: OIer;
 }
 
 const PersonCard: React.FC<PersonCardProps> = (props) => {
