@@ -31,6 +31,10 @@ export const Footer: React.FC = () => (
                     &nbsp; by{' '}
                     <a href="https://baoshuo.ren" target="_blank">
                         Baoshuo
+                    </a>{' '}
+                    and{' '}
+                    <a href="https://men.ci" target="_blank">
+                        Menci
                     </a>
                 </div>
             </Container>
