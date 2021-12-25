@@ -12,7 +12,6 @@
     "postinstall": "husky install"
   },
   "dependencies": {
-    "@types/twemoji": "^12.1.2",
     "less": "^4.1.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -24,6 +23,7 @@
   "devDependencies": {
     "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
+    "@types/twemoji": "^12.1.2",
     "@vitejs/plugin-react": "^1.0.7",
     "husky": "^7.0.4",
     "prettier": "^2.5.1",
