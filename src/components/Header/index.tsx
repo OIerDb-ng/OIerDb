@@ -31,6 +31,11 @@ const headerButtons: {
         icon: 'home',
     },
     {
+        name: '学校',
+        to: '/school',
+        icon: 'building',
+    },
+    {
         name: '关于',
         to: '/about',
         icon: 'info circle',

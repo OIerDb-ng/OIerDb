@@ -19,6 +19,8 @@ import {
 // Pages
 import { Home } from '@/pages/Home';
 import { Person } from '@/pages/Person';
+import { School } from '@/pages/School';
+import { School as SchoolInfo } from '@/pages/School/School';
 import { NotFound } from '@/pages/404';
 import { About } from '@/pages/About';
 
@@ -63,6 +65,8 @@ const App: React.FC = () => {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/oier/:uid" element={<Person />} />
+            <Route path="/school" element={<School />} />
+            <Route path="/school/:id" element={<SchoolInfo />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
         </Routes>

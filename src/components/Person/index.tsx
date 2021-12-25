@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 // Components
 import { Table } from 'semantic-ui-react';
 
@@ -39,7 +41,14 @@ export const Person: React.FC<PersonProps> = (props) => {
                             </Table.Cell>
                             <Table.Cell>{data.score}</Table.Cell>
                             <Table.Cell>{data.rank}</Table.Cell>
-                            <Table.Cell>{data.school.name}</Table.Cell>
+                            <Table.Cell>
+                                <Link
+                                    to={`/school/${data.school.id}`}
+                                    style={{ color: 'inherit' }}
+                                >
+                                    {data.school.name}
+                                </Link>
+                            </Table.Cell>
                             <Table.Cell>
                                 {getGrade(
                                     oier.enroll_middle,
