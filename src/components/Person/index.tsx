@@ -6,7 +6,7 @@ import styles from './index.module.less';
 // Utils
 import getGrade from '@/utils/getGrade';
 import fixChineseSpace from '@/utils/fixChineseSpace';
-import { getEmoji } from '@/utils/getEmoji';
+import { EmojiRenderer } from '../common/EmojiRenderer';
 
 interface AwardEmojiProps {
     level: string;
@@ -21,9 +21,7 @@ const AwardEmoji: React.FC<AwardEmojiProps> = (props) => {
     );
     const emoji = emojis[type];
 
-    return emoji ? (
-        <span dangerouslySetInnerHTML={{ __html: getEmoji(emoji) }} />
-    ) : null;
+    return emoji ? <EmojiRenderer>{emoji}</EmojiRenderer> : null;
 };
 
 interface PersonProps {
