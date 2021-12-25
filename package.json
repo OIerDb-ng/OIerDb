@@ -12,12 +12,14 @@
     "postinstall": "husky install"
   },
   "dependencies": {
+    "@types/twemoji": "^12.1.2",
     "less": "^4.1.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^6.2.1",
     "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^2.0.4"
+    "semantic-ui-react": "^2.0.4",
+    "twemoji": "^13.1.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.37",
