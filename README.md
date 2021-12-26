@@ -6,7 +6,7 @@
 
 演示站点：[oier.baoshuo.dev](https://oier.baoshuo.dev)
 
-本项目是 [OIerDb-ng/OIer@oierdb-ng](https://github.com/OIerDb-ng/OIer) 的前端实现。目前使用在 [renbaoshuo/OIerDb-data-generator](https://github.com/renbaoshuo/OIerDb-data-generator) 中维护的选手数据。
+本项目是 [OIerDb-ng/OIer@oierdb-ng](https://github.com/OIerDb-ng/OIer) 的前端实现。目前使用在 [OIerDb-ng/OIerDb-data-generator](https://github.com/OIerDb-ng/OIerDb-data-generator) 中维护的选手数据。
 
 ## 部署
 
