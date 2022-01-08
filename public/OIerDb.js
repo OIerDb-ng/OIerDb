@@ -346,9 +346,7 @@
                 }
             }
             let response = await (
-                await fetch(
-                    'https://oierdb-ng.github.io/OIerDb-data-generator/result.txt'
-                )
+                await fetch('https://oier-data.baoshuo.dev/result.txt')
             ).text();
             OIerDb.oiers = text_to_raw(response);
             await save_to_indexDB(OIerDb.oiers);
