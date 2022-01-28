@@ -108,16 +108,81 @@ export const School: React.FC<SchoolProps> = (props) => {
                 }),
             };
 
+            const LEGEND_TOP_MARGIN = -24;
+            const LEGEND_BOTTOM_MARGIN = 10;
+
+            const FONT_SIZE = 14;
+            const LABELS_SPACING = 36;
+            const TOOLTIP_ICON_MARGIN = 5;
+            const TOOLTIP_PADDING = 12;
+            const AXIS_MARGIN_TOP = 14;
+
             return {
                 menuItem: key,
                 render: () => (
                     <Tab.Pane attached={false}>
                         <Line
+                            style={{
+                                marginTop: LEGEND_TOP_MARGIN,
+                            }}
+                            plugins={[
+                                {
+                                    id: null, // Make typing happy
+                                    beforeInit: (chart: any) => {
+                                        const originalFit = chart.legend
+                                            .fit as Function;
+
+                                        chart.legend.fit = function fit() {
+                                            originalFit.call(chart.legend);
+                                            this.height += LEGEND_BOTTOM_MARGIN;
+                                        };
+                                    },
+                                },
+                            ]}
                             options={{
                                 responsive: true,
                                 plugins: {
                                     legend: {
                                         position: 'top' as const,
+                                        labels: {
+                                            font: {
+                                                size: FONT_SIZE,
+                                            },
+                                            padding: LABELS_SPACING,
+                                        },
+                                        title: {
+                                            font: {
+                                                size: FONT_SIZE,
+                                            },
+                                        },
+                                    },
+                                    tooltip: {
+                                        titleFont: {
+                                            size: FONT_SIZE,
+                                        },
+                                        bodyFont: {
+                                            size: FONT_SIZE,
+                                        },
+                                        boxPadding: TOOLTIP_ICON_MARGIN,
+                                        padding: TOOLTIP_PADDING,
+                                    },
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: {
+                                            font: {
+                                                size: FONT_SIZE,
+                                            },
+                                            padding: AXIS_MARGIN_TOP,
+                                        },
+                                    },
+                                    y: {
+                                        ticks: {
+                                            font: {
+                                                size: FONT_SIZE,
+                                            },
+                                            padding: AXIS_MARGIN_TOP,
+                                        },
                                     },
                                 },
                             }}
