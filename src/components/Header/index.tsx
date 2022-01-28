@@ -70,7 +70,11 @@ export const Header: React.FC = () => {
                     </Menu.Item>
                     {(wide &&
                         headerButtons.map((button) => (
-                            <Menu.Item as={Link} to={button.to}>
+                            <Menu.Item
+                                key={button.name}
+                                as={Link}
+                                to={button.to}
+                            >
                                 <Icon name={button.icon} />
                                 {button.name}
                             </Menu.Item>
@@ -111,6 +115,7 @@ export const Header: React.FC = () => {
                         </Menu.Item>
                         {headerButtons.map((button) => (
                             <Menu.Item
+                                key={button.name}
                                 as={Link}
                                 to={button.to}
                                 onClick={() => setSidebarOpen(false)}
