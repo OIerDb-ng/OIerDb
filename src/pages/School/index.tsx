@@ -98,7 +98,6 @@ const SchoolRank: React.FC = () => {
 
 export const School: React.FC = () => (
     <>
-        {/* TODO: 学校搜索 */}
         <SchoolRank />
     </>
 );

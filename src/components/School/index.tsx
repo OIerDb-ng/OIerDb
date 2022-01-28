@@ -1,13 +1,34 @@
 import { useState } from 'react';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import type { ChartData } from 'chart.js';
 
 // Components
-import { Pagination, Table, Icon } from 'semantic-ui-react';
+import { Pagination, Table, Icon, Tab } from 'semantic-ui-react';
 import { PersonCard } from '@/components/Person/Card';
 
 // Utils
 import getGrade from '@/utils/getGrade';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
 interface SchoolProps {
     school: School;
 }
@@ -40,6 +61,74 @@ export const School: React.FC<SchoolProps> = (props) => {
         siblingRange = 4;
     }
 
+    const colors = {
+        一等奖: '#ee961b',
+        二等奖: '#939291',
+        三等奖: '#9c593b',
+        一等: '#ee961b',
+        二等: '#939291',
+        三等: '#9c593b',
+        金牌: '#ee961b',
+        银牌: '#939291',
+        铜牌: '#9c593b',
+    };
+
+    const panes = Object.keys(school.award_counts)
+        .map((key) => {
+            // 奖项名称列表
+            const awards: string[] = [];
+            const years = Object.keys(school.award_counts[key]);
+            years.forEach((year) => {
+                Object.keys(school.award_counts[key][year].dict).forEach(
+                    (award) => {
+                        if (!awards.includes(award)) awards.push(award);
+                    }
+                );
+            });
+
+            let isEmpty = true;
+            years.forEach((year) => {
+                if (Object.keys(school.award_counts[key][year].dict).length)
+                    isEmpty = false;
+            });
+            if (isEmpty) return null;
+
+            const data: ChartData<'line'> = {
+                labels: years,
+                datasets: awards.map((award) => {
+                    return {
+                        label: award,
+                        data: years.map(
+                            (year) =>
+                                school.award_counts[key][year].dict[award] || 0
+                        ),
+                        backgroundColor: colors[award] || null,
+                        borderColor: colors[award] || null,
+                    };
+                }),
+            };
+
+            return {
+                menuItem: key,
+                render: () => (
+                    <Tab.Pane attached={false}>
+                        <Line
+                            options={{
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'top' as const,
+                                    },
+                                },
+                            }}
+                            data={data}
+                        />
+                    </Tab.Pane>
+                ),
+            };
+        })
+        .filter((pane) => pane);
+
     return (
         <>
             <h4>学校信息</h4>
@@ -50,8 +139,9 @@ export const School: React.FC<SchoolProps> = (props) => {
             <p>
                 OIerDb 排名：{school.rank + 1}（{school.score} 分）
             </p>
+            <h4>获奖信息</h4>
+            <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
             <h4>选手列表</h4>
-            {/* TODO: 年获奖数量变化图 */}
             <Table basic="very" unstackable>
                 <Table.Header>
                     <Table.Row>
