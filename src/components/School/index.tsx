@@ -124,6 +124,7 @@ export const School: React.FC<SchoolProps> = (props) => {
                         <Line
                             style={{
                                 marginTop: LEGEND_TOP_MARGIN,
+                                minHeight: 400,
                             }}
                             plugins={[
                                 {
@@ -140,6 +141,7 @@ export const School: React.FC<SchoolProps> = (props) => {
                                 },
                             ]}
                             options={{
+                                maintainAspectRatio: false,
                                 responsive: true,
                                 plugins: {
                                     legend: {
