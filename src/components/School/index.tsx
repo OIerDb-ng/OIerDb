@@ -20,6 +20,9 @@ import { PersonCard } from '@/components/Person/Card';
 import getGrade from '@/utils/getGrade';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
+// Styles
+import styles from './index.module.less';
+
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -29,6 +32,7 @@ ChartJS.register(
     Tooltip,
     Legend
 );
+
 interface SchoolProps {
     school: School;
 }
@@ -207,7 +211,11 @@ export const School: React.FC<SchoolProps> = (props) => {
                 OIerDb 排名：{school.rank + 1}（{school.score} 分）
             </p>
             <h4>获奖信息</h4>
-            <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+            <Tab
+                menu={{ secondary: true }}
+                panes={panes}
+                id={styles.schoolTab}
+            />
             <h4>选手列表</h4>
             <Table basic="very" unstackable>
                 <Table.Header>
