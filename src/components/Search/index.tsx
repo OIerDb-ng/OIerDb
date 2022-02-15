@@ -1,54 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 // Components
-import { Header, Input, Segment, Table, Modal, Icon } from 'semantic-ui-react';
-import { Person } from '@/components/Person';
+import { Header, Input, Segment, Table } from 'semantic-ui-react';
+import { PersonCard } from '@/components/Person/Card';
 
 // Styles
 import styles from './index.module.less';
 import './index.css';
-
-// Utils
-import getGrade from '@/utils/getGrade';
-
-interface PersonCardProps {
-    oier: OIer;
-}
-
-const PersonCard: React.FC<PersonCardProps> = (props) => {
-    const { oier } = props;
-
-    const trigger = (
-        <Table.Row className={styles.row}>
-            <Table.Cell>{oier.name}</Table.Cell>
-            <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
-            <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
-        </Table.Row>
-    );
-
-    return (
-        <>
-            <Modal
-                closeOnEscape
-                closeOnDimmerClick
-                closeIcon
-                trigger={trigger}
-                dimmer={{ inverted: true }}
-            >
-                <Modal.Header>
-                    {oier.name}
-                    <Link className={styles.link} to={'/oier/' + oier.uid}>
-                        <Icon name="linkify" />
-                    </Link>
-                </Modal.Header>
-                <Modal.Content>
-                    <Person oier={oier} />
-                </Modal.Content>
-            </Modal>
-        </>
-    );
-};
 
 export const Search: React.FC = () => {
     const [searching, setSearching] = useState(false);

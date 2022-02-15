@@ -4,6 +4,7 @@ declare global {
     interface OIerDb {
         init: () => Promise<boolean>;
         oiers: OIer[];
+        schools: School[];
     }
 
     interface OIer {
