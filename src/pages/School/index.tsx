@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 // Components
 import { Pagination, Table, Icon } from 'semantic-ui-react';
@@ -8,7 +7,10 @@ import { Pagination, Table, Icon } from 'semantic-ui-react';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
 const SchoolRank: React.FC = () => {
-    const [page, setPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const page = Number(searchParams.get('page')) || 1;
+    const setPage = (page: string) => setSearchParams({ page });
     const totalPages = Math.ceil(OIerDb.schools.length / 30);
 
     const screenWidthLessThan376 = useScreenWidthWithin(0, 376);
@@ -86,9 +88,10 @@ const SchoolRank: React.FC = () => {
                         icon: true,
                         disabled: page === totalPages,
                     }}
+                    activePage={page}
                     totalPages={totalPages}
                     onPageChange={(_, data) =>
-                        setPage(data.activePage as number)
+                        setPage(data.activePage as string)
                     }
                 />
             </div>

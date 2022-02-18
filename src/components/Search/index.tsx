@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 // Components
 import { Header, Input, Segment, Table } from 'semantic-ui-react';
@@ -9,8 +10,11 @@ import styles from './index.module.less';
 import './index.css';
 
 export const Search: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const input = searchParams.get('query') || '';
+    const setInput = (query: string) => setSearchParams({ query });
+
     const [searching, setSearching] = useState(false);
-    const [input, setInput] = useState('');
     const [result, setResult] = useState(null);
 
     function onSearchInputChange(value: string) {

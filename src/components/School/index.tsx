@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -38,9 +39,12 @@ interface SchoolProps {
 }
 
 export const School: React.FC<SchoolProps> = (props) => {
-    const { school } = props;
-    const [page, setPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
 
+    const { school } = props;
+
+    const page = Number(searchParams.get('page')) || 1;
+    const setPage = (page: string) => setSearchParams({ page });
     const totalPages = Math.ceil(school.members.length / 30);
 
     const screenWidthLessThan376 = useScreenWidthWithin(0, 376);
@@ -270,9 +274,10 @@ export const School: React.FC<SchoolProps> = (props) => {
                         icon: true,
                         disabled: page === totalPages,
                     }}
+                    activePage={page}
                     totalPages={totalPages}
                     onPageChange={(_, data) =>
-                        setPage(data.activePage as number)
+                        setPage(data.activePage as string)
                     }
                 />
             </div>
