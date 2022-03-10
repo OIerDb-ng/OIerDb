@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // Components
@@ -17,18 +17,17 @@ export const Search: React.FC = () => {
     const [searching, setSearching] = useState(false);
     const [result, setResult] = useState(null);
 
-    function onSearchInputChange(value: string) {
+    useEffect(() => {
         setSearching(true);
         setResult(null);
-        setInput(value);
 
         const result = OIerDb.oiers.filter(
-            (oier) => oier.name === value || oier.initials === value
+            (oier) => oier.name === input || oier.initials === input
         );
 
         setSearching(false);
         setResult(result);
-    }
+    }, [input]);
 
     return (
         <>
@@ -45,8 +44,9 @@ export const Search: React.FC = () => {
                     fluid
                     placeholder="键入学生姓名或其拼音首字母..."
                     loading={searching}
-                    onChange={(_, { value }) => onSearchInputChange(value)}
+                    onChange={(_, { value }) => setInput(value)}
                     spellCheck="false"
+                    defaultValue={input}
                 />
                 {result?.length ? (
                     <>
