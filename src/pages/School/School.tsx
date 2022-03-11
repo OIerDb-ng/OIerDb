@@ -6,7 +6,7 @@ import { NotFound } from '@/pages/404';
 
 export const School: React.FC = () => {
     const params = useParams();
-    const id = Number(params.id) || -1;
+    const id = Number(params.id) ?? -1;
     const school = OIerDb.schools.find((school) => school.id === id);
 
     if (!school) return <NotFound />;
