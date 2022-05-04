@@ -11,9 +11,9 @@ import { Container } from 'semantic-ui-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import {
-    Loading,
-    NotSupportIndexedDB,
-    ErrorWhenLoadingOIerDb,
+  Loading,
+  NotSupportIndexedDB,
+  ErrorWhenLoadingOIerDb,
 } from '@/components/App';
 
 // Pages
@@ -33,57 +33,57 @@ import styles from './main.module.less';
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
 const App: React.FC = () => {
-    const [loadedOIerDb, setLoadedOIerDb] = useState(false);
-    const [errorLoadingOIerDb, setErrorLoadingOIerDb] = useState(false);
+  const [loadedOIerDb, setLoadedOIerDb] = useState(false);
+  const [errorLoadingOIerDb, setErrorLoadingOIerDb] = useState(false);
 
-    useEffect(() => {
-        (async () => {
-            // 加载 OIerDb
-            if (await OIerDb.init()) {
-                setLoadedOIerDb(true);
-            } else {
-                setErrorLoadingOIerDb(true);
-            }
-        })();
-    }, []);
+  useEffect(() => {
+    (async () => {
+      // 加载 OIerDb
+      if (await OIerDb.init()) {
+        setLoadedOIerDb(true);
+      } else {
+        setErrorLoadingOIerDb(true);
+      }
+    })();
+  }, []);
 
-    // 不支持 indexedDB
-    if (notSupportIndexedDB) {
-        return <NotSupportIndexedDB />;
-    }
+  // 不支持 indexedDB
+  if (notSupportIndexedDB) {
+    return <NotSupportIndexedDB />;
+  }
 
-    // 加载失败时的提示信息
-    if (!loadedOIerDb && errorLoadingOIerDb) {
-        return <ErrorWhenLoadingOIerDb />;
-    }
+  // 加载失败时的提示信息
+  if (!loadedOIerDb && errorLoadingOIerDb) {
+    return <ErrorWhenLoadingOIerDb />;
+  }
 
-    // 加载中
-    if (!loadedOIerDb) {
-        return <Loading />;
-    }
+  // 加载中
+  if (!loadedOIerDb) {
+    return <Loading />;
+  }
 
-    return (
-        <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/oier" element={<Person />} />
-            <Route path="/oier/:uid" element={<PersonInfo />} />
-            <Route path="/school" element={<School />} />
-            <Route path="/school/:id" element={<SchoolInfo />} />
-            <Route path="/about" element={<About />} />
-            <Route path="*" element={<NotFound />} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/oier" element={<Person />} />
+      <Route path="/oier/:uid" element={<PersonInfo />} />
+      <Route path="/school" element={<School />} />
+      <Route path="/school/:id" element={<SchoolInfo />} />
+      <Route path="/about" element={<About />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 };
 
 ReactDOM.render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <Header />
-            <Container className={styles.container}>
-                <App />
-            </Container>
-            <Footer />
-        </BrowserRouter>
-    </React.StrictMode>,
-    document.getElementById('app')
+  <React.StrictMode>
+    <BrowserRouter>
+      <Header />
+      <Container className={styles.container}>
+        <App />
+      </Container>
+      <Footer />
+    </BrowserRouter>
+  </React.StrictMode>,
+  document.getElementById('app')
 );

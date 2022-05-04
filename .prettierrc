@@ -1,13 +1,6 @@
 {
-    "tabWidth": 4,
-    "endOfLine": "lf",
-    "singleQuote": true,
-    "overrides": [
-        {
-            "files": "*.y{,a}ml",
-            "options": {
-                "tabWidth": 2
-            }
-        }
-    ]
+  "tabWidth": 2,
+  "printWidth": 80,
+  "endOfLine": "lf",
+  "singleQuote": true
 }

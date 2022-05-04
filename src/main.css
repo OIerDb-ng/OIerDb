@@ -1,21 +1,21 @@
 body {
-    overflow-y: scroll;
+  overflow-y: scroll;
 }
 
 body:not(.dimmed) {
-    padding-top: 50px;
+  padding-top: 50px;
 }
 
 body.dimmed > #app > .ui.container {
-    margin-top: 50px;
+  margin-top: 50px;
 }
 
 .emoji {
-    height: 1.1em;
-    width: 1.1em;
-    vertical-align: middle;
-    position: relative;
-    top: -0.1em;
-    margin: -0.5em 0;
-    display: initial;
+  height: 1.1em;
+  width: 1.1em;
+  vertical-align: middle;
+  position: relative;
+  top: -0.1em;
+  margin: -0.5em 0;
+  display: initial;
 }

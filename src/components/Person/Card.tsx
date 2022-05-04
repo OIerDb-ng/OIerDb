@@ -11,47 +11,47 @@ import styles from './Card.module.less';
 import getGrade from '@/utils/getGrade';
 
 interface PersonCardProps {
-    oier: OIer;
-    trigger?: JSX.Element;
+  oier: OIer;
+  trigger?: JSX.Element;
 }
 
 export const PersonCard: React.FC<PersonCardProps> = (props) => {
-    const { oier } = props;
+  const { oier } = props;
 
-    const trigger = (
-        <Table.Row className={styles.row}>
-            {props.trigger || (
-                <>
-                    <Table.Cell>{oier.rank + 1}</Table.Cell>
-                    <Table.Cell>{oier.name}</Table.Cell>
-                    <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
-                    <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
-                    <Table.Cell>{oier.oierdb_score.toFixed(2)}</Table.Cell>
-                    <Table.Cell>{oier.ccf_level}</Table.Cell>
-                </>
-            )}
-        </Table.Row>
-    );
-
-    return (
+  const trigger = (
+    <Table.Row className={styles.row}>
+      {props.trigger || (
         <>
-            <Modal
-                closeOnEscape
-                closeOnDimmerClick
-                closeIcon
-                trigger={trigger}
-                dimmer={{ inverted: true }}
-            >
-                <Modal.Header>
-                    {oier.name}
-                    <Link className={styles.link} to={'/oier/' + oier.uid}>
-                        <Icon name="linkify" />
-                    </Link>
-                </Modal.Header>
-                <Modal.Content>
-                    <Person oier={oier} />
-                </Modal.Content>
-            </Modal>
+          <Table.Cell>{oier.rank + 1}</Table.Cell>
+          <Table.Cell>{oier.name}</Table.Cell>
+          <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
+          <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
+          <Table.Cell>{oier.oierdb_score.toFixed(2)}</Table.Cell>
+          <Table.Cell>{oier.ccf_level}</Table.Cell>
         </>
-    );
+      )}
+    </Table.Row>
+  );
+
+  return (
+    <>
+      <Modal
+        closeOnEscape
+        closeOnDimmerClick
+        closeIcon
+        trigger={trigger}
+        dimmer={{ inverted: true }}
+      >
+        <Modal.Header>
+          {oier.name}
+          <Link className={styles.link} to={'/oier/' + oier.uid}>
+            <Icon name="linkify" />
+          </Link>
+        </Modal.Header>
+        <Modal.Content>
+          <Person oier={oier} />
+        </Modal.Content>
+      </Modal>
+    </>
+  );
 };
