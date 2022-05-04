@@ -31,6 +31,11 @@ const headerButtons: {
         icon: 'home',
     },
     {
+        name: '选手',
+        to: '/oier',
+        icon: 'user',
+    },
+    {
         name: '学校',
         to: '/school',
         icon: 'building',
