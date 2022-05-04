@@ -78,10 +78,7 @@ export const Person: React.FC<PersonProps> = (props) => {
                             <Table.Cell>{data.score}</Table.Cell>
                             <Table.Cell>{data.rank}</Table.Cell>
                             <Table.Cell>
-                                <Link
-                                    to={`/school/${data.school.id}`}
-                                    style={{ color: 'inherit' }}
-                                >
+                                <Link to={`/school/${data.school.id}`}>
                                     {data.school.name}
                                 </Link>
                             </Table.Cell>
