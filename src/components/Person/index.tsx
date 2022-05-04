@@ -43,7 +43,11 @@ export const Person: React.FC<PersonProps> = (props) => {
             <h4>选手信息</h4>
             <p>现在{getGrade(oier.enroll_middle)}。</p>
             <p>
-                OIerDb 排名：{oier.rank + 1}（{oier.oierdb_score} 分）。
+                OIerDb 排名：
+                <Link to={'/oier?page=' + Math.ceil((oier.rank + 1) / 30)}>
+                    {oier.rank + 1}
+                </Link>
+                （{oier.oierdb_score} 分）。
             </p>
             <p>CCF 程序设计能力等级：{oier.ccf_level} 级（仅供参考）。</p>
             <h4>获奖信息</h4>

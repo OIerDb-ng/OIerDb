@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -212,7 +212,11 @@ export const School: React.FC<SchoolProps> = (props) => {
                 {school.city}。
             </p>
             <p>
-                OIerDb 排名：{school.rank + 1}（{school.score} 分）
+                OIerDb 排名：
+                <Link to={'/school?page=' + Math.ceil((school.rank + 1) / 30)}>
+                    {school.rank + 1}
+                </Link>
+                （{school.score} 分）
             </p>
             <h4>获奖信息</h4>
             <Tab
