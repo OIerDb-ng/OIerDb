@@ -228,10 +228,12 @@ export const School: React.FC<SchoolProps> = (props) => {
             <Table basic="very" unstackable>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell>#</Table.HeaderCell>
+                        <Table.HeaderCell width={1}>#</Table.HeaderCell>
                         <Table.HeaderCell>姓名</Table.HeaderCell>
                         <Table.HeaderCell>年级</Table.HeaderCell>
-                        <Table.HeaderCell>全国排名</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>全国排名</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>评分</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>CCF 评级</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -251,6 +253,12 @@ export const School: React.FC<SchoolProps> = (props) => {
                                             {getGrade(oier.enroll_middle)}
                                         </Table.Cell>
                                         <Table.Cell>{oier.rank + 1}</Table.Cell>
+                                        <Table.Cell>
+                                            {oier.oierdb_score.toFixed(2)}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {oier.ccf_level}
+                                        </Table.Cell>
                                     </>
                                 }
                             />

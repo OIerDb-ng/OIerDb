@@ -53,9 +53,18 @@ export const Search: React.FC = () => {
                         <Table basic="very" unstackable>
                             <Table.Header>
                                 <Table.Row>
+                                    <Table.HeaderCell width={1}>
+                                        #
+                                    </Table.HeaderCell>
                                     <Table.HeaderCell>姓名</Table.HeaderCell>
                                     <Table.HeaderCell>省份</Table.HeaderCell>
                                     <Table.HeaderCell>年级</Table.HeaderCell>
+                                    <Table.HeaderCell width={2}>
+                                        评分
+                                    </Table.HeaderCell>
+                                    <Table.HeaderCell width={2}>
+                                        CCF 评级
+                                    </Table.HeaderCell>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>

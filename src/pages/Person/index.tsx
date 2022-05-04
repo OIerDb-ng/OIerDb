@@ -45,6 +45,7 @@ const PersonRank: React.FC = () => {
                         <Table.HeaderCell>姓名</Table.HeaderCell>
                         <Table.HeaderCell width={2}>省份</Table.HeaderCell>
                         <Table.HeaderCell width={2}>评分</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>CCF 评级</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -62,6 +63,7 @@ const PersonRank: React.FC = () => {
                                     {oier.provinces.join('、')}
                                 </Table.Cell>
                                 <Table.Cell>{oier.oierdb_score}</Table.Cell>
+                                <Table.Cell>{oier.ccf_level}</Table.Cell>
                             </Table.Row>
                         ))}
                 </Table.Body>
