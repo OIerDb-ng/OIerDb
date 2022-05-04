@@ -9,6 +9,7 @@ import {
   Table,
   Checkbox,
   Form,
+  Loader,
 } from 'semantic-ui-react';
 import { PersonCard } from '@/components/Person/Card';
 
@@ -35,7 +36,12 @@ export const Search: React.FC = () => {
 
   const advanced = searchParams.get('advanced') === '1' || false;
   const setAdvanced = (advanced: boolean) =>
-    setSearchParams({ advanced: advanced ? '1' : '0' });
+    setSearchParams({
+      advanced: advanced ? '1' : '0',
+      province: '',
+      grade: '',
+      school: '',
+    });
 
   const province = searchParams.get('province') || '';
   const setProvince = (province: string) => setSearchParams({ province });
@@ -53,34 +59,36 @@ export const Search: React.FC = () => {
     setSearching(true);
     setResult(null);
 
-    let result: OIer[] = [];
-    if (!advanced) {
-      result = OIerDb.oiers.filter(
-        (oier) => oier.name === input || oier.initials === input
-      );
-    } else {
-      result = OIerDb.oiers.filter((oier) => {
-        let res = true;
-        if (input) {
-          res &&= oier.name === input || oier.initials === input;
-        }
-        if (province) {
-          res &&= oier.provinces.includes(province);
-        }
-        if (grade) {
-          res &&= oier.enroll_middle.toString() === grade;
-        }
-        if (school) {
-          res &&= oier.records
-            .map((record) => record.school.name)
-            .includes(school);
-        }
-        return res;
-      });
-    }
+    setTimeout(() => {
+      let result: OIer[] = [];
+      if (!advanced) {
+        result = OIerDb.oiers.filter(
+          (oier) => oier.name === input || oier.initials === input
+        );
+      } else {
+        result = OIerDb.oiers.filter((oier) => {
+          let res = Boolean(input || province || grade || school);
+          if (input) {
+            res &&= oier.name === input || oier.initials === input;
+          }
+          if (province) {
+            res &&= oier.provinces.includes(province);
+          }
+          if (grade) {
+            res &&= oier.enroll_middle.toString() === grade;
+          }
+          if (school) {
+            res &&= oier.records
+              .map((record) => record.school.name)
+              .includes(school);
+          }
+          return res;
+        });
+      }
 
-    setSearching(false);
-    setResult(result);
+      setSearching(false);
+      setResult(result);
+    }, 0);
   }, [input, province, grade, school]);
 
   return (
@@ -187,8 +195,10 @@ export const Search: React.FC = () => {
             />
           </Form>
         )}
-        {result?.length ? (
-          <>
+        {searching ? (
+          <Loader active inline="centered" style={{ marginTop: '1rem' }} />
+        ) : result?.length ? (
+          <div style={{ marginTop: '1.5rem' }}>
             <Table basic="very" unstackable>
               <Table.Header>
                 <Table.Row>
@@ -206,10 +216,10 @@ export const Search: React.FC = () => {
                 ))}
               </Table.Body>
             </Table>
-          </>
+          </div>
         ) : (
           <>
-            {input.length ? (
+            {input || province || grade || school ? (
               <div style={{ paddingTop: '1rem' }}>未找到结果</div>
             ) : (
               <></>
