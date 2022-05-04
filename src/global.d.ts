@@ -5,6 +5,8 @@ declare global {
         init: () => Promise<boolean>;
         oiers: OIer[];
         schools: School[];
+        provinces: string[];
+        enroll_middle_years: number[];
     }
 
     interface OIer {

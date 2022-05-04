@@ -51,7 +51,7 @@ const SchoolRank: React.FC = () => {
                     {OIerDb.schools
                         .slice(30 * (page - 1), 30 * page)
                         .map((school) => (
-                            <Table.Row>
+                            <Table.Row key={school.id}>
                                 <Table.Cell>{school.rank + 1}</Table.Cell>
                                 <Table.Cell>
                                     <Link to={'/school/' + school.id}>

@@ -243,6 +243,12 @@
         OIerDb.schools.forEach(
             (school) => (school.members = Array.from(new Set(school.members)))
         );
+        Object.defineProperty(OIerDb, 'enroll_middle_years', {
+            enumerable: true,
+            value: Array.from(
+                new Set(OIerDb.oiers.map((oier) => oier.enroll_middle))
+            ).sort(),
+        });
         return true;
     }
 

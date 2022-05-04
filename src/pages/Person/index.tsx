@@ -52,7 +52,7 @@ const PersonRank: React.FC = () => {
                     {OIerDb.oiers
                         .slice(30 * (page - 1), 30 * page)
                         .map((oier) => (
-                            <Table.Row>
+                            <Table.Row key={oier.uid}>
                                 <Table.Cell>{oier.rank + 1}</Table.Cell>
                                 <Table.Cell>
                                     <Link to={'/oier/' + oier.uid}>
