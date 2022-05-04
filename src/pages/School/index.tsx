@@ -41,10 +41,10 @@ const SchoolRank: React.FC = () => {
             <Table celled unstackable>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell>#</Table.HeaderCell>
+                        <Table.HeaderCell width={1}>#</Table.HeaderCell>
                         <Table.HeaderCell>学校</Table.HeaderCell>
-                        <Table.HeaderCell>省份</Table.HeaderCell>
-                        <Table.HeaderCell>评分</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>省份</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>评分</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -54,10 +54,7 @@ const SchoolRank: React.FC = () => {
                             <Table.Row>
                                 <Table.Cell>{school.rank + 1}</Table.Cell>
                                 <Table.Cell>
-                                    <Link
-                                        to={'/school/' + school.id}
-                                        style={{ color: 'inherit' }}
-                                    >
+                                    <Link to={'/school/' + school.id}>
                                         {school.name}
                                     </Link>
                                 </Table.Cell>

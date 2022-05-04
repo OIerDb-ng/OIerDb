@@ -43,7 +43,7 @@ const PersonRank: React.FC = () => {
                     <Table.Row>
                         <Table.HeaderCell width={1}>#</Table.HeaderCell>
                         <Table.HeaderCell>姓名</Table.HeaderCell>
-                        <Table.HeaderCell>省份</Table.HeaderCell>
+                        <Table.HeaderCell width={2}>省份</Table.HeaderCell>
                         <Table.HeaderCell width={2}>评分</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
@@ -54,10 +54,7 @@ const PersonRank: React.FC = () => {
                             <Table.Row>
                                 <Table.Cell>{oier.rank + 1}</Table.Cell>
                                 <Table.Cell>
-                                    <Link
-                                        to={'/oier/' + oier.uid}
-                                        style={{ color: 'inherit' }}
-                                    >
+                                    <Link to={'/oier/' + oier.uid}>
                                         {oier.name}
                                     </Link>
                                 </Table.Cell>
