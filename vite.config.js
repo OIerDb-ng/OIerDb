@@ -60,7 +60,7 @@ export default defineConfig({
           injectTo: 'head',
           tag: 'script',
           attrs: {
-            defer: true,
+            async: true,
             'data-domain': 'oier.baoshuo.dev',
             src: '//stat.u.sb/js/script.js',
           },
