@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Semantic UI
-import 'semantic-ui-css/semantic.min.css';
 import { Container } from 'semantic-ui-react';
 
 // Components
