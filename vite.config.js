@@ -5,7 +5,7 @@ import { viteExternalsPlugin } from 'vite-plugin-externals';
 import path from 'path';
 import crypto from 'node:crypto';
 
-const isProd = process.env.NODE_ENV === 'production' && !process.env.NETLIFY;
+const isProd = process.env.NODE_ENV === 'production';
 
 const buildHash =
   /* Netlify */ process.env.COMMIT_REF ||
