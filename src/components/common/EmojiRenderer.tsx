@@ -12,7 +12,7 @@ export const EmojiRenderer: React.FC<EmojiRendererProps> = (props) => {
   useEffect(() => {
     if (refElement.current)
       twemoji.parse(refElement.current, {
-        base: 'https://cdnjs.rsb.net/ajax/libs/twemoji/13.1.0/',
+        base: 'https://cdnjs.baoshuo.ren/ajax/libs/twemoji/13.1.0/',
         size: 'svg',
         ext: '.svg',
         className: props.emojiClassName,
