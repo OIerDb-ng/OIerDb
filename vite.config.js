@@ -85,13 +85,6 @@ export default defineConfig({
                 injectTo: 'head',
                 tag: 'script',
                 attrs: {
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-router-dom/6.2.1/react-router-dom.production.min.js',
-                },
-              },
-              {
-                injectTo: 'head',
-                tag: 'script',
-                attrs: {
                   src: '//cdnjs.baoshuo.ren/ajax/libs/Chart.js/3.7.0/chart.min.js',
                 },
               },
@@ -120,7 +113,6 @@ export default defineConfig({
       {
         react: 'React',
         'react-dom': 'ReactDOM',
-        'react-router-dom': 'ReactRouterDOM',
         'chart.js': 'Chart',
       },
       { disableInServe: true }
