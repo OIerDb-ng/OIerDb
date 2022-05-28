@@ -47,10 +47,45 @@ const Stats: React.FC = () => (
   </>
 );
 
+const Develpoers = () => (
+  <>
+    <Header
+      className={styles.header}
+      block
+      as="h4"
+      content="开发者"
+      attached="top"
+      icon="users"
+    />
+    <Segment attached="bottom">
+      <h5>前端</h5>
+      <ul>
+        <li>
+          <a href="https://baoshuo.ren">宝硕</a>
+        </li>
+        <li>
+          <a href="https://men.ci">Menci</a>
+        </li>
+      </ul>
+      <h5>数据处理</h5>
+      <ul>
+        <li>
+          <a href="https://bytew.net">norciz</a>
+        </li>
+        <li>
+          <a href="https://github.com/yhx-12243">yhx-12243</a>
+        </li>
+      </ul>
+      <p>以上排名不分先后，感谢他们的贡献。</p>
+    </Segment>
+  </>
+);
+
 export const About: React.FC = () => (
   <>
     <AboutHeader />
     <FAQ />
     <Stats />
+    <Develpoers />
   </>
 );
