@@ -269,8 +269,15 @@
         compressed_records,
       ] = fields;
       let records = compressed_records.split('/').map((record) => {
-        let [contest, school, score, rank, province_id, award_level_id] =
-          record.split(':');
+        let [
+          contest,
+          school,
+          score,
+          rank,
+          province_id,
+          award_level_id,
+          enroll_middle,
+        ] = record.split(':');
         return {
           contest,
           school,
@@ -284,6 +291,7 @@
             award_level_id in OIerDb.award_levels
               ? OIerDb.award_levels[award_level_id]
               : award_level_id,
+          ...(enroll_middle ? { enroll_middle: parseInt(enroll_middle) } : {}),
         };
       });
       oierdb_score = parseFloat(oierdb_score);

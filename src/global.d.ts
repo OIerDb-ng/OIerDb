@@ -30,6 +30,7 @@ declare global {
     rank: number;
     school: School;
     score: number;
+    enroll_middle?: number;
   }
 
   interface Contest {

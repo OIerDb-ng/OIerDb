@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 // Components
-import { Table } from 'semantic-ui-react';
+import { Table, Popup } from 'semantic-ui-react';
 
 import styles from './index.module.less';
 
@@ -79,7 +79,23 @@ export const Person: React.FC<PersonProps> = (props) => {
                 <Link to={`/school/${data.school.id}`}>{data.school.name}</Link>
               </Table.Cell>
               <Table.Cell>
-                {getGrade(oier.enroll_middle, data.contest.school_year())}
+                {data.enroll_middle &&
+                data.enroll_middle !== oier.enroll_middle ? (
+                  <Popup
+                    position="top center"
+                    content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
+                    trigger={
+                      <span style={{ color: 'red' }}>
+                        {getGrade(
+                          data.enroll_middle,
+                          data.contest.school_year()
+                        )}
+                      </span>
+                    }
+                  />
+                ) : (
+                  getGrade(oier.enroll_middle, data.contest.school_year())
+                )}
               </Table.Cell>
             </Table.Row>
           ))}
