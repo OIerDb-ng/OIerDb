@@ -92,8 +92,22 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         sourcemap: true,
-        maximumFileSizeToCacheInBytes: 5242880, // 5 MiB
+        maximumFileSizeToCacheInBytes: 104857600, // 100 MiB
         runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/oier-data\.baoshuo\.dev\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'oierdb-data-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24, // <== 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
           {
             urlPattern: /^https?:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
