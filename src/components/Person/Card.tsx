@@ -7,6 +7,9 @@ import { Person } from '@/components/Person';
 // Styles
 import styles from './Card.module.less';
 
+// Libs
+import type { OIer } from '@/libs/OIerDb';
+
 // Utils
 import getGrade from '@/utils/getGrade';
 

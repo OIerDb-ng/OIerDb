@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -21,6 +21,9 @@ import { PersonCard } from '@/components/Person/Card';
 import getGrade from '@/utils/getGrade';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
+// Libs
+import type { School as SchoolType } from '@/libs/OIerDb';
+
 // Styles
 import styles from './index.module.less';
 
@@ -35,10 +38,10 @@ ChartJS.register(
 );
 
 interface SchoolProps {
-  school: School;
+  school: SchoolType;
 }
 
-export const School: React.FC<SchoolProps> = (props) => {
+export const School: React.FC<SchoolProps> = memo((props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { school } = props;
@@ -277,4 +280,4 @@ export const School: React.FC<SchoolProps> = (props) => {
       </div>
     </>
   );
-};
+});

@@ -18,7 +18,9 @@ import getGrade from '@/utils/getGrade';
 
 // Styles
 import styles from './index.module.less';
-import './index.css';
+
+// Libs
+import { provinces, type OIer } from '@/libs/OIerDb';
 
 export const Search: React.FC = () => {
   const [searchParams, _setSearchParams] = useSearchParams();
@@ -141,7 +143,7 @@ export const Search: React.FC = () => {
                 search
                 selection
                 clearable
-                options={OIerDb.provinces.map((province) => ({
+                options={provinces.map((province) => ({
                   key: province,
                   value: province,
                   text: province,

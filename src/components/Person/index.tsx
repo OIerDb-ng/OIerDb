@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 // Components
@@ -8,7 +9,10 @@ import styles from './index.module.less';
 // Utils
 import getGrade from '@/utils/getGrade';
 import fixChineseSpace from '@/utils/fixChineseSpace';
-import { EmojiRenderer } from '../common/EmojiRenderer';
+import { EmojiRenderer } from '../EmojiRenderer';
+
+// Libs
+import type { OIer } from '@/libs/OIerDb';
 
 interface AwardEmojiProps {
   level: string;
@@ -30,7 +34,7 @@ interface PersonProps {
   oier: OIer;
 }
 
-export const Person: React.FC<PersonProps> = (props) => {
+export const Person: React.FC<PersonProps> = memo((props) => {
   const { oier } = props;
 
   // "NOI2017D类" -> "NOI2017 D类"
@@ -103,4 +107,4 @@ export const Person: React.FC<PersonProps> = (props) => {
       </Table>
     </>
   );
-};
+});

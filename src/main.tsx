@@ -1,28 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { lazy, useEffect, useState, Suspense } from 'react';
+import { createRoot } from 'react-dom/client';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Semantic UI
 import { Container } from 'semantic-ui-react';
 
+// Utils
+import { initDb } from '@/libs/OIerDb';
+
 // Components
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import {
-  Loading,
   NotSupportIndexedDB,
   ErrorWhenLoadingOIerDb,
-} from '@/components/App';
+} from '@/components/Errors';
+import { Loading } from '@/components/Loading';
 
 // Pages
-import { Home } from '@/pages/Home';
-import { Person } from '@/pages/Person';
-import { Person as PersonInfo } from '@/pages/Person/Person';
-import { School } from '@/pages/School';
-import { School as SchoolInfo } from '@/pages/School/School';
-import { NotFound } from '@/pages/404';
-import { About } from '@/pages/About';
+const Home = lazy(() => import('@/pages/Home'));
+const Person = lazy(() => import('@/pages/Person'));
+const PersonInfo = lazy(() => import('@/pages/Person/Person'));
+const School = lazy(() => import('@/pages/School'));
+const SchoolInfo = lazy(() => import('@/pages/School/School'));
+const NotFound = lazy(() => import('@/pages/404'));
+const About = lazy(() => import('@/pages/About'));
 
 // Styles
 import './main.css';
@@ -38,7 +41,7 @@ const App: React.FC = () => {
   useEffect(() => {
     (async () => {
       // 加载 OIerDb
-      if (await OIerDb.init()) {
+      if ((window.OIerDb = await initDb())) {
         setLoadedOIerDb(true);
       } else {
         setErrorLoadingOIerDb(true);
@@ -63,26 +66,73 @@ const App: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/oier" element={<Person />} />
-      <Route path="/oier/:uid" element={<PersonInfo />} />
-      <Route path="/school" element={<School />} />
-      <Route path="/school/:id" element={<SchoolInfo />} />
-      <Route path="/about" element={<About />} />
-      <Route path="*" element={<NotFound />} />
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<>...</>}>
+            <Home />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/oier"
+        element={
+          <Suspense fallback={<>...</>}>
+            <Person />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/oier/:uid"
+        element={
+          <Suspense fallback={<>...</>}>
+            <PersonInfo />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/school"
+        element={
+          <Suspense fallback={<>...</>}>
+            <School />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/school/:id"
+        element={
+          <Suspense fallback={<>...</>}>
+            <SchoolInfo />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <Suspense fallback={<>...</>}>
+            <About />
+          </Suspense>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <Suspense fallback={<>...</>}>
+            <NotFound />
+          </Suspense>
+        }
+      />
     </Routes>
   );
 };
 
-ReactDOM.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Header />
-      <Container className={styles.container}>
-        <App />
-      </Container>
-      <Footer />
-    </BrowserRouter>
-  </React.StrictMode>,
-  document.getElementById('app')
+const rootElement = document.getElementById('app');
+createRoot(rootElement).render(
+  <BrowserRouter>
+    <Header />
+    <Container className={styles.container}>
+      <App />
+    </Container>
+    <Footer />
+  </BrowserRouter>
 );

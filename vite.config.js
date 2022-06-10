@@ -29,27 +29,6 @@ export default defineConfig({
       tags: [
         {
           injectTo: 'head',
-          tag: 'script',
-          attrs: {
-            src: '/OIerDb.js',
-          },
-        },
-        {
-          injectTo: 'head',
-          tag: 'script',
-          attrs: {
-            src: '//oier-data.baoshuo.dev/static.js',
-          },
-        },
-        {
-          injectTo: 'head',
-          tag: 'script',
-          attrs: {
-            src: '//oier-data.baoshuo.dev/result.sha512.js',
-          },
-        },
-        {
-          injectTo: 'head',
           tag: 'link',
           attrs: {
             rel: 'stylesheet',
@@ -71,28 +50,16 @@ export default defineConfig({
                 injectTo: 'head',
                 tag: 'script',
                 attrs: {
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react/17.0.2/umd/react.production.min.js',
+                  defer: true,
+                  src: '//cdnjs.baoshuo.ren/ajax/libs/react/18.1.0/umd/react.production.min.js',
                 },
               },
               {
                 injectTo: 'head',
                 tag: 'script',
                 attrs: {
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js',
-                },
-              },
-              {
-                injectTo: 'head',
-                tag: 'script',
-                attrs: {
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/Chart.js/3.7.0/chart.min.js',
-                },
-              },
-              {
-                injectTo: 'head',
-                tag: 'script',
-                attrs: {
-                  src: '',
+                  defer: true,
+                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-dom/18.1.0/umd/react-dom.production.min.js',
                 },
               },
             ]
@@ -113,7 +80,6 @@ export default defineConfig({
       {
         react: 'React',
         'react-dom': 'ReactDOM',
-        'chart.js': 'Chart',
       },
       { disableInServe: true }
     ),

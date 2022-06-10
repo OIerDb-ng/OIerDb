@@ -90,8 +90,10 @@ const SchoolRank: React.FC = () => {
   );
 };
 
-export const School: React.FC = () => (
+const School: React.FC = () => (
   <>
     <SchoolRank />
   </>
 );
+
+export default School;

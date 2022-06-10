@@ -6,8 +6,8 @@ import {
   Container,
   Icon,
   Menu,
-  SemanticICONS,
   Sidebar,
+  type SemanticICONS,
 } from 'semantic-ui-react';
 
 // Styles
