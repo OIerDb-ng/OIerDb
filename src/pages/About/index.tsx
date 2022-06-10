@@ -81,7 +81,7 @@ const Develpoers = () => (
   </>
 );
 
-export const About: React.FC = () => (
+const About: React.FC = () => (
   <>
     <AboutHeader />
     <FAQ />
@@ -89,3 +89,5 @@ export const About: React.FC = () => (
     <Develpoers />
   </>
 );
+
+export default About;

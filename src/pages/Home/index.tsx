@@ -4,9 +4,11 @@ import React from 'react';
 import { FAQ } from '@/components/Home';
 import { Search } from '@/components/Search';
 
-export const Home: React.FC = () => (
+const Home: React.FC = () => (
   <>
     <Search />
     <FAQ />
   </>
 );
+
+export default Home;

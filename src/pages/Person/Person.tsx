@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { useParams } from 'react-router-dom';
 
 // Components
 import { Person as PersonInfo } from '@/components/Person';
-import { NotFound } from '@/pages/404';
+const NotFound = lazy(() => import('@/pages/404'));
 
-export const Person: React.FC = () => {
+const Person: React.FC = () => {
   // 获取参数
   const params = useParams();
   const uid = Number(params.uid) || -1;
@@ -21,3 +21,5 @@ export const Person: React.FC = () => {
     </>
   );
 };
+
+export default Person;

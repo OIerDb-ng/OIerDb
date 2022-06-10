@@ -92,8 +92,10 @@ const PersonRank: React.FC = () => {
   );
 };
 
-export const Person: React.FC = () => (
+const Person: React.FC = () => (
   <>
     <PersonRank />
   </>
 );
+
+export default Person;
