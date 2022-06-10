@@ -43,7 +43,7 @@ export class Contest {
   level_counts: Counter;
 
   school_year(): number {
-    return this.fall_semester ? this.year : this.year + 1;
+    return this.fall_semester ? this.year : this.year - 1;
   }
 }
 
