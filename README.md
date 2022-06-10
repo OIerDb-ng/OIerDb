@@ -1,4 +1,4 @@
-<p align="center"><img src="src/assets/logo-white.png"></p>
+<p align="center"><img src="public/logo.png"></p>
 
 <h1 align="center">OIerDb NG</h1>
 

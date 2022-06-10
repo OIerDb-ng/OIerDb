@@ -4,9 +4,6 @@ import React from 'react';
 import { Header, Segment } from 'semantic-ui-react';
 import { FAQ } from '@/components/Home';
 
-// Logo
-import logo from '@/assets/logo-white.png';
-
 // Styles
 import styles from './index.module.less';
 
@@ -14,7 +11,7 @@ const AboutHeader: React.FC = () => (
   <>
     <img
       width={128}
-      src={logo}
+      src="/logo.png"
       title="OIerDb"
       style={{ margin: '0 auto', display: 'block' }}
     />
