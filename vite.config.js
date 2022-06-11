@@ -89,7 +89,6 @@ export default defineConfig({
       { disableInServe: true }
     ),
     VitePWA({
-      registerType: 'autoUpdate',
       workbox: {
         sourcemap: true,
         maximumFileSizeToCacheInBytes: 104857600, // 100 MiB

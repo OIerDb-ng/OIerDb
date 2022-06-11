@@ -9,7 +9,7 @@ import { Container } from 'semantic-ui-react';
 
 // Utils
 import { initDb } from '@/libs/OIerDb';
-import toast from '@/utils/toast';
+import toast, { confirm } from '@/utils/toast';
 
 // Components
 import { Header } from '@/components/Header';
@@ -38,7 +38,22 @@ import 'noty/lib/themes/semanticui.css';
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
-registerSW({
+const updateSW = registerSW({
+  onNeedRefresh() {
+    confirm.info('检测到新版本，是否更新？', [
+      {
+        name: '确定',
+        color: 'green',
+        callback() {
+          updateSW(true);
+        },
+      },
+      {
+        name: '取消',
+        type: 'close',
+      },
+    ]);
+  },
   onOfflineReady() {
     toast.info('已完成脱机工作准备。', 3000);
   },
