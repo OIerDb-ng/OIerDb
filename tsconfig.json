@@ -19,7 +19,10 @@
     "jsxFragmentFactory": "Fragment",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": [
+      "vite-plugin-pwa/client"
+    ]
   },
   "include": ["src"]
 }

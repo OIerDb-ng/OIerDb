@@ -13,9 +13,6 @@ import {
 // Styles
 import styles from './index.module.less';
 
-// Logo
-import logo from '@/assets/logo-white.png';
-
 // Utils
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 
@@ -68,7 +65,7 @@ export const Header: React.FC = () => {
       <Menu fixed="top" borderless>
         <Container>
           <Menu.Item as={Link} to="/">
-            <img src={logo} style={{ marginRight: '0.75em' }} />
+            <img src="/logo.png" style={{ marginRight: '0.75em' }} />
             <div style={{ fontSize: '20px' }}>
               <b>OIerDb</b>
             </div>
@@ -127,9 +124,3 @@ export const Header: React.FC = () => {
     </>
   );
 };
-
-// Favicon
-const favicon = document.createElement('link');
-favicon.rel = 'shortcut icon';
-favicon.href = logo;
-document.head.appendChild(favicon);
