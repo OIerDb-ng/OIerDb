@@ -38,7 +38,7 @@ export default defineConfig({
           },
         },
         {
-          injectTo: 'head',
+          injectTo: 'body',
           tag: 'script',
           attrs: {
             async: true,

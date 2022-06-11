@@ -258,15 +258,52 @@ const processData = (data: any) => {
   return result;
 };
 
-export const initDb = async () => {
+const getData = async (
+  url: string,
+  size: number,
+  setProgressPercent?: (p: number) => void,
+  start: number = 0,
+  end: number = 100
+) => {
+  const response = await fetch(url);
+  let receivedSize = 0;
+  let chunks: Uint8Array[] = [];
+
+  const reader = response.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    receivedSize += value.length;
+
+    if (setProgressPercent) {
+      setProgressPercent(
+        Math.ceil(start + Math.min((receivedSize / size) * (end - start), end))
+      );
+    }
+  }
+
+  const chunksAll = new Uint8Array(receivedSize);
+  let pos = 0;
+  for (const chunk of chunks) {
+    chunksAll.set(chunk, pos);
+    pos += chunk.length;
+  }
+
+  return new TextDecoder().decode(chunksAll);
+};
+
+export const initDb = async (setProgressPercent?: (p: number) => void) => {
   if (__DATA__) return __DATA__;
 
-  const staticSha512 = await fetch(`${baseUrl}/static.sha512.json`)
-    .then((res) => res.json())
-    .then((res) => res.sha512);
-  const resultSha512 = await fetch(`${baseUrl}/result.sha512.json`)
-    .then((res) => res.json())
-    .then((res) => res.sha512);
+  if (!setProgressPercent) setProgressPercent = () => {};
+
+  const { sha512: staticSha512, size: staticSize } = await fetch(
+    `${baseUrl}/static.sha512.json`
+  ).then((res) => res.json());
+  const { sha512: resultSha512, size: resultSize } = await fetch(
+    `${baseUrl}/result.sha512.json`
+  ).then((res) => res.json());
 
   if (checkSha512(staticSha512, resultSha512)) {
     const staticData = await getDataFromIndexedDb('static');
@@ -277,12 +314,21 @@ export const initDb = async () => {
     }
   }
 
-  const staticData = await fetch(`${baseUrl}/static.json`).then((res) =>
-    res.json()
-  );
-  const oiers = await fetch(`${baseUrl}/result.txt`)
-    .then((res) => res.text())
-    .then(textToRaw);
+  const staticData = await getData(
+    `${baseUrl}/static.json`,
+    staticSize,
+    setProgressPercent,
+    0,
+    40
+  ).then((res) => JSON.parse(res));
+
+  const oiers = await getData(
+    `${baseUrl}/result.txt`,
+    resultSize,
+    setProgressPercent,
+    40,
+    90
+  ).then(textToRaw);
 
   await saveDataToIndexedDb('static', staticData);
   await saveDataToIndexedDb('oiers', oiers);
@@ -290,7 +336,12 @@ export const initDb = async () => {
   localStorage.setItem('staticSha512', staticSha512);
   localStorage.setItem('resultSha512', resultSha512);
 
-  return (__DATA__ = processData({ static: staticData, oiers }));
+  setProgressPercent(95);
+
+  __DATA__ = processData({ static: staticData, oiers });
+
+  setProgressPercent(100);
+  return __DATA__;
 };
 
 // 省份列表

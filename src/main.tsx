@@ -62,11 +62,12 @@ const updateSW = registerSW({
 const App: React.FC = () => {
   const [loadedOIerDb, setLoadedOIerDb] = useState(false);
   const [errorLoadingOIerDb, setErrorLoadingOIerDb] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     (async () => {
       // 加载 OIerDb
-      if ((window.OIerDb = await initDb())) {
+      if ((window.OIerDb = await initDb(setProgress))) {
         setLoadedOIerDb(true);
       } else {
         setErrorLoadingOIerDb(true);
@@ -86,7 +87,7 @@ const App: React.FC = () => {
 
   // 加载中
   if (!loadedOIerDb) {
-    return <Loading />;
+    return <Loading progress={progress} />;
   }
 
   return (
@@ -94,7 +95,7 @@ const App: React.FC = () => {
       <Route
         path="/"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="首页" />}>
             <Home />
           </Suspense>
         }
@@ -102,7 +103,7 @@ const App: React.FC = () => {
       <Route
         path="/oier"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="选手列表" />}>
             <Person />
           </Suspense>
         }
@@ -110,7 +111,7 @@ const App: React.FC = () => {
       <Route
         path="/oier/:uid"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="选手详情" />}>
             <PersonInfo />
           </Suspense>
         }
@@ -118,7 +119,7 @@ const App: React.FC = () => {
       <Route
         path="/school"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="学校列表" />}>
             <School />
           </Suspense>
         }
@@ -126,7 +127,7 @@ const App: React.FC = () => {
       <Route
         path="/school/:id"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="学校详情" />}>
             <SchoolInfo />
           </Suspense>
         }
@@ -134,7 +135,7 @@ const App: React.FC = () => {
       <Route
         path="/about"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="关于页面" />}>
             <About />
           </Suspense>
         }
@@ -142,7 +143,7 @@ const App: React.FC = () => {
       <Route
         path="*"
         element={
-          <Suspense fallback={<>...</>}>
+          <Suspense fallback={<Loading name="404" />}>
             <NotFound />
           </Suspense>
         }
