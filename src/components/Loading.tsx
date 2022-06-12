@@ -33,7 +33,7 @@ export const Loading: React.FC<LoadingProps> = ({
       <Dimmer active inverted>
         <Loader indeterminate>
           {message[slowNetwork]}
-          {progress ?? <> ({progress} %)</>}
+          {typeof progress !== 'undefined' && <> ({progress} %)</>}
         </Loader>
       </Dimmer>
     </Segment>
