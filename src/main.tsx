@@ -67,9 +67,11 @@ const App: React.FC = () => {
   useEffect(() => {
     (async () => {
       // 加载 OIerDb
-      if ((window.OIerDb = await initDb(setProgress))) {
+      try {
+        window.OIerDb = await initDb(setProgress);
         setLoadedOIerDb(true);
-      } else {
+      } catch (e) {
+        console.error(e);
         setErrorLoadingOIerDb(true);
       }
     })();

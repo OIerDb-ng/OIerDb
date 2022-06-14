@@ -76,6 +76,7 @@ export interface OIerDbData {
 }
 
 const baseUrl = 'https://oier-data.baoshuo.dev';
+const cdnBaseUrl = 'https://jsd.baoshuo.ren/oier';
 
 let __DATA__: OIerDbData = null;
 
@@ -259,13 +260,24 @@ const processData = (data: any) => {
 };
 
 const getData = async (
-  url: string,
+  urls: string | string[],
   size: number,
   setProgressPercent?: (p: number) => void,
   start: number = 0,
   end: number = 100
 ) => {
-  const response = await fetch(url);
+  if (!Array.isArray(urls)) urls = [urls];
+
+  let response: Response = null;
+  for (const url of urls) {
+    try {
+      response = await fetch(url);
+      if (response.ok) break;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   let receivedSize = 0;
   let chunks: Uint8Array[] = [];
 
@@ -298,10 +310,16 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
 
   if (!setProgressPercent) setProgressPercent = () => {};
 
-  const { sha512: staticSha512, size: staticSize } = await fetch(
+  const {
+    sha512: staticSha512,
+    size: staticSize,
+  }: { sha512: string; size: number } = await fetch(
     `${baseUrl}/static.sha512.json`
   ).then((res) => res.json());
-  const { sha512: resultSha512, size: resultSize } = await fetch(
+  const {
+    sha512: resultSha512,
+    size: resultSize,
+  }: { sha512: string; size: number } = await fetch(
     `${baseUrl}/result.sha512.json`
   ).then((res) => res.json());
 
@@ -315,7 +333,10 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   }
 
   const staticData = await getData(
-    `${baseUrl}/static.json`,
+    [
+      `${cdnBaseUrl}/static.${staticSha512.substring(0, 7)}.json`,
+      `${baseUrl}/static.json`,
+    ],
     staticSize,
     setProgressPercent,
     0,
@@ -323,7 +344,10 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   ).then((res) => JSON.parse(res));
 
   const oiers = await getData(
-    `${baseUrl}/result.txt`,
+    [
+      `${cdnBaseUrl}/result.${resultSha512.substring(0, 7)}.txt`,
+      `${baseUrl}/result.txt`,
+    ],
     resultSize,
     setProgressPercent,
     40,
