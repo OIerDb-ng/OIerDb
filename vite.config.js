@@ -7,7 +7,7 @@ import path from 'path';
 import crypto from 'crypto';
 
 const isProd = process.env.NODE_ENV === 'production';
-const isNetlify = process.env.NETLIFY;
+const isNetlify = process.env.NETLIFY && process.env.CONTEXT !== 'production';
 
 const buildHash =
   /* Netlify */ process.env.COMMIT_REF ||
