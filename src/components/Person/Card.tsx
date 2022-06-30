@@ -44,6 +44,7 @@ export const PersonCard: React.FC<PersonCardProps> = (props) => {
         closeIcon
         trigger={trigger}
         dimmer={{ inverted: true }}
+        size='large'
       >
         <Modal.Header>
           {oier.name}

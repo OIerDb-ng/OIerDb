@@ -39,11 +39,17 @@ export class Contest {
   type: string;
   contestants: Record[];
   fall_semester: boolean;
+  full_score: number;
+  capacity: number;
   length: number;
   level_counts: Counter;
 
   school_year(): number {
     return this.fall_semester ? this.year : this.year - 1;
+  }
+
+  n_contestants() {
+    return this.capacity ? this.capacity : this.contestants.length;
   }
 }
 

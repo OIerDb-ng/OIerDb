@@ -42,6 +42,12 @@ export const Person: React.FC<PersonProps> = memo((props) => {
     return contestName.replace(/(\d+)([a-z]+)/gi, '$1 $2');
   }
 
+  function getProgress(score: number, fullScore: number) {
+    if (!(score < fullScore)) return 10;
+    if (!(0 < score)) return 0;
+    return Math.floor(10 * score / fullScore);
+  }
+
   return (
     <>
       <h4>选手信息</h4>
@@ -61,6 +67,7 @@ export const Person: React.FC<PersonProps> = memo((props) => {
             <Table.HeaderCell>奖项</Table.HeaderCell>
             <Table.HeaderCell>分数</Table.HeaderCell>
             <Table.HeaderCell>选手排名</Table.HeaderCell>
+            <Table.HeaderCell>省份</Table.HeaderCell>
             <Table.HeaderCell>就读学校</Table.HeaderCell>
             <Table.HeaderCell>年级</Table.HeaderCell>
           </Table.Row>
@@ -77,8 +84,34 @@ export const Person: React.FC<PersonProps> = memo((props) => {
                   {fixChineseSpace(data.level)}
                 </span>
               </Table.Cell>
-              <Table.Cell>{data.score}</Table.Cell>
-              <Table.Cell>{data.rank}</Table.Cell>
+              <Table.Cell>
+                {data.score == null ? '/' :
+                  <>
+                    <span className={styles[`progress-${getProgress(
+                      data.score, data.contest.full_score
+                    )}`]}>
+                      {data.score}
+                    </span>
+                    {' '}
+                    <span className={styles.recordTotal}>
+                      / {data.contest.full_score}
+                    </span>
+                  </>
+                }
+              </Table.Cell>
+              <Table.Cell>
+                <span className={styles[`progress-${getProgress(
+                  data.contest.n_contestants() - data.rank,
+                  data.contest.n_contestants() - 1
+                )}`]}>
+                  {data.rank}
+                </span>
+                {' '}
+                <span className={styles.recordTotal}>
+                  / {data.contest.n_contestants()}
+                </span>
+              </Table.Cell>
+              <Table.Cell>{data.province}</Table.Cell>
               <Table.Cell>
                 <Link to={`/school/${data.school.id}`}>{data.school.name}</Link>
               </Table.Cell>
@@ -102,7 +135,7 @@ export const Person: React.FC<PersonProps> = memo((props) => {
                 )}
               </Table.Cell>
             </Table.Row>
-          ))}
+          )).reverse()}
         </Table.Body>
       </Table>
     </>
