@@ -42,11 +42,11 @@ export const Person: React.FC<PersonProps> = memo((props) => {
     return contestName.replace(/(\d+)([a-z]+)/gi, '$1 $2');
   }
 
-  function getProgress(score: number, fullScore: number) {
-    if (!(score < fullScore)) return 10;
-    if (!(0 < score)) return 0;
+  const getProgress = (score: number, fullScore: number) => {
+    if (score >= fullScore) return 10;
+    if (score < 0) return 0;
     return Math.floor((10 * score) / fullScore);
-  }
+  };
 
   return (
     <>
@@ -87,7 +87,7 @@ export const Person: React.FC<PersonProps> = memo((props) => {
                 </Table.Cell>
                 <Table.Cell>
                   {data.score == null ? (
-                    '/'
+                    '-'
                   ) : (
                     <>
                       <span
