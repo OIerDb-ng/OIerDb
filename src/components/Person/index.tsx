@@ -42,6 +42,12 @@ export const Person: React.FC<PersonProps> = memo((props) => {
     return contestName.replace(/(\d+)([a-z]+)/gi, '$1 $2');
   }
 
+  const getProgress = (score: number, fullScore: number) => {
+    if (score >= fullScore) return 10;
+    if (score < 0) return 0;
+    return Math.floor((10 * score) / fullScore);
+  };
+
   return (
     <>
       <h4>选手信息</h4>
@@ -61,48 +67,92 @@ export const Person: React.FC<PersonProps> = memo((props) => {
             <Table.HeaderCell>奖项</Table.HeaderCell>
             <Table.HeaderCell>分数</Table.HeaderCell>
             <Table.HeaderCell>选手排名</Table.HeaderCell>
+            <Table.HeaderCell>省份</Table.HeaderCell>
             <Table.HeaderCell>就读学校</Table.HeaderCell>
             <Table.HeaderCell>年级</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {oier.records.map((data) => (
-            <Table.Row key={data.contest.id}>
-              <Table.Cell>
-                <span className={styles.contestName}>
-                  {fixChineseSpace(fixContestName(data.contest.name))}
-                </span>{' '}
-                <span className={styles.contestLevel}>
-                  <AwardEmoji level={data.level} />
-                  {fixChineseSpace(data.level)}
-                </span>
-              </Table.Cell>
-              <Table.Cell>{data.score}</Table.Cell>
-              <Table.Cell>{data.rank}</Table.Cell>
-              <Table.Cell>
-                <Link to={`/school/${data.school.id}`}>{data.school.name}</Link>
-              </Table.Cell>
-              <Table.Cell>
-                {data.enroll_middle &&
-                data.enroll_middle !== oier.enroll_middle ? (
-                  <Popup
-                    position="top center"
-                    content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
-                    trigger={
-                      <span style={{ color: 'red' }}>
-                        {getGrade(
-                          data.enroll_middle,
-                          data.contest.school_year()
-                        )}
+          {oier.records
+            .map((data) => (
+              <Table.Row key={data.contest.id}>
+                <Table.Cell>
+                  <span className={styles.contestName}>
+                    {fixChineseSpace(fixContestName(data.contest.name))}
+                  </span>{' '}
+                  <span className={styles.contestLevel}>
+                    <AwardEmoji level={data.level} />
+                    {fixChineseSpace(data.level)}
+                  </span>
+                </Table.Cell>
+                <Table.Cell>
+                  {data.score == null ? (
+                    '-'
+                  ) : (
+                    <>
+                      <span
+                        className={
+                          styles[
+                            `progress-${getProgress(
+                              data.score,
+                              data.contest.full_score
+                            )}`
+                          ]
+                        }
+                      >
+                        {data.score}
+                      </span>{' '}
+                      <span className={styles.recordTotal}>
+                        / {data.contest.full_score}
                       </span>
+                    </>
+                  )}
+                </Table.Cell>
+                <Table.Cell>
+                  <span
+                    className={
+                      styles[
+                        `progress-${getProgress(
+                          data.contest.n_contestants() - data.rank,
+                          data.contest.n_contestants() - 1
+                        )}`
+                      ]
                     }
-                  />
-                ) : (
-                  getGrade(oier.enroll_middle, data.contest.school_year())
-                )}
-              </Table.Cell>
-            </Table.Row>
-          ))}
+                  >
+                    {data.rank}
+                  </span>{' '}
+                  <span className={styles.recordTotal}>
+                    / {data.contest.n_contestants()}
+                  </span>
+                </Table.Cell>
+                <Table.Cell>{data.province}</Table.Cell>
+                <Table.Cell>
+                  <Link to={`/school/${data.school.id}`}>
+                    {data.school.name}
+                  </Link>
+                </Table.Cell>
+                <Table.Cell>
+                  {data.enroll_middle &&
+                  data.enroll_middle !== oier.enroll_middle ? (
+                    <Popup
+                      position="top center"
+                      content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
+                      trigger={
+                        <span style={{ color: 'red' }}>
+                          {getGrade(
+                            data.enroll_middle,
+                            data.contest.school_year()
+                          )}
+                        </span>
+                      }
+                    />
+                  ) : (
+                    getGrade(oier.enroll_middle, data.contest.school_year())
+                  )}
+                </Table.Cell>
+              </Table.Row>
+            ))
+            .reverse()}
         </Table.Body>
       </Table>
     </>
