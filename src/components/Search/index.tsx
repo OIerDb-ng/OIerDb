@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // Components
@@ -54,14 +54,13 @@ export const Search: React.FC = () => {
   const school = searchParams.get('school') || '';
   const setSchool = (school: string) => setSearchParams({ school });
 
-  const [searching, setSearching] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    setSearching(true);
     setResult(null);
 
-    setTimeout(() => {
+    startTransition(() => {
       let result: OIer[] = [];
       if (!advanced) {
         result = OIerDb.oiers.filter(
@@ -88,10 +87,9 @@ export const Search: React.FC = () => {
         });
       }
 
-      setSearching(false);
       setResult(result);
-    }, 0);
-  }, [input, province, grade, school]);
+    });
+  }, [input, province, grade, school, advanced]);
 
   return (
     <>
@@ -122,7 +120,7 @@ export const Search: React.FC = () => {
           <Input
             fluid
             placeholder="键入学生姓名或其拼音首字母..."
-            loading={searching}
+            loading={isPending}
             onChange={(_, { value }) => setInput(value)}
             spellCheck="false"
             defaultValue={input}
@@ -197,7 +195,7 @@ export const Search: React.FC = () => {
             />
           </Form>
         )}
-        {searching ? (
+        {isPending ? (
           <Loader active inline="centered" style={{ marginTop: '1rem' }} />
         ) : result?.length ? (
           <div style={{ marginTop: '1.5rem' }}>
