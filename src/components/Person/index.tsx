@@ -59,18 +59,18 @@ export const Person: React.FC<PersonProps> = memo((props) => {
           }
         />
       );
-    } else {
-      return (
-        <Popup
-          position="top center"
-          content={`此记录的年级与原始数据不一致，原始数据为 “${getGrade(
-            record,
-            true
-          )}”。`}
-          trigger={<span style={{ color: 'fuchsia' }}>{getGrade(record)}</span>}
-        />
-      );
     }
+
+    return (
+      <Popup
+        position="top center"
+        content={`此记录的年级与原始数据不一致，原始数据为「${getGrade(
+          record,
+          true
+        )}」。`}
+        trigger={<span style={{ color: 'fuchsia' }}>{getGrade(record)}</span>}
+      />
+    );
   };
 
   return (
