@@ -12,7 +12,7 @@ import fixChineseSpace from '@/utils/fixChineseSpace';
 import { EmojiRenderer } from '../EmojiRenderer';
 
 // Libs
-import type { OIer } from '@/libs/OIerDb';
+import type { OIer, Record } from '@/libs/OIerDb';
 
 interface AwardEmojiProps {
   level: string;
@@ -48,10 +48,41 @@ export const Person: React.FC<PersonProps> = memo((props) => {
     return Math.floor((10 * score) / fullScore);
   };
 
+  const handleInconsistentGrade = (record: Record) => {
+    if (record.enroll_middle.is_stay_down) {
+      return (
+        <Popup
+          position="top center"
+          content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
+          trigger={
+            <span style={{ color: 'red', cursor: 'pointer' }}>
+              {getGrade(record, true)}
+            </span>
+          }
+        />
+      );
+    }
+
+    return (
+      <Popup
+        position="top center"
+        content={`此记录的年级与原始数据不一致，原始数据为「${getGrade(
+          record,
+          true
+        )}」。`}
+        trigger={
+          <span style={{ color: 'fuchsia', cursor: 'pointer' }}>
+            {getGrade(record)}
+          </span>
+        }
+      />
+    );
+  };
+
   return (
     <>
       <h4>选手信息</h4>
-      <p>现在{getGrade(oier.enroll_middle)}。</p>
+      <p>现在{getGrade(oier)}。</p>
       <p>
         OIerDb 排名：
         <Link to={'/oier?page=' + Math.ceil((oier.rank + 1) / 30)}>
@@ -132,23 +163,9 @@ export const Person: React.FC<PersonProps> = memo((props) => {
                   </Link>
                 </Table.Cell>
                 <Table.Cell>
-                  {data.enroll_middle &&
-                  data.enroll_middle !== oier.enroll_middle ? (
-                    <Popup
-                      position="top center"
-                      content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
-                      trigger={
-                        <span style={{ color: 'red' }}>
-                          {getGrade(
-                            data.enroll_middle,
-                            data.contest.school_year()
-                          )}
-                        </span>
-                      }
-                    />
-                  ) : (
-                    getGrade(oier.enroll_middle, data.contest.school_year())
-                  )}
+                  {data.enroll_middle
+                    ? handleInconsistentGrade(data)
+                    : getGrade(data)}
                 </Table.Cell>
               </Table.Row>
             ))
