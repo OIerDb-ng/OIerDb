@@ -55,7 +55,9 @@ export const Person: React.FC<PersonProps> = memo((props) => {
           position="top center"
           content="此记录为非正常年级，可能为该选手后期出现了留级等情况而导致的。"
           trigger={
-            <span style={{ color: 'red' }}>{getGrade(record, true)}</span>
+            <span style={{ color: 'red', cursor: 'pointer' }}>
+              {getGrade(record, true)}
+            </span>
           }
         />
       );
@@ -68,7 +70,11 @@ export const Person: React.FC<PersonProps> = memo((props) => {
           record,
           true
         )}」。`}
-        trigger={<span style={{ color: 'fuchsia' }}>{getGrade(record)}</span>}
+        trigger={
+          <span style={{ color: 'fuchsia', cursor: 'pointer' }}>
+            {getGrade(record)}
+          </span>
+        }
       />
     );
   };
