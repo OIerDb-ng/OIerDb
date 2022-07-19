@@ -2,6 +2,10 @@ import { openDB } from 'idb';
 import { Counter } from './Counter';
 
 export class OIer {
+  constructor(settings: any) {
+    for (const setting in settings) this[setting] = settings[setting];
+  }
+
   uid: number;
   name: string;
   ccf_level: number;
@@ -250,6 +254,8 @@ const processData = (data: any) => {
   });
 
   result.oiers = data.oiers.map((oier) => {
+    oier = new OIer(oier);
+
     oier.provinces = [
       ...new Set(oier.records.map((record) => record.province)),
     ];
