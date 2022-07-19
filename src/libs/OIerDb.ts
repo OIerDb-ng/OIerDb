@@ -14,7 +14,7 @@ export class OIer {
   records: Record[];
 }
 
-interface Record {
+export interface Record {
   oier: OIer;
   contest: Contest;
   level: string;
@@ -22,7 +22,10 @@ interface Record {
   rank: number;
   school: School;
   score: number;
-  enroll_middle?: number;
+  enroll_middle?: {
+    is_stay_down: boolean;
+    value: number;
+  };
 }
 
 export class Contest {
@@ -146,13 +149,19 @@ const textToRaw = (text: string) => {
     let records = compressed_records.split('/').map((record) => {
       let [
         contest,
+        ,
         school,
+        ,
         score,
+        ,
         rank,
+        ,
         province_id,
+        ,
         award_level_id,
+        is_stay_down,
         enroll_middle,
-      ] = record.split(':');
+      ] = record.split(/([:;])/);
       return {
         contest,
         school,
@@ -164,7 +173,12 @@ const textToRaw = (text: string) => {
           award_level_id in awardLevels
             ? awardLevels[award_level_id]
             : award_level_id,
-        ...(enroll_middle ? { enroll_middle: parseInt(enroll_middle) } : {}),
+        ...(enroll_middle != null && {
+          enroll_middle: {
+            is_stay_down: is_stay_down === ';',
+            value: parseInt(enroll_middle),
+          },
+        }),
       };
     });
     let oierdb_score = parseFloat(_oierdb_score);

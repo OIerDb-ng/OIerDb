@@ -242,7 +242,7 @@ export const School: React.FC<SchoolProps> = memo((props) => {
                   <>
                     <Table.Cell>{page * 30 - 30 + index + 1}</Table.Cell>
                     <Table.Cell>{oier.name}</Table.Cell>
-                    <Table.Cell>{getGrade(oier.enroll_middle)}</Table.Cell>
+                    <Table.Cell>{getGrade(oier)}</Table.Cell>
                     <Table.Cell>{oier.rank + 1}</Table.Cell>
                     <Table.Cell>{oier.oierdb_score.toFixed(2)}</Table.Cell>
                     <Table.Cell>{oier.ccf_level}</Table.Cell>
