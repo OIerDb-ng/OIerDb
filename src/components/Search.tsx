@@ -14,10 +14,10 @@ import {
 import { PersonCard } from '@/components/Person/Card';
 
 // Utils
-import getGrade from '@/utils/getGrade';
+import getGrade, { currentYear } from '@/utils/getGrade';
 
 // Styles
-import styles from './index.module.less';
+import styles from './Search.module.less';
 
 // Libs
 import { provinces, type OIer } from '@/libs/OIerDb';
@@ -159,7 +159,7 @@ export const Search: React.FC = () => {
                   .map((year) => ({
                     key: year,
                     value: year,
-                    text: getGrade(year),
+                    text: getGrade(year, currentYear),
                   }))
                   .sort((a, b) => {
                     const t = ['一', '二', '三', '四', '五', '六'];

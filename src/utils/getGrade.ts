@@ -1,21 +1,22 @@
 import { OIer, Record } from '@/libs/OIerDb';
 
-const currentYear =
-    new Date().getFullYear() - Number(new Date().getMonth() + 1 < 9),
-  grades = [
-    '一年级',
-    '二年级',
-    '三年级',
-    '四年级',
-    '五年级',
-    '六年级',
-    '初一',
-    '初二',
-    '初三',
-    '高一',
-    '高二',
-    '高三',
-  ];
+export const currentYear =
+  new Date().getFullYear() - Number(new Date().getMonth() + 1 < 9);
+
+const grades = [
+  '一年级',
+  '二年级',
+  '三年级',
+  '四年级',
+  '五年级',
+  '六年级',
+  '初一',
+  '初二',
+  '初三',
+  '高一',
+  '高二',
+  '高三',
+];
 
 function getGrade(oier: OIer): string;
 function getGrade(record: Record, rawData?: boolean): string;
