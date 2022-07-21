@@ -67,7 +67,7 @@ const Develpoers = () => (
       <h5>数据处理</h5>
       <ul>
         <li>
-          <a href="https://bytew.net">norciz</a>
+          <a href="https://bytew.net">nocriz</a>
         </li>
         <li>
           <a href="https://github.com/yhx-12243">yhx-12243</a>

@@ -22,18 +22,30 @@ export const Footer: React.FC = () => (
           Source Code
         </a>
       </div>
+      {/* 人员按字典序排列 */}
       <div className={styles.footerText}>
         Made with &nbsp;
         <i>
           <EmojiRenderer>💖</EmojiRenderer>
         </i>
         &nbsp; by{' '}
-        <a href="https://baoshuo.ren" target="_blank">
+        <a
+          href="https://baoshuo.ren/?utm_source=oier.baoshuo.dev"
+          target="_blank"
+        >
           Baoshuo
-        </a>{' '}
-        and{' '}
+        </a>
+        {', '}
         <a href="https://men.ci" target="_blank">
           Menci
+        </a>
+        {', '}
+        <a href="https://bytew.net" target="_blank">
+          nocriz
+        </a>{' '}
+        and{' '}
+        <a href="https://github.com/yhx-12243" target="_blank">
+          yhx-12243
         </a>
       </div>
     </Container>
