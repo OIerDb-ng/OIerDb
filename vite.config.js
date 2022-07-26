@@ -53,7 +53,7 @@ export default defineConfig({
                 tag: 'script',
                 attrs: {
                   defer: true,
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react/18.1.0/umd/react.production.min.js',
+                  src: '//cdnjs.baoshuo.ren/ajax/libs/react/18.2.0/umd/react.production.min.js',
                 },
               },
               {
@@ -61,7 +61,7 @@ export default defineConfig({
                 tag: 'script',
                 attrs: {
                   defer: true,
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-dom/18.1.0/umd/react-dom.production.min.js',
+                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
                 },
               },
             ]
