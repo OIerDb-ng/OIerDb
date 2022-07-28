@@ -38,6 +38,11 @@ const headerButtons: {
     icon: 'building',
   },
   {
+    name: '比赛',
+    to: '/contest',
+    icon: 'calendar',
+  },
+  {
     name: '关于',
     to: '/about',
     icon: 'info circle',

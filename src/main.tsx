@@ -26,6 +26,8 @@ const Person = lazy(() => import('@/pages/Person'));
 const PersonInfo = lazy(() => import('@/pages/Person/Person'));
 const School = lazy(() => import('@/pages/School'));
 const SchoolInfo = lazy(() => import('@/pages/School/School'));
+const Contest = lazy(() => import('@/pages/Contest'));
+const ContestInfo = lazy(() => import('@/pages/Contest/Contest'));
 const NotFound = lazy(() => import('@/pages/404'));
 const About = lazy(() => import('@/pages/About'));
 
@@ -131,6 +133,22 @@ const App: React.FC = () => {
         element={
           <Suspense fallback={<Loading name="学校详情" />}>
             <SchoolInfo />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/contest"
+        element={
+          <Suspense fallback={<Loading name="比赛列表页面" />}>
+            <Contest />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/contest/:id"
+        element={
+          <Suspense fallback={<Loading name="比赛页面" />}>
+            <ContestInfo />
           </Suspense>
         }
       />
