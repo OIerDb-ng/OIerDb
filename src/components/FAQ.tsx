@@ -1,13 +1,8 @@
-import React from 'react';
-
-// Components
+import React, { memo } from 'react';
 import { Header, Segment } from 'semantic-ui-react';
+import styles from './FAQ.module.less';
 
-// Styles
-import styles from './index.module.less';
-
-// FAQ
-export const FAQ: React.FC = () => {
+const FAQ: React.FC = () => {
   return (
     <>
       <Header
@@ -47,3 +42,5 @@ export const FAQ: React.FC = () => {
     </>
   );
 };
+
+export default memo(FAQ);

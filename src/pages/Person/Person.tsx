@@ -1,8 +1,7 @@
 import React, { lazy } from 'react';
 import { useParams } from 'react-router-dom';
+import PersonInfo from '@/components/PersonInfo';
 
-// Components
-import { Person as PersonInfo } from '@/components/Person';
 const NotFound = lazy(() => import('@/pages/404'));
 
 const Person: React.FC = () => {

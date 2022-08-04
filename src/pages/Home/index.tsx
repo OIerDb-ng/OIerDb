@@ -1,8 +1,6 @@
 import React from 'react';
-
-// Components
-import { FAQ } from '@/components/Home';
-import { Search } from '@/components/Search';
+import FAQ from '@/components/FAQ';
+import Search from '@/components/Search';
 
 const Home: React.FC = () => (
   <>

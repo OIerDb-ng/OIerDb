@@ -1,7 +1,5 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
-// Components
 import {
   Header,
   Input,
@@ -11,18 +9,12 @@ import {
   Form,
   Loader,
 } from 'semantic-ui-react';
-import { PersonCard } from '@/components/Person/Card';
-
-// Utils
+import PersonCard from '@/components/PersonCard';
 import getGrade, { currentYear } from '@/utils/getGrade';
-
-// Styles
+import { provinces, type OIer } from '@/libs/OIerDb';
 import styles from './Search.module.less';
 
-// Libs
-import { provinces, type OIer } from '@/libs/OIerDb';
-
-export const Search: React.FC = () => {
+const Search: React.FC = () => {
   const [searchParams, _setSearchParams] = useSearchParams();
 
   const setSearchParams = (params: { [key: string]: string }) => {

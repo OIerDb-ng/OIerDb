@@ -1,10 +1,6 @@
 import React from 'react';
-
-// Components
 import { Header, Segment } from 'semantic-ui-react';
-import { FAQ } from '@/components/Home';
-
-// Styles
+import FAQ from '@/components/FAQ';
 import styles from './index.module.less';
 
 const AboutHeader: React.FC = () => (
