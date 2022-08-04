@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pagination, Table, Icon } from 'semantic-ui-react';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 
 const Contests: React.FC = () => {
@@ -58,7 +59,7 @@ const Contests: React.FC = () => {
               <Table.Cell>{contest.id}</Table.Cell>
               <Table.Cell>
                 <Link to={'/contest/' + contest.id}>
-                  {fixChineseSpace(contest.name)}
+                  {fixChineseSpace(fixContestName(contest.name))}
                 </Link>
               </Table.Cell>
               <Table.Cell>{contest.contestants.length}</Table.Cell>

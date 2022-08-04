@@ -16,8 +16,9 @@ import { PersonCard } from '@/components/Person/Card';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 import getGrade from '@/utils/getGrade';
 import getProgress from '@/utils/getProgress';
-import styles from './Contest.module.less';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+import fixContestName from '@/utils/fixContestName';
+import styles from './Contest.module.less';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -73,7 +74,7 @@ const Contest: React.FC = () => {
 
   return (
     <>
-      <h1>{fixChineseSpace(contest.name)}</h1>
+      <h1>{fixChineseSpace(fixContestName(contest.name))}</h1>
       <p>
         举办于 {contest.year} 年（{contest.school_year()}-
         {contest.school_year() + 1} 学年），共 {contest.contestants.length}{' '}

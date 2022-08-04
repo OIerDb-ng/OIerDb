@@ -6,6 +6,7 @@ import fixChineseSpace from '@/utils/fixChineseSpace';
 import AwardEmoji from '@/components/AwardEmoji';
 import type { OIer, Record } from '@/libs/OIerDb';
 import getProgress from '@/utils/getProgress';
+import fixContestName from '@/utils/fixContestName';
 import styles from './index.module.less';
 
 interface PersonProps {
@@ -14,11 +15,6 @@ interface PersonProps {
 
 export const Person: React.FC<PersonProps> = memo((props) => {
   const { oier } = props;
-
-  // "NOI2017D类" -> "NOI2017 D类"
-  function fixContestName(contestName: string) {
-    return contestName.replace(/(\d+)([a-z]+)/gi, '$1 $2');
-  }
 
   const handleInconsistentGrade = (record: Record) => {
     if (record.enroll_middle.is_stay_down) {
