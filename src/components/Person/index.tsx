@@ -80,9 +80,12 @@ export const Person: React.FC<PersonProps> = memo((props) => {
             .map((data) => (
               <Table.Row key={data.contest.id}>
                 <Table.Cell>
-                  <span className={styles.contestName}>
+                  <Link
+                    className={styles.contestName}
+                    to={'/contest/' + data.contest.id}
+                  >
                     {fixChineseSpace(fixContestName(data.contest.name))}
-                  </span>{' '}
+                  </Link>{' '}
                   <span className={styles.contestLevel}>
                     <AwardEmoji level={data.level} />
                     {fixChineseSpace(data.level)}
