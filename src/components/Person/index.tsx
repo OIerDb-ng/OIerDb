@@ -1,34 +1,12 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-
-// Components
 import { Table, Popup } from 'semantic-ui-react';
-
-import styles from './index.module.less';
-
-// Utils
 import getGrade from '@/utils/getGrade';
 import fixChineseSpace from '@/utils/fixChineseSpace';
-import { EmojiRenderer } from '../EmojiRenderer';
-
-// Libs
+import AwardEmoji from '@/components/AwardEmoji';
 import type { OIer, Record } from '@/libs/OIerDb';
-
-interface AwardEmojiProps {
-  level: string;
-}
-
-const AwardEmoji: React.FC<AwardEmojiProps> = (props) => {
-  const keywordsOfType = [['金'], ['银'], ['铜']];
-  const emojis = ['🥇', '🥈', '🥉'];
-
-  const type = keywordsOfType.findIndex((keywords) =>
-    keywords.some((keyword) => props.level.includes(keyword))
-  );
-  const emoji = emojis[type];
-
-  return emoji ? <EmojiRenderer>{emoji}</EmojiRenderer> : null;
-};
+import getProgress from '@/utils/getProgress';
+import styles from './index.module.less';
 
 interface PersonProps {
   oier: OIer;
@@ -41,12 +19,6 @@ export const Person: React.FC<PersonProps> = memo((props) => {
   function fixContestName(contestName: string) {
     return contestName.replace(/(\d+)([a-z]+)/gi, '$1 $2');
   }
-
-  const getProgress = (score: number, fullScore: number) => {
-    if (score >= fullScore) return 10;
-    if (score < 0) return 0;
-    return Math.floor((10 * score) / fullScore);
-  };
 
   const handleInconsistentGrade = (record: Record) => {
     if (record.enroll_middle.is_stay_down) {
