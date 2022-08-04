@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Table, Icon, Pagination } from 'semantic-ui-react';
+import { Table } from 'semantic-ui-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,8 +16,8 @@ import { PersonCard } from '@/components/Person/Card';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 import getGrade from '@/utils/getGrade';
 import getProgress from '@/utils/getProgress';
-import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 import fixContestName from '@/utils/fixContestName';
+import Pagination from '@/components/Pagination';
 import styles from './Contest.module.less';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -36,7 +36,7 @@ const colors = {
 
 const Contest: React.FC = () => {
   const params = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const id = Number(params.id) ?? -1;
   const contest = useMemo(
@@ -44,33 +44,10 @@ const Contest: React.FC = () => {
     [id]
   );
 
-  if (!contest) return <NotFound />;
-
   const page = Number(searchParams.get('page')) || 1;
-  const setPage = (page: string) => setSearchParams({ page });
-  const totalPages = Math.ceil(contest.contestants.length / 30);
+  const perPage = 30;
 
-  const screenWidthLessThan376 = useScreenWidthWithin(0, 376);
-  const screenWidthLessThan450 = useScreenWidthWithin(0, 450);
-  const screenWidthLessThan680 = useScreenWidthWithin(0, 680);
-  const screenWidthLessThan768 = useScreenWidthWithin(0, 768);
-  const screenWidthLessThan1024 = useScreenWidthWithin(0, 1024);
-
-  let siblingRange: number, size: string;
-  if (screenWidthLessThan376) {
-    siblingRange = 0;
-    size = 'small';
-  } else if (screenWidthLessThan450) {
-    siblingRange = 0;
-  } else if (screenWidthLessThan680) {
-    siblingRange = 1;
-  } else if (screenWidthLessThan768) {
-    siblingRange = 2;
-  } else if (screenWidthLessThan1024) {
-    siblingRange = 3;
-  } else {
-    siblingRange = 4;
-  }
+  if (!contest) return <NotFound />;
 
   return (
     <>
@@ -124,7 +101,7 @@ const Contest: React.FC = () => {
         </Table.Header>
         <Table.Body>
           {contest.contestants
-            .slice(page * 30 - 30, page * 30)
+            .slice((page - 1) * perPage, page * perPage)
             .map((contestant) => (
               <PersonCard
                 oier={contestant.oier}
@@ -172,32 +149,7 @@ const Contest: React.FC = () => {
             ))}
         </Table.Body>
       </Table>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Pagination
-          firstItem={null}
-          lastItem={null}
-          size={size}
-          siblingRange={siblingRange}
-          ellipsisItem={{
-            content: '...',
-            disabled: true,
-            icon: true,
-          }}
-          prevItem={{
-            content: <Icon name="angle left" />,
-            icon: true,
-            disabled: page === 1,
-          }}
-          nextItem={{
-            content: <Icon name="angle right" />,
-            icon: true,
-            disabled: page === totalPages,
-          }}
-          activePage={page}
-          totalPages={totalPages}
-          onPageChange={(_, data) => setPage(data.activePage as string)}
-        />
-      </div>
+      <Pagination total={contest.contestants.length} perPage={perPage} />
     </>
   );
 };

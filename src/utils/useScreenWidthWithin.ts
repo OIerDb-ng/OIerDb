@@ -40,3 +40,5 @@ export function useScreenWidthWithin(l: number, r: number): boolean {
 
   return result;
 }
+
+export default useScreenWidthWithin;
