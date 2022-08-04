@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Pagination, Table, Icon } from 'semantic-ui-react';
-import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+import { Table } from 'semantic-ui-react';
+import Pagination from '@/components/Pagination';
 import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 
 const Contests: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const data = useMemo(
     () =>
@@ -17,30 +17,7 @@ const Contests: React.FC = () => {
   );
 
   const page = Number(searchParams.get('page')) || 1;
-  const setPage = (page: string) => setSearchParams({ page });
-  const totalPages = Math.ceil(data.length / 20);
-
-  const screenWidthLessThan376 = useScreenWidthWithin(0, 376);
-  const screenWidthLessThan450 = useScreenWidthWithin(0, 450);
-  const screenWidthLessThan680 = useScreenWidthWithin(0, 680);
-  const screenWidthLessThan768 = useScreenWidthWithin(0, 768);
-  const screenWidthLessThan1024 = useScreenWidthWithin(0, 1024);
-
-  let siblingRange: number, size: string;
-  if (screenWidthLessThan376) {
-    siblingRange = 0;
-    size = 'small';
-  } else if (screenWidthLessThan450) {
-    siblingRange = 0;
-  } else if (screenWidthLessThan680) {
-    siblingRange = 1;
-  } else if (screenWidthLessThan768) {
-    siblingRange = 2;
-  } else if (screenWidthLessThan1024) {
-    siblingRange = 3;
-  } else {
-    siblingRange = 4;
-  }
+  const perPage = 20;
 
   return (
     <>
@@ -54,7 +31,7 @@ const Contests: React.FC = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {data.slice(20 * (page - 1), 20 * page).map((contest) => (
+          {data.slice(perPage * (page - 1), perPage * page).map((contest) => (
             <Table.Row key={contest.id}>
               <Table.Cell>{contest.id}</Table.Cell>
               <Table.Cell>
@@ -67,32 +44,7 @@ const Contests: React.FC = () => {
           ))}
         </Table.Body>
       </Table>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Pagination
-          firstItem={null}
-          lastItem={null}
-          size={size}
-          siblingRange={siblingRange}
-          ellipsisItem={{
-            content: '...',
-            disabled: true,
-            icon: true,
-          }}
-          prevItem={{
-            content: <Icon name="angle left" />,
-            icon: true,
-            disabled: page === 1,
-          }}
-          nextItem={{
-            content: <Icon name="angle right" />,
-            icon: true,
-            disabled: page === totalPages,
-          }}
-          activePage={page}
-          totalPages={totalPages}
-          onPageChange={(_, data) => setPage(data.activePage as string)}
-        />
-      </div>
+      <Pagination total={OIerDb.contests.length} perPage={perPage} />
     </>
   );
 };
