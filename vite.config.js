@@ -37,15 +37,6 @@ export default defineConfig({
             href: '//cdnjs.baoshuo.ren/ajax/libs/semantic-ui/2.4.1/semantic.min.css',
           },
         },
-        {
-          injectTo: 'body',
-          tag: 'script',
-          attrs: {
-            async: true,
-            'data-domain': 'oier.baoshuo.dev',
-            src: '//stat.u.sb/js/script.js',
-          },
-        },
         ...(isProd
           ? [
               {

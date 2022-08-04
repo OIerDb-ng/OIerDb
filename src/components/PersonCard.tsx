@@ -4,6 +4,7 @@ import { Table, Modal, Icon } from 'semantic-ui-react';
 import PersonInfo from '@/components/PersonInfo';
 import getGrade from '@/utils/getGrade';
 import type { OIer } from '@/libs/OIerDb';
+import { trackPageview } from '@/libs/plausible';
 import styles from './PersonCard.module.less';
 
 interface PersonCardProps {
@@ -37,6 +38,14 @@ const PersonCard: React.FC<PersonCardProps> = (props) => {
         closeIcon
         trigger={trigger}
         dimmer={{ inverted: true }}
+        onOpen={() =>
+          trackPageview({
+            url: new URL(
+              `/oier/${oier.uid}`,
+              window.location.origin
+            ).toString(),
+          })
+        }
         size="large"
       >
         <Modal.Header>

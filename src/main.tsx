@@ -1,17 +1,11 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-// Semantic UI
 import { Container } from 'semantic-ui-react';
-
-// Utils
 import { initDb } from '@/libs/OIerDb';
+import { enableAutoPageviews } from '@/libs/plausible';
 import toast, { confirm } from '@/utils/toast';
-
-// Components
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
@@ -78,6 +72,8 @@ const App: React.FC = () => {
       }
     })();
   }, []);
+
+  useEffect(() => enableAutoPageviews(), []);
 
   // 不支持 indexedDB
   if (notSupportIndexedDB) {

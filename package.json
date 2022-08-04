@@ -16,6 +16,7 @@
     "idb": "^7.0.1",
     "less": "^4.1.2",
     "noty": "^3.2.0-beta-deprecated",
+    "plausible-tracker": "^0.3.8",
     "react": "^18.2.0",
     "react-chartjs-2": "^4.0.1",
     "react-dom": "^18.2.0",
