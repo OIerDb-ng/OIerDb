@@ -49,7 +49,7 @@ export class Contest {
   full_score: number;
   capacity: number;
   length: number;
-  level_counts: Counter;
+  level_counts: Counter<string>;
 
   school_year(): number {
     return this.fall_semester ? this.year : this.year - 1;
@@ -78,7 +78,7 @@ export class School {
   rank: number;
   members: OIer[];
   records: Record[];
-  award_counts: { [key: string]: { [key: number]: Counter } };
+  award_counts: { [key: string]: { [key: number]: Counter<string> } };
 }
 
 export interface OIerDbData {

@@ -72,15 +72,13 @@ const Contest: React.FC = () => {
             },
           }}
           data={{
-            labels: Object.keys(contest.level_counts.dict),
+            labels: [...contest.level_counts.keys()],
             datasets: [
               {
                 label: '数量',
                 barThickness: 30,
-                data: Object.keys(contest.level_counts.dict).map(
-                  (award) => contest.level_counts.dict[award]
-                ),
-                backgroundColor: Object.keys(contest.level_counts.dict).map(
+                data: [...contest.level_counts.values()],
+                backgroundColor: [...contest.level_counts.keys()].map(
                   (award) => colors[award] || null
                 ),
               },

@@ -56,15 +56,14 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
       const awards: string[] = [];
       const years = Object.keys(school.award_counts[key]);
       years.forEach((year) => {
-        Object.keys(school.award_counts[key][year].dict).forEach((award) => {
+        school.award_counts[key][year].forEach((_, award) => {
           if (!awards.includes(award)) awards.push(award);
         });
       });
 
       let isEmpty = true;
       years.forEach((year) => {
-        if (Object.keys(school.award_counts[key][year].dict).length)
-          isEmpty = false;
+        if (school.award_counts[key][year].size) isEmpty = false;
       });
       if (isEmpty) return null;
 
@@ -73,8 +72,8 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
         datasets: awards.map((award) => {
           return {
             label: award,
-            data: years.map(
-              (year) => school.award_counts[key][year].dict[award] || 0
+            data: years.map((year) =>
+              school.award_counts[key][year].get(award)
             ),
             backgroundColor: colors[award] || null,
             borderColor: colors[award] || null,
