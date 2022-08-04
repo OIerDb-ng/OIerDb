@@ -7,13 +7,13 @@ import AwardEmoji from '@/components/AwardEmoji';
 import type { OIer, Record } from '@/libs/OIerDb';
 import getProgress from '@/utils/getProgress';
 import fixContestName from '@/utils/fixContestName';
-import styles from './index.module.less';
+import styles from './PersonInfo.module.less';
 
-interface PersonProps {
+interface PersonInfoProps {
   oier: OIer;
 }
 
-export const Person: React.FC<PersonProps> = memo((props) => {
+const PersonInfo: React.FC<PersonInfoProps> = (props) => {
   const { oier } = props;
 
   const handleInconsistentGrade = (record: Record) => {
@@ -145,4 +145,6 @@ export const Person: React.FC<PersonProps> = memo((props) => {
       </Table>
     </>
   );
-});
+};
+
+export default memo(PersonInfo);

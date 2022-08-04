@@ -7,7 +7,7 @@ import { EmojiRenderer } from './EmojiRenderer';
 // Styles
 import styles from './Footer.module.less';
 
-export const Footer: React.FC = () => (
+const Footer: React.FC = () => (
   <Segment vertical>
     <Container textAlign="center">
       <div className={styles.footerIcons}>
@@ -51,3 +51,5 @@ export const Footer: React.FC = () => (
     </Container>
   </Segment>
 );
+
+export default Footer;

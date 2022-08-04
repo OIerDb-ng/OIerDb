@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Table } from 'semantic-ui-react';
 import Pagination from '@/components/Pagination';

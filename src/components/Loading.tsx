@@ -6,10 +6,7 @@ type LoadingProps = {
   progress?: number;
 };
 
-export const Loading: React.FC<LoadingProps> = ({
-  name = 'OIerDb',
-  progress,
-}) => {
+const Loading: React.FC<LoadingProps> = ({ name = 'OIerDb', progress }) => {
   const [slowNetwork, setSlowNetwork] = useState(0);
 
   useEffect(() => {
@@ -39,3 +36,5 @@ export const Loading: React.FC<LoadingProps> = ({
     </Segment>
   );
 };
+
+export default Loading;

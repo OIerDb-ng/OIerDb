@@ -12,13 +12,13 @@ import { initDb } from '@/libs/OIerDb';
 import toast, { confirm } from '@/utils/toast';
 
 // Components
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import {
   NotSupportIndexedDB,
   ErrorWhenLoadingOIerDb,
 } from '@/components/Errors';
-import { Loading } from '@/components/Loading';
+import Loading from '@/components/Loading';
 
 // Pages
 const Home = lazy(() => import('@/pages/Home'));

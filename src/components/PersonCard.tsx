@@ -1,24 +1,17 @@
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-
-// Components
 import { Table, Modal, Icon } from 'semantic-ui-react';
-import { Person } from '@/components/Person';
-
-// Styles
-import styles from './Card.module.less';
-
-// Libs
-import type { OIer } from '@/libs/OIerDb';
-
-// Utils
+import PersonInfo from '@/components/PersonInfo';
 import getGrade from '@/utils/getGrade';
+import type { OIer } from '@/libs/OIerDb';
+import styles from './PersonCard.module.less';
 
 interface PersonCardProps {
   oier: OIer;
   trigger?: JSX.Element;
 }
 
-export const PersonCard: React.FC<PersonCardProps> = (props) => {
+const PersonCard: React.FC<PersonCardProps> = (props) => {
   const { oier } = props;
 
   const trigger = (
@@ -53,9 +46,11 @@ export const PersonCard: React.FC<PersonCardProps> = (props) => {
           </Link>
         </Modal.Header>
         <Modal.Content>
-          <Person oier={oier} />
+          <PersonInfo oier={oier} />
         </Modal.Content>
       </Modal>
     </>
   );
 };
+
+export default memo(PersonCard);

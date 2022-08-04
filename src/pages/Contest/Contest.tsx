@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { lazy, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Table } from 'semantic-ui-react';
 import {
@@ -10,15 +10,16 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import NotFound from '@/pages/404';
 import AwardEmoji from '@/components/AwardEmoji';
-import { PersonCard } from '@/components/Person/Card';
+import PersonCard from '@/components/PersonCard';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 import getGrade from '@/utils/getGrade';
 import getProgress from '@/utils/getProgress';
 import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
 import styles from './Contest.module.less';
+
+const NotFound = lazy(() => import('@/pages/404'));
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 

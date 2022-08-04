@@ -13,11 +13,11 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Table, Tab } from 'semantic-ui-react';
-import { PersonCard } from '@/components/Person/Card';
+import PersonCard from '@/components/PersonCard';
 import Pagination from '@/components/Pagination';
 import getGrade from '@/utils/getGrade';
 import type { School as SchoolType } from '@/libs/OIerDb';
-import styles from './index.module.less';
+import styles from './SchoolInfo.module.less';
 
 ChartJS.register(
   CategoryScale,
@@ -33,7 +33,7 @@ interface SchoolProps {
   school: SchoolType;
 }
 
-export const School: React.FC<SchoolProps> = memo(({ school }) => {
+const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
   const [searchParams] = useSearchParams();
 
   const page = Number(searchParams.get('page')) || 1;
@@ -221,4 +221,6 @@ export const School: React.FC<SchoolProps> = memo(({ school }) => {
       <Pagination total={school.members.length} perPage={30} />
     </>
   );
-});
+};
+
+export default memo(SchoolInfo);

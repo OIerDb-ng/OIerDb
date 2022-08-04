@@ -1,8 +1,8 @@
+import React, { lazy } from 'react';
 import { useParams } from 'react-router-dom';
+import SchoolInfo from '@/components/SchoolInfo';
 
-// Components
-import { School as SchoolInfo } from '@/components/School';
-import NotFound from '@/pages/404';
+const NotFound = lazy(() => import('@/pages/404'));
 
 const School: React.FC = () => {
   const params = useParams();

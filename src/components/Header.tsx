@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-// Components
 import {
   Container,
   Icon,
@@ -9,12 +7,8 @@ import {
   Sidebar,
   type SemanticICONS,
 } from 'semantic-ui-react';
-
-// Styles
-import styles from './index.module.less';
-
-// Utils
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+import styles from './Header.module.less';
 
 // Header Buttons
 const headerButtons: {
@@ -49,7 +43,7 @@ const headerButtons: {
   },
 ];
 
-export const Header: React.FC = () => {
+const Header: React.FC = () => {
   const wide = useScreenWidthWithin(768, Infinity);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -129,3 +123,5 @@ export const Header: React.FC = () => {
     </>
   );
 };
+
+export default Header;
