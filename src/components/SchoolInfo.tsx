@@ -16,7 +16,7 @@ import { Table, Tab } from 'semantic-ui-react';
 import PersonCard from '@/components/PersonCard';
 import Pagination from '@/components/Pagination';
 import getGrade from '@/utils/getGrade';
-import type { School as SchoolType } from '@/libs/OIerDb';
+import { awardColors, awardLevels, School as SchoolType } from '@/libs/OIerDb';
 import styles from './SchoolInfo.module.less';
 
 ChartJS.register(
@@ -38,34 +38,16 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
 
   const page = Number(searchParams.get('page')) || 1;
 
-  const colors = {
-    一等奖: '#ee961b',
-    二等奖: '#939291',
-    三等奖: '#9c593b',
-    一等: '#ee961b',
-    二等: '#939291',
-    三等: '#9c593b',
-    金牌: '#ee961b',
-    银牌: '#939291',
-    铜牌: '#9c593b',
-  };
-
   const panes = Object.keys(school.award_counts)
     .map((key) => {
       // 奖项名称列表
-      const awards: string[] = [];
-      const years = Object.keys(school.award_counts[key]);
-      years.forEach((year) => {
-        school.award_counts[key][year].forEach((_, award) => {
-          if (!awards.includes(award)) awards.push(award);
-        });
-      });
+      const years = Object.keys(school.award_counts[key]).map(Number);
+      const setAwards = new Set(
+        years.flatMap((year) => [...school.award_counts[key][year].keys()])
+      );
+      const awards = awardLevels.filter((award) => setAwards.has(award));
 
-      let isEmpty = true;
-      years.forEach((year) => {
-        if (school.award_counts[key][year].size) isEmpty = false;
-      });
-      if (isEmpty) return null;
+      if (!awards.length) return [];
 
       const data: ChartData<'line'> = {
         labels: years,
@@ -75,8 +57,8 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
             data: years.map((year) =>
               school.award_counts[key][year].get(award)
             ),
-            backgroundColor: colors[award] || null,
-            borderColor: colors[award] || null,
+            backgroundColor: awardColors[award] || null,
+            borderColor: awardColors[award] || null,
           };
         }),
       };

@@ -432,15 +432,16 @@ export const provinces = [
   '台湾',
 ];
 
-// 奖项列表
-export const awardLevels = [
-  '金牌',
-  '银牌',
-  '铜牌',
-  '一等奖',
-  '二等奖',
-  '三等奖',
-  '国际金牌',
-  '国际银牌',
-  '国际铜牌',
-];
+// 奖项列表及颜色
+export const awardColors = {
+    金牌: '#ee961b',
+    银牌: '#939291',
+    铜牌: '#9c593b',
+    一等奖: '#ee961b',
+    二等奖: '#939291',
+    三等奖: '#9c593b',
+    国际金牌: '#ee961b',
+    国际银牌: '#939291',
+    国际铜牌: '#9c593b',
+  },
+  awardLevels = Object.keys(awardColors);

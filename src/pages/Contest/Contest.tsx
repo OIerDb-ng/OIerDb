@@ -18,22 +18,11 @@ import getProgress from '@/utils/getProgress';
 import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
 import styles from './Contest.module.less';
+import { awardColors, awardLevels } from '@/libs/OIerDb';
 
 const NotFound = lazy(() => import('@/pages/404'));
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
-
-const colors = {
-  一等奖: '#ee961b',
-  二等奖: '#939291',
-  三等奖: '#9c593b',
-  一等: '#ee961b',
-  二等: '#939291',
-  三等: '#9c593b',
-  金牌: '#ee961b',
-  银牌: '#939291',
-  铜牌: '#9c593b',
-};
 
 const Contest: React.FC = () => {
   const params = useParams();
@@ -49,6 +38,10 @@ const Contest: React.FC = () => {
   const perPage = 30;
 
   if (!contest) return <NotFound />;
+
+  const awards = awardLevels.filter((awardLevel) =>
+    contest.level_counts.has(awardLevel)
+  );
 
   return (
     <>
@@ -72,15 +65,13 @@ const Contest: React.FC = () => {
             },
           }}
           data={{
-            labels: [...contest.level_counts.keys()],
+            labels: awards,
             datasets: [
               {
                 label: '数量',
                 barThickness: 30,
-                data: [...contest.level_counts.values()],
-                backgroundColor: [...contest.level_counts.keys()].map(
-                  (award) => colors[award] || null
-                ),
+                data: awards.map((award) => contest.level_counts.get(award)),
+                backgroundColor: awards.map((award) => awardColors[award]),
               },
             ],
           }}
