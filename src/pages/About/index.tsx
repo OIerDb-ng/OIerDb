@@ -32,7 +32,11 @@ const Stats: React.FC = () => (
     />
     <Segment attached="bottom">
       本站的访客统计信息可以{' '}
-      <a href="https://stat.xtom.com/oier.baoshuo.dev" target="_blank">
+      <a
+        href="https://stat.xtom.com/oier.baoshuo.dev"
+        target="_blank"
+        rel="noreferrer"
+      >
         在 xTom Analytics 上查看
       </a>{' '}
       。

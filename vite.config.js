@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { minifyHtml, injectHtml } from 'vite-plugin-html';

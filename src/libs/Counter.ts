@@ -1,4 +1,5 @@
 export class Counter<K> extends Map<K, number> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(entries?: any) {
     super(entries);
   }
@@ -23,7 +24,7 @@ export class Counter<K> extends Map<K, number> {
     return this.#counter_common(n, 1);
   }
 
-  update(key: K, value: number = 1) {
+  update(key: K, value = 1) {
     const newValue = this.get(key) + value;
     this.set(key, newValue);
     return newValue;

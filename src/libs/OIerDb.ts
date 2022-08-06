@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { openDB } from 'idb';
 import { Counter } from './Counter';
 
@@ -134,12 +135,12 @@ const getDataFromIndexedDb = async (name: 'static' | 'oiers') => {
 };
 
 const textToRaw = (text: string) => {
-  let data: any[] = [];
+  const data: any[] = [];
 
   text.split('\n').forEach((line) => {
-    let fields = line.split(',');
+    const fields = line.split(',');
     if (fields.length !== 9) return;
-    let [
+    const [
       uid,
       initials,
       name,
@@ -150,8 +151,8 @@ const textToRaw = (text: string) => {
       ccf_level,
       compressed_records,
     ] = fields;
-    let records = compressed_records.split('/').map((record) => {
-      let [
+    const records = compressed_records.split('/').map((record) => {
+      const [
         contest,
         ,
         school,
@@ -185,8 +186,8 @@ const textToRaw = (text: string) => {
         }),
       };
     });
-    let oierdb_score = parseFloat(_oierdb_score);
-    let oier = {
+    const oierdb_score = parseFloat(_oierdb_score);
+    const oier = {
       rank:
         data.length && oierdb_score === data[data.length - 1].oierdb_score
           ? data[data.length - 1].rank
@@ -222,14 +223,14 @@ const processData = (data: any) => {
     );
   };
 
-  // @ts-expect-error
-  let result: OIerDbData = {};
+  // @ts-expect-error ...
+  const result: OIerDbData = {};
 
   result.contests = data.static.contests.value.map(
     (x, id: number) => new Contest(id, x)
   );
 
-  let originSchools = (result.schools = data.static.schools.value.map(
+  const originSchools = (result.schools = data.static.schools.value.map(
     (x: any[], id: number) => new School(id, x)
   ));
 
@@ -289,8 +290,8 @@ const getData = async (
   urls: string | string[],
   size: number,
   setProgressPercent?: (p: number) => void,
-  start: number = 0,
-  end: number = 100
+  start = 0,
+  end = 100
 ) => {
   if (!Array.isArray(urls)) urls = [urls];
 
@@ -305,9 +306,10 @@ const getData = async (
   }
 
   let receivedSize = 0;
-  let chunks: Uint8Array[] = [];
+  const chunks: Uint8Array[] = [];
 
   const reader = response.body.getReader();
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -334,6 +336,7 @@ const getData = async (
 export const initDb = async (setProgressPercent?: (p: number) => void) => {
   if (__DATA__) return __DATA__;
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   if (!setProgressPercent) setProgressPercent = () => {};
 
   const {
