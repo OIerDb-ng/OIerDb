@@ -47,7 +47,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
       );
       const awards = awardLevels.filter((award) => setAwards.has(award));
 
-      if (!awards.length) return [];
+      if (!awards.length) return null;
 
       const data: ChartData<'line'> = {
         labels: years,
