@@ -22,6 +22,7 @@ function getGrade(oier: OIer): string;
 function getGrade(record: Record, rawData?: boolean): string;
 function getGrade(enroll_middle: number, contestYear: number): string;
 function getGrade(relativeGrade: number): string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getGrade(arg1: any, arg2?: any): string {
   let rel: number;
   if (arg1 instanceof OIer) {

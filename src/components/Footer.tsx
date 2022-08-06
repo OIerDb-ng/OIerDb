@@ -32,19 +32,20 @@ const Footer: React.FC = () => (
         <a
           href="https://baoshuo.ren/?utm_source=oier.baoshuo.dev"
           target="_blank"
+          rel="noreferrer"
         >
           Baoshuo
         </a>
         {', '}
-        <a href="https://men.ci" target="_blank">
+        <a href="https://men.ci" target="_blank" rel="noreferrer">
           Menci
         </a>
         {', '}
-        <a href="https://bytew.net" target="_blank">
+        <a href="https://bytew.net" target="_blank" rel="noreferrer">
           nocriz
         </a>{' '}
         and{' '}
-        <a href="https://github.com/yhx-12243" target="_blank">
+        <a href="https://github.com/yhx-12243" target="_blank" rel="noreferrer">
           yhx-12243
         </a>
       </div>

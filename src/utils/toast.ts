@@ -39,16 +39,16 @@ function dialog(type: Noty.Type, text: string, buttons: Buttons) {
 }
 
 export default {
-  success(message: string, timeout: number = 5000) {
+  success(message: string, timeout = 5000) {
     noty('success', message, timeout);
   },
-  info(message: string, timeout: number = 5000) {
+  info(message: string, timeout = 5000) {
     noty('alert', message, timeout);
   },
-  warning(message: string, timeout: number = 5000) {
+  warning(message: string, timeout = 5000) {
     noty('warning', message, timeout);
   },
-  error(message: string, timeout: number = 5000) {
+  error(message: string, timeout = 5000) {
     noty('error', message, timeout);
   },
 };

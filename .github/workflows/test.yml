@@ -20,7 +20,7 @@ jobs:
           cache: yarn
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
-      - name: Check Code Format
-        run: yarn format:check
-      - name: Build Site
+      - name: Lint
+        run: yarn lint:check
+      - name: Build
         run: yarn build

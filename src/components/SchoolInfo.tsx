@@ -84,7 +84,9 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
               plugins={[
                 {
                   id: null, // Make typing happy
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   beforeInit: (chart: any) => {
+                    // eslint-disable-next-line @typescript-eslint/ban-types
                     const originalFit = chart.legend.fit as Function;
 
                     chart.legend.fit = function fit() {

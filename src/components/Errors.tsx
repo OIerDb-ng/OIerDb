@@ -23,7 +23,11 @@ export const NotSupportIndexedDB: React.FC = () => {
         </Message>
         <p>
           推荐使用最新版的{' '}
-          <a href="https://www.google.cn/chrome/" target="_blank">
+          <a
+            href="https://www.google.cn/chrome/"
+            target="_blank"
+            rel="noreferrer"
+          >
             Google Chrome 浏览器
           </a>{' '}
           访问 OIerDb NG。

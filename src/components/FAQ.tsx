@@ -21,7 +21,7 @@ const FAQ: React.FC = () => {
         </p>
         <p>
           OIerDb 原始数据不接受任何修改，除非是为了与{' '}
-          <a href="https://www.noi.cn" target="_blank">
+          <a href="https://www.noi.cn" target="_blank" rel="noreferrer">
             NOI 官网
           </a>{' '}
           保持一致。但学校和人的合并、拼音生成等其他问题可以通过 GitHub
@@ -33,7 +33,11 @@ const FAQ: React.FC = () => {
         </p>
         <p>
           欢迎加入 OIerDb 用户 QQ 群：
-          <a href="https://jq.qq.com/?_wv=1027&k=qcFzvx32" target="_blank">
+          <a
+            href="https://jq.qq.com/?_wv=1027&k=qcFzvx32"
+            target="_blank"
+            rel="noreferrer"
+          >
             813305282
           </a>
           。
