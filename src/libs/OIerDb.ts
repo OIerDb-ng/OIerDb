@@ -345,12 +345,17 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   }: { sha512: string; size: number } = await fetch(
     `${baseUrl}/static.sha512.json`
   ).then((res) => res.json());
+
+  setProgressPercent(4);
+
   const {
     sha512: resultSha512,
     size: resultSize,
   }: { sha512: string; size: number } = await fetch(
     `${baseUrl}/result.sha512.json`
   ).then((res) => res.json());
+
+  setProgressPercent(8);
 
   if (checkSha512(staticSha512, resultSha512)) {
     const staticData = await getDataFromIndexedDb('static');
@@ -361,6 +366,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     }
   }
 
+  setProgressPercent(10);
+
   const staticData = await getData(
     [
       `${cdnBaseUrl}/static.${staticSha512.substring(0, 7)}.json`,
@@ -368,7 +375,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     ],
     staticSize,
     setProgressPercent,
-    0,
+    10,
     40
   ).then((res) => JSON.parse(res));
 
@@ -384,16 +391,22 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   ).then(textToRaw);
 
   await saveDataToIndexedDb('static', staticData);
+
+  setProgressPercent(93);
+
   await saveDataToIndexedDb('oiers', oiers);
+
+  setProgressPercent(96);
 
   localStorage.setItem('staticSha512', staticSha512);
   localStorage.setItem('resultSha512', resultSha512);
 
-  setProgressPercent(95);
+  setProgressPercent(97);
 
   __DATA__ = processData({ static: staticData, oiers });
 
   setProgressPercent(100);
+
   return __DATA__;
 };
 
