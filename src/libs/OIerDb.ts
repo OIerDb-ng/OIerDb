@@ -446,7 +446,7 @@ export const provinces = [
   '青海',
   '西藏',
   '台湾',
-];
+] as const;
 
 // 奖项列表及颜色
 export const awardColors = {
