@@ -23,7 +23,9 @@ const Search: React.FC = () => {
     Object.keys(params).forEach((key) => {
       _params.set(key, params[key]);
     });
-    _setSearchParams(_params.toString());
+    _setSearchParams(_params.toString(), {
+      replace: true,
+    });
   };
 
   const input = searchParams.get('query') || '';
