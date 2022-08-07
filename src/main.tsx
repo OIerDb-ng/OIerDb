@@ -41,6 +41,9 @@ const updateSW = registerSW({
         name: '确定',
         color: 'green',
         callback() {
+          localStorage.removeItem('staticSha512');
+          localStorage.removeItem('resultSha512');
+
           updateSW(true);
         },
       },
