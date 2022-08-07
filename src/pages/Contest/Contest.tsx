@@ -1,6 +1,6 @@
-import React, { lazy, useMemo } from 'react';
+import React, { lazy, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Table } from 'semantic-ui-react';
+import { Form, Table } from 'semantic-ui-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,6 +19,7 @@ import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
 import styles from './Contest.module.less';
 import { awardColors, awardLevels } from '@/libs/OIerDb';
+import compareGrades from '@/utils/compareGrades';
 
 const NotFound = lazy(() => import('@/pages/404'));
 
@@ -38,6 +39,43 @@ const Contest: React.FC = () => {
   const perPage = 30;
 
   if (!contest) return <NotFound />;
+
+  const [province, setProvince] = useState('');
+  const [grade, setGrade] = useState(0);
+
+  const provinces = useMemo(
+    () => [
+      ...new Set(contest.contestants.map((contestant) => contestant.province)),
+    ],
+    [id]
+  );
+
+  const grades = useMemo(
+    () => [
+      ...new Set(
+        contest.contestants.map(
+          (contestant) =>
+            contestant.enroll_middle?.value || contestant.oier.enroll_middle
+        )
+      ),
+    ],
+    [id]
+  );
+
+  const data = useMemo(
+    () =>
+      contest.contestants
+        .filter((contestant) =>
+          province ? contestant.province === province : true
+        )
+        .filter((contestant) =>
+          grade
+            ? (contestant.enroll_middle?.value ||
+                contestant.oier.enroll_middle) === grade
+            : true
+        ),
+    [contest, province, grade]
+  );
 
   const awards = awardLevels.filter((awardLevel) =>
     contest.level_counts.has(awardLevel)
@@ -77,7 +115,42 @@ const Contest: React.FC = () => {
           }}
         />
       </div>
-      <h4>选手列表</h4>
+      <Form onSubmit={() => false} style={{ margin: '20px 0' }}>
+        <Form.Group widths="four">
+          <Form.Field style={{ display: 'flex', alignItems: 'center' }}>
+            <h4>选手列表</h4>
+          </Form.Field>
+          <Form.Field />
+          <Form.Dropdown
+            fluid
+            search
+            selection
+            clearable
+            placeholder="年级"
+            options={grades
+              .map((grade) => ({
+                key: grade,
+                value: grade,
+                text: getGrade(grade, contest.school_year()),
+              }))
+              .sort(compareGrades)}
+            onChange={(_, { value }) => setGrade(Number(value))}
+          />
+          <Form.Dropdown
+            fluid
+            search
+            selection
+            clearable
+            placeholder="省份"
+            options={provinces.map((province) => ({
+              key: province,
+              value: province,
+              text: province,
+            }))}
+            onChange={(_, { value }) => setProvince(value as string)}
+          />
+        </Form.Group>
+      </Form>
       <Table basic="very" unstackable>
         <Table.Header>
           <Table.Row>
@@ -90,7 +163,7 @@ const Contest: React.FC = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {contest.contestants
+          {data
             .slice((page - 1) * perPage, page * perPage)
             .map((contestant) => (
               <PersonCard
@@ -102,7 +175,8 @@ const Contest: React.FC = () => {
                     <Table.Cell>{contestant.oier.name}</Table.Cell>
                     <Table.Cell>
                       {getGrade(
-                        contestant.oier.enroll_middle,
+                        contestant.enroll_middle?.value ||
+                          contestant.oier.enroll_middle,
                         contest.school_year()
                       )}
                     </Table.Cell>
@@ -140,7 +214,7 @@ const Contest: React.FC = () => {
             ))}
         </Table.Body>
       </Table>
-      <Pagination total={contest.contestants.length} perPage={perPage} />
+      <Pagination total={data.length} perPage={perPage} />
     </>
   );
 };
