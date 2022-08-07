@@ -129,7 +129,8 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https?:\/\/cdnjs\.baoshuo\.ren\/.*/i,
+            urlPattern:
+              /^https?:\/\/cdnjs\.(?:baoshuo\.ren|rsb\.net|loli\.net|cloudflare\.com)\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'cdnjs-cache',
