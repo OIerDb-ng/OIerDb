@@ -4,7 +4,7 @@ import PersonInfo from '@/components/PersonInfo';
 
 const NotFound = lazy(() => import('@/pages/404'));
 
-const Person: React.FC = () => {
+const OIerInfo: React.FC = () => {
   // 获取参数
   const params = useParams();
   const uid = Number(params.uid) || -1;
@@ -21,4 +21,4 @@ const Person: React.FC = () => {
   );
 };
 
-export default Person;
+export default OIerInfo;

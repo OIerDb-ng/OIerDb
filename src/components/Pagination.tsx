@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pagination as SemanticUIPagination, Icon } from 'semantic-ui-react';
-import { useSearchParams } from 'react-router-dom';
 import useScreenWidthWithin from '@/utils/useScreenWidthWithin';
+import usePartialSearchParams from '@/utils/usePartialSearchParams';
 import styles from './Pagination.module.less';
 
 interface PaginationProps {
@@ -10,7 +10,7 @@ interface PaginationProps {
 }
 
 const Pagination: React.FC<PaginationProps> = (props) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = usePartialSearchParams();
 
   const screenWidthLessThan376 = useScreenWidthWithin(0, 376);
   const screenWidthLessThan450 = useScreenWidthWithin(0, 450);

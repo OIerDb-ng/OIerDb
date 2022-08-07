@@ -16,10 +16,10 @@ import Loading from '@/components/Loading';
 
 // Pages
 const Home = lazy(() => import('@/pages/Home'));
-const Person = lazy(() => import('@/pages/Person'));
-const PersonInfo = lazy(() => import('@/pages/Person/Person'));
-const School = lazy(() => import('@/pages/School'));
-const SchoolInfo = lazy(() => import('@/pages/School/School'));
+const OIerList = lazy(() => import('@/pages/oier/index'));
+const PersonInfo = lazy(() => import('@/pages/oier/[uid]'));
+const SchoolList = lazy(() => import('@/pages/school/index'));
+const SchoolInfo = lazy(() => import('@/pages/school/[id]'));
 const Contest = lazy(() => import('@/pages/Contest'));
 const ContestInfo = lazy(() => import('@/pages/Contest/Contest'));
 const NotFound = lazy(() => import('@/pages/404'));
@@ -107,7 +107,7 @@ const App: React.FC = () => {
         path="/oier"
         element={
           <Suspense fallback={<Loading name="选手列表" />}>
-            <Person />
+            <OIerList />
           </Suspense>
         }
       />
@@ -123,7 +123,7 @@ const App: React.FC = () => {
         path="/school"
         element={
           <Suspense fallback={<Loading name="学校列表" />}>
-            <School />
+            <SchoolList />
           </Suspense>
         }
       />
