@@ -4,7 +4,10 @@ import { registerSW } from 'virtual:pwa-register';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
 import { initDb } from '@/libs/OIerDb';
-import { enableAutoPageviews, trackEvent } from '@/libs/plausible';
+import {
+  enableAutoPageviews,
+  enableAutoTrackMultiDomain,
+} from '@/libs/plausible';
 import toast, { confirm } from '@/utils/toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -77,13 +80,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => enableAutoPageviews(), []);
-  useEffect(() => {
-    if (location.hostname !== 'oier.baoshuo.dev') {
-      trackEvent('Domain', {
-        props: { domain: location.hostname },
-      });
-    }
-  }, []);
+  useEffect(() => enableAutoTrackMultiDomain(), []);
 
   // 不支持 indexedDB
   if (notSupportIndexedDB) {
