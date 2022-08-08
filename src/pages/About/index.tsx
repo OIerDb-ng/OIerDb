@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header, Segment } from 'semantic-ui-react';
 import FAQ from '@/components/FAQ';
+import Stats from '@/components/Stats';
 import styles from './index.module.less';
 
 const AboutHeader: React.FC = () => (
@@ -20,31 +21,7 @@ const AboutHeader: React.FC = () => (
   </>
 );
 
-const Stats: React.FC = () => (
-  <>
-    <Header
-      className={styles.header}
-      block
-      as="h4"
-      content="统计"
-      attached="top"
-      icon="info"
-    />
-    <Segment attached="bottom">
-      本站的访客统计信息可以{' '}
-      <a
-        href="https://stat.xtom.com/oier.baoshuo.dev"
-        target="_blank"
-        rel="noreferrer"
-      >
-        在 xTom Analytics 上查看
-      </a>{' '}
-      。
-    </Segment>
-  </>
-);
-
-const Develpoers = () => (
+const Developers = () => (
   <>
     <Header
       className={styles.header}
@@ -55,17 +32,13 @@ const Develpoers = () => (
       icon="users"
     />
     <Segment attached="bottom">
-      <h5>前端</h5>
-      <ul>
+      <ul style={{ marginTop: 0 }}>
         <li>
           <a href="https://baoshuo.ren">宝硕</a>
         </li>
         <li>
           <a href="https://men.ci">Menci</a>
         </li>
-      </ul>
-      <h5>数据处理</h5>
-      <ul>
         <li>
           <a href="https://bytew.net">nocriz</a>
         </li>
@@ -83,7 +56,7 @@ const About: React.FC = () => (
     <AboutHeader />
     <FAQ />
     <Stats />
-    <Develpoers />
+    <Developers />
   </>
 );
 
