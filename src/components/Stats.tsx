@@ -41,13 +41,39 @@ const Stats: React.FC = () => {
             </Dimmer>
           </div>
         ) : error ? (
-          <>加载失败。</>
+          <>
+            <p>加载失败。</p>
+            <p>
+              请前往{' '}
+              <a
+                href="https://stat.xtom.com/oier.baoshuo.dev"
+                target="_blank"
+                rel="noreferrer noopener nofollow"
+              >
+                xTom Analytics
+              </a>{' '}
+              获取统计信息。
+            </p>
+          </>
         ) : (
-          <p>
-            总访问量：{data.pageviews} 次。
-            <br />
-            总访客数：{data.visitors} 人。
-          </p>
+          <>
+            <p>
+              总访问量：{data.pageviews} 次。
+              <br />
+              总访客数：{data.visitors} 人。
+            </p>
+            <p>
+              详细统计信息可以在{' '}
+              <a
+                href="https://stat.xtom.com/oier.baoshuo.dev"
+                target="_blank"
+                rel="noreferrer noopener nofollow"
+              >
+                xTom Analytics
+              </a>{' '}
+              上查看。
+            </p>
+          </>
         )}
       </Segment>
     </>
