@@ -8,13 +8,7 @@ import fixChineseSpace from '@/utils/fixChineseSpace';
 const Contests: React.FC = () => {
   const [searchParams] = useSearchParams();
 
-  const data = useMemo(
-    () =>
-      OIerDb.contests
-        .filter((contest) => !contest.type.endsWith('D类'))
-        .reverse(),
-    []
-  );
+  const data = useMemo(() => OIerDb.contests.reverse(), []);
 
   const page = Number(searchParams.get('page')) || 1;
   const perPage = 20;
