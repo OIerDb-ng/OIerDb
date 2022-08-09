@@ -33,7 +33,7 @@ const Contests: React.FC = () => {
         <Table.Body>
           {data.slice(perPage * (page - 1), perPage * page).map((contest) => (
             <Table.Row key={contest.id}>
-              <Table.Cell>{contest.id}</Table.Cell>
+              <Table.Cell>{contest.id + 1}</Table.Cell>
               <Table.Cell>
                 <Link to={'/contest/' + contest.id}>
                   {fixChineseSpace(fixContestName(contest.name))}
