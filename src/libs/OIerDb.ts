@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { openDB } from 'idb';
+import { trackEvent } from '@/libs/plausible';
 import { Counter } from './Counter';
 
 export class OIer {
@@ -291,14 +292,19 @@ const getData = async (
   size: number,
   setProgressPercent?: (p: number) => void,
   start = 0,
-  end = 100
+  end = 100,
+  trackLabel = ''
 ) => {
+  const startTime = performance.now();
+
   if (!Array.isArray(urls)) urls = [urls];
 
   let response: Response = null;
+  let realUrl: string = null;
   for (const url of urls) {
     try {
       response = await fetch(url);
+      realUrl = url;
       if (response.ok) break;
     } catch (e) {
       console.error(e);
@@ -330,7 +336,23 @@ const getData = async (
     pos += chunk.length;
   }
 
-  return new TextDecoder().decode(chunksAll);
+  const data = new TextDecoder().decode(chunksAll);
+
+  if (trackLabel) {
+    const timeUsed = performance.now() - startTime;
+
+    trackEvent('Download: ' + trackLabel, {
+      props: {
+        url: realUrl,
+        time:
+          timeUsed < 100
+            ? Math.floor(timeUsed / 25) * 25
+            : Math.floor(timeUsed / 100) * 100,
+      },
+    });
+  }
+
+  return data;
 };
 
 export const initDb = async (setProgressPercent?: (p: number) => void) => {
@@ -376,7 +398,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     staticSize,
     setProgressPercent,
     10,
-    40
+    40,
+    'static.json'
   ).then((res) => JSON.parse(res));
 
   const oiers = await getData(
@@ -387,7 +410,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     resultSize,
     setProgressPercent,
     40,
-    90
+    90,
+    'result.txt'
   ).then(textToRaw);
 
   await saveDataToIndexedDb('static', staticData);
