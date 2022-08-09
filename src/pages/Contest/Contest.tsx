@@ -101,6 +101,18 @@ const Contest: React.FC = () => {
                 display: false,
               },
             },
+            scales: {
+              x: {
+                ticks: {
+                  precision: 0,
+                },
+              },
+              y: {
+                ticks: {
+                  precision: 0,
+                },
+              },
+            },
           }}
           data={{
             labels: awards,

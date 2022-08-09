@@ -132,6 +132,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
                         size: FONT_SIZE,
                       },
                       padding: AXIS_MARGIN_TOP,
+                      precision: 0,
                     },
                   },
                   y: {
@@ -140,6 +141,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
                         size: FONT_SIZE,
                       },
                       padding: AXIS_MARGIN_TOP,
+                      precision: 0,
                     },
                   },
                 },
