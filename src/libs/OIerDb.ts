@@ -90,7 +90,7 @@ export interface OIerDbData {
   enroll_middle_years: number[];
 }
 
-const baseUrl = 'https://oier-data.baoshuo.dev';
+const baseUrl = 'https://oier.api.baoshuo.dev';
 const cdnBaseUrl = 'https://jsd.baoshuo.ren/oier';
 
 let __DATA__: OIerDbData = null;
