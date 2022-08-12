@@ -91,7 +91,7 @@ export interface OIerDbData {
 }
 
 const baseUrl = 'https://oier.api.baoshuo.dev';
-const cdnBaseUrl = 'https://jsd.baoshuo.ren/oier';
+const urls = ['https://sb.cdn.baoshuo.ren/oier', baseUrl];
 
 let __DATA__: OIerDbData = null;
 
@@ -391,10 +391,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   setProgressPercent(10);
 
   const staticData = await getData(
-    [
-      `${cdnBaseUrl}/static.${staticSha512.substring(0, 7)}.json`,
-      `${baseUrl}/static.json`,
-    ],
+    urls.map((url) => `${url}/static.${staticSha512.substring(0, 7)}.json`),
     staticSize,
     setProgressPercent,
     10,
@@ -403,10 +400,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   ).then((res) => JSON.parse(res));
 
   const oiers = await getData(
-    [
-      `${cdnBaseUrl}/result.${resultSha512.substring(0, 7)}.txt`,
-      `${baseUrl}/result.txt`,
-    ],
+    urls.map((url) => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
     resultSize,
     setProgressPercent,
     40,
