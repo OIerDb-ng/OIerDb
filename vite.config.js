@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { defineConfig } from 'vite';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { minifyHtml, injectHtml } from 'vite-plugin-html';
 import { viteExternalsPlugin } from 'vite-plugin-externals';
@@ -27,6 +27,7 @@ const data = {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    splitVendorChunkPlugin(),
     react(),
     injectHtml({
       data,
