@@ -57,7 +57,7 @@ const externalPackageList = {
 const externalStylesheetList = {
   'semantic-ui': {
     file: 'semantic.min.css',
-    version: '2.4.2',
+    version: '2.4.1',
   },
 };
 
