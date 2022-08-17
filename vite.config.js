@@ -8,9 +8,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import crypto from 'crypto';
 
-const isProd = process.env.NODE_ENV === 'production';
-const isNetlify = process.env.NETLIFY && process.env.CONTEXT !== 'production';
-
 const buildHash =
   /* Netlify */ process.env.COMMIT_REF ||
   /* CI */ process.env.BUILD_SHA ||
@@ -24,64 +21,93 @@ const data = {
   appVersion: buildHash,
 };
 
+const cdnjsBaseUrl = '//cdnjs.baoshuo.ren/ajax/libs';
+const externalPackageList = {
+  react: {
+    globalVariableName: 'React',
+    devScript: 'umd/react.development.js',
+    prodScript: 'umd/react.production.min.js',
+  },
+  'react-dom': {
+    globalVariableName: 'ReactDOM',
+    devScript: 'umd/react-dom.development.js',
+    prodScript: 'umd/react-dom.production.min.js',
+  },
+  history: {
+    globalVariableName: 'HistoryLibrary',
+    devScript: 'history.development.js',
+    prodScript: 'history.production.min.js',
+  },
+  'react-router': {
+    globalVariableName: 'ReactRouter',
+    devScript: 'react-router.development.js',
+    prodScript: 'react-router.production.min.js',
+  },
+  'react-router-dom': {
+    globalVariableName: 'ReactRouterDOM',
+    devScript: 'react-router-dom.development.js',
+    prodScript: 'react-router-dom.production.min.js',
+  },
+  'react-is': {
+    globalVariableName: 'ReactIs',
+    devScript: 'umd/react-is.development.js',
+    prodScript: 'umd/react-is.production.min.js',
+  },
+};
+const externalStylesheetList = {
+  'semantic-ui': 'semantic.min.css',
+};
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     splitVendorChunkPlugin(),
     react(),
     injectHtml({
       data,
       tags: [
-        {
+        ...Object.entries(externalStylesheetList).map(([name, href]) => ({
           injectTo: 'head',
           tag: 'link',
           attrs: {
             rel: 'stylesheet',
-            href: '//cdnjs.baoshuo.ren/ajax/libs/semantic-ui/2.4.1/semantic.min.css',
+            href:
+              cdnjsBaseUrl +
+              '/' +
+              name +
+              '/' +
+              require(`${name}/package.json`).version +
+              '/' +
+              href,
           },
-        },
-        ...(isProd
-          ? [
-              {
-                injectTo: 'head',
-                tag: 'script',
-                attrs: {
-                  defer: true,
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react/18.2.0/umd/react.production.min.js',
-                },
-              },
-              {
-                injectTo: 'head',
-                tag: 'script',
-                attrs: {
-                  defer: true,
-                  src: '//cdnjs.baoshuo.ren/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
-                },
-              },
-            ]
-          : []),
-        ...(isNetlify || !isProd
-          ? [
-              {
-                injectTo: 'head-prepend',
-                tag: 'meta',
-                attrs: {
-                  name: 'referrer',
-                  content: 'no-referrer',
-                },
-              },
-            ]
-          : []),
+        })),
+        ...Object.entries(externalPackageList).map(
+          ([name, { devScript, prodScript }]) => ({
+            injectTo: 'head',
+            tag: 'script',
+            attrs: {
+              defer: true,
+              src:
+                cdnjsBaseUrl +
+                '/' +
+                name +
+                '/' +
+                require(`${name}/package.json`).version +
+                '/' +
+                (command === 'build' ? prodScript ?? devScript : devScript),
+            },
+          })
+        ),
       ],
     }),
     minifyHtml(),
-    viteExternalsPlugin(
-      {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-      },
-      { disableInServe: true }
-    ),
+    viteExternalsPlugin({
+      ...Object.fromEntries(
+        Object.entries(externalPackageList).map(
+          ([name, { globalVariableName }]) => [name, globalVariableName]
+        )
+      ),
+    }),
     VitePWA({
       workbox: {
         sourcemap: true,
@@ -199,4 +225,4 @@ export default defineConfig({
       '@': path.join(__dirname, './src'),
     },
   },
-});
+}));
