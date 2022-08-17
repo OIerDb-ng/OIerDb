@@ -116,7 +116,7 @@ const Search: React.FC = () => {
             fluid
             placeholder="键入学生姓名或其拼音首字母..."
             loading={isPending}
-            onChange={(_, { value }) => setInput(value)}
+            onChange={(_, { value }) => setInput(value.toLowerCase())}
             spellCheck="false"
             defaultValue={input}
           />
@@ -127,7 +127,7 @@ const Search: React.FC = () => {
                 label="姓名"
                 placeholder="姓名或姓名拼音首字母"
                 spellCheck="false"
-                onChange={(_, { value }) => setInput(value)}
+                onChange={(_, { value }) => setInput(value.toLowerCase())}
                 defaultValue={input}
               />
               <Form.Dropdown
