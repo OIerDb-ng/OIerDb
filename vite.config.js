@@ -55,7 +55,10 @@ const externalPackageList = {
   },
 };
 const externalStylesheetList = {
-  'semantic-ui': 'semantic.min.css',
+  'semantic-ui': {
+    file: 'semantic.min.css',
+    version: '2.4.2',
+  },
 };
 
 // https://vitejs.dev/config/
@@ -66,21 +69,23 @@ export default defineConfig(({ command }) => ({
     injectHtml({
       data,
       tags: [
-        ...Object.entries(externalStylesheetList).map(([name, href]) => ({
-          injectTo: 'head',
-          tag: 'link',
-          attrs: {
-            rel: 'stylesheet',
-            href:
-              cdnjsBaseUrl +
-              '/' +
-              name +
-              '/' +
-              require(`${name}/package.json`).version +
-              '/' +
-              href,
-          },
-        })),
+        ...Object.entries(externalStylesheetList).map(
+          ([name, { file, version }]) => ({
+            injectTo: 'head',
+            tag: 'link',
+            attrs: {
+              rel: 'stylesheet',
+              href:
+                cdnjsBaseUrl +
+                '/' +
+                name +
+                '/' +
+                (version ?? require(`${name}/package.json`).version) +
+                '/' +
+                file,
+            },
+          })
+        ),
         ...Object.entries(externalPackageList).map(
           ([name, { devScript, prodScript }]) => ({
             injectTo: 'head',
