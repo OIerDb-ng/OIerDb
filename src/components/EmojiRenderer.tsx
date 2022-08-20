@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Ref } from 'semantic-ui-react';
 import twemoji from 'twemoji';
+import { version as twemojiVersion } from 'twemoji/package.json';
 
 interface EmojiRendererProps {
   emojiClassName?: string;
@@ -12,7 +13,7 @@ export const EmojiRenderer: React.FC<EmojiRendererProps> = (props) => {
   useEffect(() => {
     if (refElement.current)
       twemoji.parse(refElement.current, {
-        base: 'https://cdnjs.baoshuo.ren/ajax/libs/twemoji/13.1.0/',
+        base: `https://cdnjs.baoshuo.ren/ajax/libs/twemoji/${twemojiVersion}/`,
         size: 'svg',
         ext: '.svg',
         className: props.emojiClassName,
