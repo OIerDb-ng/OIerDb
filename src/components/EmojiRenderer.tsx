@@ -8,12 +8,16 @@ interface EmojiRendererProps {
   children: React.ReactElement | string;
 }
 
+const cdnjsBaseUrl = import.meta.env.VITE_BAOSHUO_CDNJS
+  ? '//cdnjs.baoshuo.ren/ajax/libs'
+  : '//cdnjs.cloudflare.com/ajax/libs';
+
 export const EmojiRenderer: React.FC<EmojiRendererProps> = (props) => {
   const refElement = useRef<HTMLElement>();
   useEffect(() => {
     if (refElement.current)
       twemoji.parse(refElement.current, {
-        base: `https://cdnjs.baoshuo.ren/ajax/libs/twemoji/${twemojiVersion}/`,
+        base: `${cdnjsBaseUrl}/twemoji/${twemojiVersion}/`,
         size: 'svg',
         ext: '.svg',
         className: props.emojiClassName,

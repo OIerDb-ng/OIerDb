@@ -21,7 +21,10 @@ const data = {
   appVersion: buildHash,
 };
 
-const cdnjsBaseUrl = '//cdnjs.baoshuo.ren/ajax/libs';
+const cdnjsBaseUrl = process.env.VITE_BAOSHUO_CDNJS
+  ? '//cdnjs.baoshuo.ren/ajax/libs'
+  : '//cdnjs.cloudflare.com/ajax/libs';
+
 const externalPackageList = {
   react: {
     globalVariableName: 'React',

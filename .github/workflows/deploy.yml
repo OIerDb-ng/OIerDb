@@ -33,6 +33,8 @@ jobs:
 
       - name: Build Site
         run: yarn build
+        env:
+          VITE_BAOSHUO_CDNJS: true
 
       - name: Deploy site to server
         uses: easingthemes/ssh-deploy@v2.1.5
