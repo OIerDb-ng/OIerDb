@@ -12,6 +12,7 @@ import {
 import { Bar } from 'react-chartjs-2';
 import AwardEmoji from '@/components/AwardEmoji';
 import PersonCard from '@/components/PersonCard';
+import usePartialSearchParams from '@/utils/usePartialSearchParams';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 import getGrade from '@/utils/getGrade';
 import getProgress from '@/utils/getProgress';
@@ -27,7 +28,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const Contest: React.FC = () => {
   const params = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = usePartialSearchParams();
 
   const id = Number(params.id) ?? -1;
   const contest = useMemo(
@@ -40,8 +41,15 @@ const Contest: React.FC = () => {
 
   if (!contest) return <NotFound />;
 
-  const [province, setProvince] = useState('');
-  const [grade, setGrade] = useState(0);
+  const province = searchParams.get('province') || '';
+  const setProvince = (province: string) => {
+    setSearchParams({ province, page: '1' });
+  };
+
+  const grade = Number(searchParams.get('grade') || '0');
+  const setGrade = (grade: number) => {
+    setSearchParams({ grade: String(grade), page: '1' });
+  };
 
   const provinces = useMemo(
     () => [
