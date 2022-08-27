@@ -90,8 +90,16 @@ export interface OIerDbData {
   enroll_middle_years: number[];
 }
 
-const baseUrl = 'https://oier.api.baoshuo.dev';
-const urls = ['https://sb.cdn.baoshuo.ren/oier', baseUrl];
+const infoUrls = [
+  'https://oier.api.baoshuo.dev',
+  'https://oierdb-ng.github.io/OIerDb-data-generator',
+];
+
+const urls = [
+  'https://sb.cdn.baoshuo.ren/oier',
+  'https://oier.api.baoshuo.dev',
+  'https://oierdb-ng.github.io/OIerDb-data-generator',
+];
 
 let __DATA__: OIerDbData = null;
 
@@ -227,11 +235,11 @@ const processData = (data: any) => {
   // @ts-expect-error ...
   const result: OIerDbData = {};
 
-  result.contests = data.static.contests.value.map(
+  result.contests = data.static.contests.map(
     (x, id: number) => new Contest(id, x)
   );
 
-  const originSchools = (result.schools = data.static.schools.value.map(
+  const originSchools = (result.schools = data.static.schools.map(
     (x: any[], id: number) => new School(id, x)
   ));
 
@@ -364,8 +372,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   const {
     sha512: staticSha512,
     size: staticSize,
-  }: { sha512: string; size: number } = await fetch(
-    `${baseUrl}/static.sha512.json`
+  }: { sha512: string; size: number } = await Promise.any(
+    infoUrls.map((url) => fetch(`${url}/static.info.json`))
   ).then((res) => res.json());
 
   setProgressPercent(4);
@@ -373,8 +381,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   const {
     sha512: resultSha512,
     size: resultSize,
-  }: { sha512: string; size: number } = await fetch(
-    `${baseUrl}/result.sha512.json`
+  }: { sha512: string; size: number } = await Promise.any(
+    infoUrls.map((url) => fetch(`${url}/result.info.json`))
   ).then((res) => res.json());
 
   setProgressPercent(8);
