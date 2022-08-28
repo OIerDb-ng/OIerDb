@@ -2,6 +2,7 @@
 import { openDB } from 'idb';
 import { trackEvent } from '@/libs/plausible';
 import { Counter } from './Counter';
+import promiseAny from '@/utils/promiseAny';
 
 export class OIer {
   constructor(settings: any) {
@@ -372,7 +373,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   const {
     sha512: staticSha512,
     size: staticSize,
-  }: { sha512: string; size: number } = await Promise.any(
+  }: { sha512: string; size: number } = await promiseAny(
     infoUrls.map((url) => fetch(`${url}/static.info.json`))
   ).then((res) => res.json());
 
@@ -381,7 +382,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   const {
     sha512: resultSha512,
     size: resultSize,
-  }: { sha512: string; size: number } = await Promise.any(
+  }: { sha512: string; size: number } = await promiseAny(
     infoUrls.map((url) => fetch(`${url}/result.info.json`))
   ).then((res) => res.json());
 
