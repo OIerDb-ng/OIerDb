@@ -119,16 +119,21 @@ export default defineConfig(({ command }) => ({
     VitePWA({
       workbox: {
         sourcemap: true,
-        maximumFileSizeToCacheInBytes: 104857600, // 100 MiB
+        maximumFileSizeToCacheInBytes: 1024 * 1024 * 1024, // 1024 MiB
         runtimeCaching: [
           {
-            urlPattern: /^https?:\/\/oier-data\.baoshuo\.dev\/.*/i,
-            handler: 'StaleWhileRevalidate',
+            urlPattern: ({ url }) =>
+              [
+                'sb.cdn.baoshuo.ren',
+                'oier.api.baoshuo.ren',
+                'oierdb-ng.github.io',
+              ].includes(url.host),
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'oierdb-data-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // <== 24 hours
+                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -136,7 +141,7 @@ export default defineConfig(({ command }) => ({
             },
           },
           {
-            urlPattern: /^https?:\/\/fonts\.googleapis\.com\/.*/i,
+            urlPattern: /^https?:\/\/fonts\.googleapis\.com/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
@@ -150,7 +155,7 @@ export default defineConfig(({ command }) => ({
             },
           },
           {
-            urlPattern: /^https?:\/\/fonts\.gstatic\.com\/.*/i,
+            urlPattern: /^https?:\/\/fonts\.gstatic\.com/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'gstatic-fonts-cache',
@@ -164,14 +169,19 @@ export default defineConfig(({ command }) => ({
             },
           },
           {
-            urlPattern:
-              /^https?:\/\/cdnjs\.(?:baoshuo\.ren|rsb\.net|loli\.net|cloudflare\.com)\/.*/i,
+            urlPattern: ({ url }) =>
+              [
+                'cdnjs.baoshuo.ren',
+                'cdnjs.rsb.net',
+                'cdnjs.loli.net',
+                'cdnjs.cloudflare.com',
+              ].includes(url.host),
             handler: 'CacheFirst',
             options: {
               cacheName: 'cdnjs-cache',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
+                maxEntries: 1000,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
