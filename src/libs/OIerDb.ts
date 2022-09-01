@@ -236,7 +236,7 @@ const processData = (data: any) => {
   };
 
   const add_pinyin = (oier) => {
-    oier.pinyin = pinyin.convertToPinyin(oier.name, null, true);
+    oier.pinyin = convertToPinyin(oier.name, null, true);
   };
 
   // @ts-expect-error ...
