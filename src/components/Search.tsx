@@ -121,7 +121,7 @@ const Search: React.FC = () => {
         {!advanced ? (
           <Input
             fluid
-            placeholder="键入学生姓名或其拼音或其拼音首字母..."
+            placeholder="键入选手姓名、姓名全拼或拼音首字母..."
             loading={isPending}
             onChange={(_, { value }) => setInput(value.toLowerCase())}
             spellCheck="false"
