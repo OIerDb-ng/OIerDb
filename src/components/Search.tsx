@@ -62,7 +62,7 @@ const Search: React.FC = () => {
           (oier) =>
             oier.name === input ||
             oier.initials === input ||
-            (input && oier.pinyin.includes(input))
+            oier.pinyin === input
         );
       } else {
         result = OIerDb.oiers.filter((oier) => {
@@ -71,7 +71,7 @@ const Search: React.FC = () => {
             res &&=
               oier.name === input ||
               oier.initials === input ||
-              oier.pinyin.includes(input);
+              oier.pinyin === input
           }
           if (province) {
             res &&= oier.provinces.includes(province);
