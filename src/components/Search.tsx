@@ -132,7 +132,7 @@ const Search: React.FC = () => {
             <Form.Group widths="equal">
               <Form.Input
                 label="姓名"
-                placeholder="姓名或姓名拼音或姓名拼音首字母"
+                placeholder="选手姓名、姓名全拼或拼音首字母"
                 spellCheck="false"
                 onChange={(_, { value }) => setInput(value.toLowerCase())}
                 defaultValue={input}
