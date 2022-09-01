@@ -3,7 +3,7 @@ import { openDB } from 'idb';
 import { trackEvent } from '@/libs/plausible';
 import { Counter } from './Counter';
 import promiseAny from '@/utils/promiseAny';
-import pinyin from 'tiny-pinyin';
+import { convertToPinyin } from 'tiny-pinyin';
 
 export class OIer {
   constructor(settings: any) {
