@@ -72,7 +72,7 @@ const Search: React.FC = () => {
             res &&=
               oier.name === input ||
               oier.initials === input ||
-              (input && oier.pinyin.includes(input));
+              oier.pinyin.includes(input);
           }
           if (province) {
             res &&= oier.provinces.includes(province);
