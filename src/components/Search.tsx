@@ -57,7 +57,6 @@ const Search: React.FC = () => {
 
     startTransition(() => {
       let result: OIer[] = [];
-
       if (!advanced) {
         result = OIerDb.oiers.filter(
           (oier) =>
