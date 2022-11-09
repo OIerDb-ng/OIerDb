@@ -32,7 +32,7 @@ const Developers = () => (
       icon="users"
     />
     <Segment attached="bottom">
-      <ul style={{ marginTop: 0 }}>
+      <ul style={{ marginTop: 0, paddingLeft: 26 }}>
         <li>
           <a href="https://baoshuo.ren">宝硕</a>
         </li>

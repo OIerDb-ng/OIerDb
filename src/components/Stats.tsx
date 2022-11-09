@@ -57,11 +57,11 @@ const Stats: React.FC = () => {
           </>
         ) : (
           <>
-            <p>
-              总访问量：{data.pageviews} 次。
-              <br />
-              总访客数：{data.visitors} 人。
-            </p>
+            <p>自 2022 年 5 月以来：</p>
+            <ul style={{ paddingLeft: 26 }}>
+              <li>总访问量：{data.pageviews} 次；</li>
+              <li>总访客数：{data.visitors} 人。</li>
+            </ul>
             <p>
               详细统计信息可以在{' '}
               <a
