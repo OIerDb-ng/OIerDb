@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Segment, Dimmer, Loader } from 'semantic-ui-react';
 
 type LoadingProps = {
-  name?: string;
   progress?: number;
 };
 
-const Loading: React.FC<LoadingProps> = ({ name = 'OIerDb', progress }) => {
+const Loading: React.FC<LoadingProps> = ({ progress }) => {
   const [slowNetwork, setSlowNetwork] = useState(0);
 
   useEffect(() => {
@@ -20,7 +19,7 @@ const Loading: React.FC<LoadingProps> = ({ name = 'OIerDb', progress }) => {
   });
 
   const message: string[] = [
-    '正在加载 ' + name + '...',
+    '正在加载...',
     '仍在加载...',
     '您的网络连接速度可能较慢，请耐心等待...',
   ];

@@ -1,7 +1,7 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
 import { initDb } from '@/libs/OIerDb';
 import {
@@ -98,80 +98,22 @@ const App: React.FC = () => {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <Suspense fallback={<Loading name="首页" />}>
-            <Home />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/oier"
-        element={
-          <Suspense fallback={<Loading name="选手列表" />}>
-            <OIerList />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/oier/:uid"
-        element={
-          <Suspense fallback={<Loading name="选手详情" />}>
-            <PersonInfo />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/school"
-        element={
-          <Suspense fallback={<Loading name="学校列表" />}>
-            <SchoolList />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/school/:id"
-        element={
-          <Suspense fallback={<Loading name="学校详情" />}>
-            <SchoolInfo />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/contest"
-        element={
-          <Suspense fallback={<Loading name="比赛列表页面" />}>
-            <Contest />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/contest/:id"
-        element={
-          <Suspense fallback={<Loading name="比赛页面" />}>
-            <ContestInfo />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/about"
-        element={
-          <Suspense fallback={<Loading name="关于页面" />}>
-            <About />
-          </Suspense>
-        }
-      />
-      <Route
-        path="*"
-        element={
-          <Suspense fallback={<Loading name="404" />}>
-            <NotFound />
-          </Suspense>
-        }
-      />
-    </Routes>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/oier" element={<Navigate replace to="/oiers" />} />
+        <Route path="/oiers" element={<OIerList />} />
+        <Route path="/oier/:uid" element={<PersonInfo />} />
+        <Route path="/school" element={<Navigate replace to="/schools" />} />
+        <Route path="/schools" element={<SchoolList />} />
+        <Route path="/school/:id" element={<SchoolInfo />} />
+        <Route path="/contest" element={<Navigate replace to="/contests" />} />
+        <Route path="/contests" element={<Contest />} />
+        <Route path="/contest/:id" element={<ContestInfo />} />
+        <Route path="/about" element={<About />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 

@@ -23,17 +23,17 @@ const headerButtons: {
   },
   {
     name: '选手',
-    to: '/oier',
+    to: '/oiers',
     icon: 'user',
   },
   {
     name: '学校',
-    to: '/school',
+    to: '/schools',
     icon: 'building',
   },
   {
     name: '比赛',
-    to: '/contest',
+    to: '/contests',
     icon: 'calendar',
   },
   {
