@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "chart.js": "3.7.0",
+    "history": "^5.3.0",
     "idb": "^7.1.1",
     "less": "^4.1.2",
     "noty": "^3.2.0-beta-deprecated",
