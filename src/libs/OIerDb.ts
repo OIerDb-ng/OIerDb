@@ -3,6 +3,7 @@ import { openDB } from 'idb';
 import { trackEvent } from '@/libs/plausible';
 import { Counter } from './Counter';
 import promiseAny from '@/utils/promiseAny';
+import { convertToPinyin } from 'tiny-pinyin';
 
 export class OIer {
   constructor(settings: any) {
@@ -15,6 +16,7 @@ export class OIer {
   ccf_score: number;
   enroll_middle: number;
   initials: string;
+  pinyin: string;
   oierdb_score: number;
   provinces: string[];
   rank: number;
@@ -233,6 +235,10 @@ const processData = (data: any) => {
     );
   };
 
+  const add_pinyin = (oier) => {
+    oier.pinyin = convertToPinyin(oier.name, null, true);
+  };
+
   // @ts-expect-error ...
   const result: OIerDbData = {};
 
@@ -277,6 +283,7 @@ const processData = (data: any) => {
       record.oier = oier;
       add_contestant(record.contest, record);
       add_school_record(record.school, record);
+      add_pinyin(oier);
     });
 
     return oier;

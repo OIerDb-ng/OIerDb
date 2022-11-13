@@ -59,13 +59,19 @@ const Search: React.FC = () => {
       let result: OIer[] = [];
       if (!advanced) {
         result = OIerDb.oiers.filter(
-          (oier) => oier.name === input || oier.initials === input
+          (oier) =>
+            oier.name === input ||
+            oier.initials === input ||
+            oier.pinyin === input
         );
       } else {
         result = OIerDb.oiers.filter((oier) => {
           let res = Boolean(input || province || grade || school);
           if (input) {
-            res &&= oier.name === input || oier.initials === input;
+            res &&=
+              oier.name === input ||
+              oier.initials === input ||
+              oier.pinyin === input;
           }
           if (province) {
             res &&= oier.provinces.includes(province);
@@ -114,7 +120,7 @@ const Search: React.FC = () => {
         {!advanced ? (
           <Input
             fluid
-            placeholder="键入学生姓名或其拼音首字母..."
+            placeholder="键入选手姓名、姓名全拼或拼音首字母..."
             loading={isPending}
             onChange={(_, { value }) => setInput(value.toLowerCase())}
             spellCheck="false"
@@ -125,7 +131,7 @@ const Search: React.FC = () => {
             <Form.Group widths="equal">
               <Form.Input
                 label="姓名"
-                placeholder="姓名或姓名拼音首字母"
+                placeholder="选手姓名、姓名全拼或拼音首字母"
                 spellCheck="false"
                 onChange={(_, { value }) => setInput(value.toLowerCase())}
                 defaultValue={input}
