@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Table } from 'semantic-ui-react';
+import { Helmet } from 'react-helmet';
 import Pagination from '@/components/Pagination';
 import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
@@ -15,6 +16,10 @@ const Contests: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>比赛列表</title>
+      </Helmet>
+
       <h2>比赛列表</h2>
       <Table celled unstackable>
         <Table.Header>

@@ -2,6 +2,7 @@ import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import { Container } from 'semantic-ui-react';
 import { initDb } from '@/libs/OIerDb';
 import {
@@ -18,15 +19,15 @@ import {
 import Loading from '@/components/Loading';
 
 // Pages
-const Home = lazy(() => import('@/pages/Home'));
+const Home = lazy(() => import('@/pages/index'));
 const OIerList = lazy(() => import('@/pages/oier/index'));
 const PersonInfo = lazy(() => import('@/pages/oier/[uid]'));
 const SchoolList = lazy(() => import('@/pages/school/index'));
 const SchoolInfo = lazy(() => import('@/pages/school/[id]'));
-const Contest = lazy(() => import('@/pages/Contest'));
-const ContestInfo = lazy(() => import('@/pages/Contest/Contest'));
+const Contest = lazy(() => import('@/pages/contest'));
+const ContestInfo = lazy(() => import('@/pages/contest/[id]'));
 const NotFound = lazy(() => import('@/pages/404'));
-const About = lazy(() => import('@/pages/About'));
+const About = lazy(() => import('@/pages/about'));
 
 // Styles
 import './main.css';
@@ -120,6 +121,7 @@ const App: React.FC = () => {
 const rootElement = document.getElementById('app');
 createRoot(rootElement).render(
   <BrowserRouter>
+    <Helmet defaultTitle="OIerDb NG" titleTemplate="%s - OIerDb NG" />
     <Header />
     <Container className={styles.container}>
       <App />

@@ -1,4 +1,5 @@
 import React, { lazy } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 import PersonInfo from '@/components/PersonInfo';
 
@@ -15,6 +16,10 @@ const OIerInfo: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>{oier.name}</title>
+      </Helmet>
+
       <h2>{oier.name}</h2>
       <PersonInfo oier={oier} />
     </>

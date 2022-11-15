@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import { Header, Segment } from 'semantic-ui-react';
 import FAQ from '@/components/FAQ';
 import Stats from '@/components/Stats';
@@ -53,6 +54,10 @@ const Developers = () => (
 
 const About: React.FC = () => (
   <>
+    <Helmet>
+      <title>关于</title>
+    </Helmet>
+
     <AboutHeader />
     <FAQ />
     <Stats />
