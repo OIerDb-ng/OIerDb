@@ -2,7 +2,7 @@
 
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { minifyHtml, injectHtml } from 'vite-plugin-html';
+import { createHtmlPlugin } from 'vite-plugin-html';
 import { viteExternalsPlugin } from 'vite-plugin-externals';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -69,46 +69,49 @@ export default defineConfig(({ command }) => ({
   plugins: [
     splitVendorChunkPlugin(),
     react(),
-    injectHtml({
-      data,
-      tags: [
-        ...Object.entries(externalStylesheetList).map(
-          ([name, { file, version }]) => ({
-            injectTo: 'head',
-            tag: 'link',
-            attrs: {
-              rel: 'stylesheet',
-              href:
-                cdnjsBaseUrl +
-                '/' +
-                name +
-                '/' +
-                (version ?? require(`${name}/package.json`).version) +
-                '/' +
-                file,
-            },
-          })
-        ),
-        ...Object.entries(externalPackageList).map(
-          ([name, { devScript, prodScript }]) => ({
-            injectTo: 'head',
-            tag: 'script',
-            attrs: {
-              defer: true,
-              src:
-                cdnjsBaseUrl +
-                '/' +
-                name +
-                '/' +
-                require(`${name}/package.json`).version +
-                '/' +
-                (command === 'build' ? prodScript ?? devScript : devScript),
-            },
-          })
-        ),
-      ],
+    createHtmlPlugin({
+      minify: true,
+      entry: '/src/main.tsx',
+      inject: {
+        data,
+        tags: [
+          ...Object.entries(externalStylesheetList).map(
+            ([name, { file, version }]) => ({
+              injectTo: 'head',
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href:
+                  cdnjsBaseUrl +
+                  '/' +
+                  name +
+                  '/' +
+                  (version ?? require(`${name}/package.json`).version) +
+                  '/' +
+                  file,
+              },
+            })
+          ),
+          ...Object.entries(externalPackageList).map(
+            ([name, { devScript, prodScript }]) => ({
+              injectTo: 'head',
+              tag: 'script',
+              attrs: {
+                defer: true,
+                src:
+                  cdnjsBaseUrl +
+                  '/' +
+                  name +
+                  '/' +
+                  require(`${name}/package.json`).version +
+                  '/' +
+                  (command === 'build' ? prodScript ?? devScript : devScript),
+              },
+            })
+          ),
+        ],
+      },
     }),
-    minifyHtml(),
     viteExternalsPlugin({
       ...Object.fromEntries(
         Object.entries(externalPackageList).map(
