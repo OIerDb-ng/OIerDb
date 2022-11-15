@@ -17,6 +17,12 @@ yarn build
 
 生成好的站点会存储在 `dist` 文件夹中。
 
+## 开源许可
+
+本项目基于 [AGPL-3.0](./LICENSE) 许可协议开源。
+
+根据许可协议，您在自行部署本项目时，需要保留代码和页面中的作者信息。如果对本项目做出了修改，您需要以相同的许可证公开自部署版本的源代码。
+
 ## Author
 
 **OIerDb NG** © [Baoshuo](https://github.com/renbaoshuo), Released under the [AGPL-3.0](./LICENSE) License.<br>

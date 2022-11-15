@@ -22,6 +22,10 @@ const AboutHeader: React.FC = () => (
   </>
 );
 
+/*
+  本项目基于 AGPL 3.0 许可协议开源。
+  在您自行部署本项目时，请保留此处的作者信息。
+*/
 const Developers = () => (
   <>
     <Header
