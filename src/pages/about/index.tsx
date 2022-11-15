@@ -52,6 +52,38 @@ const Developers = () => (
   </>
 );
 
+const links = [
+  {
+    name: 'LibreOJ',
+    url: 'https://loj.ac',
+  },
+];
+
+const FriendLinks: React.FC = () => (
+  <>
+    <Header
+      className={styles.header}
+      block
+      as="h4"
+      content="友情链接"
+      attached="top"
+      icon="linkify"
+    />
+    <Segment attached="bottom">
+      <ul style={{ marginTop: 0, marginBottom: 0, paddingLeft: 26 }}>
+        {links.map(({ name, url }) => (
+          <li key={name}>
+            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+            <a href={url} target="_blank">
+              {name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Segment>
+  </>
+);
+
 const About: React.FC = () => (
   <>
     <Helmet>
@@ -62,6 +94,7 @@ const About: React.FC = () => (
     <FAQ />
     <Stats />
     <Developers />
+    <FriendLinks />
   </>
 );
 
