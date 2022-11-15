@@ -1,6 +1,7 @@
-import React, { lazy, useState, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import React, { lazy, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { Form, Table } from 'semantic-ui-react';
+import { Helmet } from 'react-helmet';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,7 +19,7 @@ import getGrade from '@/utils/getGrade';
 import getProgress from '@/utils/getProgress';
 import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
-import styles from './Contest.module.less';
+import styles from './[id].module.less';
 import { awardColors, awardLevels } from '@/libs/OIerDb';
 import compareGrades from '@/utils/compareGrades';
 
@@ -89,9 +90,15 @@ const Contest: React.FC = () => {
     contest.level_counts.has(awardLevel)
   );
 
+  const contestName = fixChineseSpace(fixContestName(contest.name));
+
   return (
     <>
-      <h1>{fixChineseSpace(fixContestName(contest.name))}</h1>
+      <Helmet>
+        <title>比赛：{contestName}</title>
+      </Helmet>
+
+      <h1>{contestName}</h1>
       <p>
         举办于 {contest.year} 年（{contest.school_year()}-
         {contest.school_year() + 1} 学年），共 {contest.contestants.length}{' '}

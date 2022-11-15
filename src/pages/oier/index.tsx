@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { Dropdown, Table } from 'semantic-ui-react';
+import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import Pagination from '@/components/Pagination';
 import { provinces } from '@/libs/OIerDb';
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
@@ -28,6 +29,10 @@ const OIerList: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>{province}信息学奥林匹克竞赛选手排名</title>
+      </Helmet>
+
       <h2 className={styles.header}>
         <Dropdown
           floating
