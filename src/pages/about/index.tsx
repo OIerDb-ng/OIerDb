@@ -61,6 +61,10 @@ const links = [
     name: 'LibreOJ',
     url: 'https://loj.ac',
   },
+  {
+    name: 'HydroOJ',
+    url: 'https://hydro.ac',
+  },
 ];
 
 const FriendLinks: React.FC = () => (
