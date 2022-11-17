@@ -1,0 +1,30 @@
+name: 功能请求 / Feature Request
+description: 为 OIerDb NG 提出新功能建议。
+labels: ['enhancement']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您的建议！请在提交前仔细填写以下内容。
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      placeholder: （可选）您为什么要提出这个需求？
+    validations:
+      required: false
+  - type: textarea
+    id: feature
+    attributes:
+      label: 需求
+      placeholder: 您的需求是什么？
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: 实现细节
+      placeholder: （可选）如果可以的话，请具体描述您的需求应该如何实现或实现成什么样子。
+    validations:
+      required: false

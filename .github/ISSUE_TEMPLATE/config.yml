@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 数据相关问题
+    url: https://github.com/OIerDb-ng/OIerDb-data-generator/issues/new/choose
+    about: 选手被错误合并、拆分，学校信息错误？请移步 OIerDb-ng/OIerDb-data-generator 仓库。

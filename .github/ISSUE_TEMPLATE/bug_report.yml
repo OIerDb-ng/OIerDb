@@ -1,0 +1,74 @@
+name: 错误报告 / Bug Report
+description: 帮助我们修复 OIerDb NG 的问题。
+labels: ['bug']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您的反馈！请在提交前仔细填写以下内容。
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      placeholder: 出现了什么问题？
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: 预期行为
+      placeholder: 出问题的地方正确的行为是什么？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      placeholder: 如何再次触发这个 Bug？
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 屏幕截图
+      placeholder: 出现 Bug 时的屏幕截图。
+    validations:
+      required: false
+  - type: textarea
+    id: console_log
+    attributes:
+      label: 控制台信息
+      description: 打开「开发人员工具 / DevTools」，转到「控制台 / Console」选项卡，将其中的内容截图到此处。
+    validations:
+      required: false
+  - type: input
+    id: os_version
+    attributes:
+      label: 您使用的系统名称及版本
+      placeholder: ex. Windows 10 21H2 (19044.2251)
+    validations:
+      required: true
+  - type: input
+    id: browsers
+    attributes:
+      label: 您使用的浏览器名称及版本
+      placeholder: ex. Google Chrome 107.0.5304.107 (64-bit)
+    validations:
+      required: true
+  - type: input
+    id: geo_location
+    attributes:
+      label: 您的地理位置
+      description: 填写此项有助于我们调查与内容分发网络（CDN）相关的问题，精确到省市即可。
+      placeholder: ex. 河北省石家庄市
+    validations:
+      required: false
+  - type: input
+    id: oierdb_version
+    attributes:
+      label: OIerDb NG 版本
+      description: 在页脚处会显示一段长度为 7 的 16 进制数字。
+      placeholder: ex. 364e508
+    validations:
+      required: true
