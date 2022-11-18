@@ -15,12 +15,72 @@
     <meta name="theme-color" content="#ffffff" />
     <meta rel="canonical" href="https://oier.baoshuo.dev" />
   </head>
+
   <body>
     <div id="app">
-      <div class="ui segment" style="height: 100px">
-        <div class="ui active transition visible inverted dimmer">
-          <div class="content">
-            <div class="ui medium text loader">Loading...</div>
+      <style>
+        body {
+          padding-top: 50px;
+        }
+      </style>
+
+      <!-- header -->
+      <div class="ui borderless top fixed menu">
+        <div class="ui container">
+          <a class="item" href="/">
+            <img src="/logo.png" style="margin-right: 0.75em" />
+            <div style="font-size: 20px"><b>OIerDb</b></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- loading -->
+      <div class="ui container" style="padding: 1.5rem 1.5rem 0.5rem">
+        <div class="ui segment" style="height: 100px">
+          <div class="ui active transition visible inverted dimmer">
+            <div class="content">
+              <div class="ui medium text loader">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- footer -->
+      <div class="ui vertical segment">
+        <div class="ui center aligned container">
+          <div style="color: #888; font-size: 0.8em">
+            <code><%= appVersion %></code>
+            &nbsp;
+            <a
+              href="https://github.com/renbaoshuo/OIerDb"
+              title="GitHub"
+              target="_blank"
+              rel="noreferrer noopener"
+              style="color: inherit"
+            >
+              <i aria-hidden="true" class="github icon"></i>
+              Source Code
+            </a>
+          </div>
+          <div style="margin-top: 0.75rem">
+            Made with 💖 by
+            <a
+              href="https://baoshuo.ren/?utm_source=oier.baoshuo.dev"
+              target="_blank"
+              rel="noreferrer"
+              >Baoshuo</a
+            >,
+            <a href="https://men.ci" target="_blank" rel="noreferrer">Menci</a>,
+            <a href="https://bytew.net" target="_blank" rel="noreferrer"
+              >nocriz</a
+            >
+            and
+            <a
+              href="https://github.com/yhx-12243"
+              target="_blank"
+              rel="noreferrer"
+              >yhx-12243</a
+            >
           </div>
         </div>
       </div>
