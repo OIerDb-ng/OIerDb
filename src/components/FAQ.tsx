@@ -24,8 +24,15 @@ const FAQ: React.FC = () => {
           <a href="https://www.noi.cn" target="_blank" rel="noreferrer">
             NOI 官网
           </a>{' '}
-          保持一致。但学校和人的合并、拼音生成等其他问题可以通过 GitHub
-          进行修改。
+          保持一致。但学校和人的合并、拼音生成等其他问题可以通过在 GitHub 上{' '}
+          <a
+            href="https://github.com/OIerDb-ng/OIerDb-data-generator/issues/new/choose"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            发送 issue
+          </a>{' '}
+          的方式申请修改。
         </p>
         <h5>我能够做什么？</h5>
         <p>
