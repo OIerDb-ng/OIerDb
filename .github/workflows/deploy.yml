@@ -36,12 +36,23 @@ jobs:
         env:
           VITE_BAOSHUO_CDNJS: true
 
-      - name: Deploy site to server
+      - name: Deploy site to server (Tokyo, JP)
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           ARGS: '-avz --delete'
           SOURCE: dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          TARGET: ${{ secrets.REMOTE_PATH }}
+          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
+
+      - name: Deploy site to server (Hong Kong, CN)
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+          ARGS: '-avz --delete'
+          SOURCE: dist/
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST_2 }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           TARGET: ${{ secrets.REMOTE_PATH }}
