@@ -12,7 +12,7 @@
     "postinstall": "husky install"
   },
   "dependencies": {
-    "chart.js": "3.7.0",
+    "chart.js": "3.9.1",
     "idb": "^7.1.1",
     "less": "^4.1.2",
     "noty": "^3.2.0-beta-deprecated",
