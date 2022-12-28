@@ -3,10 +3,23 @@ import { Header, Message, Icon } from 'semantic-ui-react';
 
 export const ErrorWhenLoadingOIerDb: React.FC = () => {
   return (
-    <Message error>
-      <Icon name="remove" />
-      初始化 OIerDb 时出现了错误，请打开控制台以获取详细信息。
-    </Message>
+    <Message
+      error
+      icon="remove"
+      header="初始化 OIerDb 时出现了错误，请打开控制台以获取详细信息。"
+      content={
+        <a
+          onClick={() => {
+            localStorage.clear();
+            window.location.reload();
+          }}
+          href="#"
+          style={{ display: 'inline-block', marginTop: 4 }}
+        >
+          刷新本地缓存
+        </a>
+      }
+    />
   );
 };
 
