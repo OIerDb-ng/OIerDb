@@ -1,26 +1,23 @@
-name: Code Test
+name: Test
 
 on:
   push:
   pull_request:
   workflow_dispatch:
 
-env:
-  CI: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js 14
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: 16
           cache: yarn
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
       - name: Lint
-        run: yarn lint:check
+        run: yarn lint
       - name: Build
         run: yarn build

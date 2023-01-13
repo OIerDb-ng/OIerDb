@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["**/*.js"],
+      "extends": ["baoshuo/node"]
+    },
+    {
+      "files": ["*.d.ts", "**/*.ts", "**/*.tsx"],
+      "parserOptions": {
+        "project": "./tsconfig.json",
+        "sourceType": "module"
+      },
+      "extends": ["baoshuo/react", "baoshuo/typescript"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "no-sparse-arrays": "off"
+      },
+      "settings": {
+        "node": {
+          "resolvePaths": ["__dirname"],
+          "tryExtensions": [".js", ".json", ".node", ".ts", ".d.ts", ".tsx"]
+        }
+      }
+    }
+  ]
+}

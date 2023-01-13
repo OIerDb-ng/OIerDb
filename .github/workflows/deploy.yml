@@ -10,20 +10,19 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('patches/**') }}
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('patches/**') }}
 
       - name: Use Node.js 16
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
@@ -33,27 +32,5 @@ jobs:
 
       - name: Build Site
         run: yarn build
-        env:
-          VITE_BAOSHUO_CDNJS: true
 
-      - name: Deploy site to server (Tokyo, JP)
-        uses: easingthemes/ssh-deploy@v2.1.5
-        env:
-          ARGS: '-avz --delete'
-          SOURCE: dist/
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          TARGET: ${{ secrets.REMOTE_PATH }}
-          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
-
-      - name: Deploy site to server (Hong Kong, CN)
-        uses: easingthemes/ssh-deploy@v2.1.5
-        env:
-          ARGS: '-avz --delete'
-          SOURCE: dist/
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST_2 }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          TARGET: ${{ secrets.REMOTE_PATH }}
-          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
+      # TODO
