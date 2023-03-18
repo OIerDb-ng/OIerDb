@@ -1,12 +1,11 @@
 /* eslint-disable */
 
-import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { createHtmlPlugin } from 'vite-plugin-html';
-import { viteExternalsPlugin } from 'vite-plugin-externals';
-import { VitePWA } from 'vite-plugin-pwa';
-import path from 'path';
 import crypto from 'crypto';
+import path from 'path';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
+import { viteExternalsPlugin } from 'vite-plugin-externals';
+import { createHtmlPlugin } from 'vite-plugin-html';
 
 const buildHash =
   /* Netlify */ process.env.COMMIT_REF ||
@@ -118,124 +117,6 @@ export default defineConfig(({ command }) => ({
           ([name, { globalVariableName }]) => [name, globalVariableName]
         )
       ),
-    }),
-    VitePWA({
-      workbox: {
-        sourcemap: true,
-        maximumFileSizeToCacheInBytes: 1024 * 1024 * 1024, // 1024 MiB
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) =>
-              [
-                'sb.cdn.baoshuo.ren',
-                'oier.api.baoshuo.ren',
-                'oierdb-ng.github.io',
-              ].includes(url.host),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'oierdb-data-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https?:\/\/fonts\.googleapis\.com/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https?:\/\/fonts\.gstatic\.com/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: ({ url }) =>
-              [
-                'cdnjs.baoshuo.ren',
-                'cdnjs.rsb.net',
-                'cdnjs.loli.net',
-                'cdnjs.cloudflare.com',
-              ].includes(url.host),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'cdnjs-cache',
-              expiration: {
-                maxEntries: 1000,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https?:\/\/stat\.u\.sb\/.*\.js/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'analytics-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // <== 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            handler: 'NetworkOnly',
-            urlPattern: /^https?:\/\/stat\.u\.sb\/api\/.*/i,
-            method: 'POST',
-            options: {
-              backgroundSync: {
-                name: 'analytics-queue',
-                options: {
-                  maxRetentionTime: 24 * 60,
-                },
-              },
-            },
-          },
-        ],
-        globPatterns: [
-          '**/*.{js,css,png,jpg,jpeg,svg,gif,webp,ico,woff,woff2,ttf,eot,otf,html}',
-        ],
-      },
-      manifest: {
-        name: 'OIerDb NG',
-        short_name: 'OIerDb',
-        description: 'Next Generation OIerDb.',
-        theme_color: '#ffffff',
-        icons: [
-          {
-            src: '/logo.png',
-            sizes: '220x220',
-            type: 'image/png',
-          },
-        ],
-      },
     }),
   ],
   build: {

@@ -1,22 +1,21 @@
-import React, { lazy, useEffect, useState, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerSW } from 'virtual:pwa-register';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
+
+import {
+  ErrorWhenLoadingOIerDb,
+  NotSupportIndexedDB,
+} from '@/components/Errors';
+import Footer from '@/components/Footer';
+import Header from '@/components/Header';
+import Loading from '@/components/Loading';
 import { initDb } from '@/libs/OIerDb';
 import {
   enableAutoPageviews,
   enableAutoTrackMultiDomain,
 } from '@/libs/plausible';
-import toast, { confirm } from '@/utils/toast';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import {
-  NotSupportIndexedDB,
-  ErrorWhenLoadingOIerDb,
-} from '@/components/Errors';
-import Loading from '@/components/Loading';
 
 // Pages
 const Home = lazy(() => import('@/pages/index'));
@@ -32,35 +31,18 @@ const About = lazy(() => import('@/pages/about'));
 // Styles
 import './main.css';
 import styles from './main.module.less';
-import 'noty/lib/noty.css';
-import 'noty/lib/themes/semanticui.css';
 
 // 是否支持 indexedDB
 const notSupportIndexedDB = !globalThis || !globalThis.indexedDB;
 
-const updateSW = registerSW({
-  onNeedRefresh() {
-    confirm.info('检测到新版本，是否更新？', [
-      {
-        name: '确定',
-        color: 'green',
-        callback() {
-          localStorage.removeItem('staticSha512');
-          localStorage.removeItem('resultSha512');
-
-          updateSW(true);
-        },
-      },
-      {
-        name: '取消',
-        type: 'close',
-      },
-    ]);
-  },
-  onOfflineReady() {
-    toast.info('已完成脱机工作准备。', 3000);
-  },
-});
+// 取消注册先前的 Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister();
+    }
+  });
+}
 
 const App: React.FC = () => {
   const [loadedOIerDb, setLoadedOIerDb] = useState(false);
