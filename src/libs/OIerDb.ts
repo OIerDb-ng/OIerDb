@@ -487,5 +487,8 @@ export const awardColors = {
     国际金牌: '#ee961b',
     国际银牌: '#939291',
     国际铜牌: '#9c593b',
+    '前5%': '#ee961b',
+    '前15%': '#939291',
+    '前25%': '#9c593b',
   },
   awardLevels = Object.keys(awardColors);
