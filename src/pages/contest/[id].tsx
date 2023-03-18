@@ -154,6 +154,7 @@ const Contest: React.FC = () => {
             selection
             clearable
             placeholder="年级"
+            value={grade || null}
             options={grades
               .map((grade) => ({
                 key: grade,
@@ -169,6 +170,7 @@ const Contest: React.FC = () => {
             selection
             clearable
             placeholder="省份"
+            value={province}
             options={provinces.map((province) => ({
               key: province,
               value: province,
