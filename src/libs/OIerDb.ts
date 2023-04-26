@@ -11,6 +11,7 @@ export class OIer {
 
   uid: number;
   name: string;
+  lowered_name: string;
   ccf_level: number;
   ccf_score: number;
   enroll_middle: number;
@@ -206,6 +207,7 @@ const textToRaw = (text: string) => {
       uid: parseInt(uid),
       initials,
       name,
+      lowered_name: name.toLowerCase(),
       gender: parseInt(gender),
       enroll_middle: parseInt(enroll_middle),
       oierdb_score,
@@ -478,17 +480,18 @@ export const provinces = [
 
 // 奖项列表及颜色
 export const awardColors = {
-    金牌: '#ee961b',
-    银牌: '#939291',
-    铜牌: '#9c593b',
-    一等奖: '#ee961b',
-    二等奖: '#939291',
-    三等奖: '#9c593b',
-    国际金牌: '#ee961b',
-    国际银牌: '#939291',
-    国际铜牌: '#9c593b',
-    '前5%': '#ee961b',
-    '前15%': '#939291',
-    '前25%': '#9c593b',
-  },
-  awardLevels = Object.keys(awardColors);
+  金牌: '#ee961b',
+  银牌: '#939291',
+  铜牌: '#9c593b',
+  一等奖: '#ee961b',
+  二等奖: '#939291',
+  三等奖: '#9c593b',
+  国际金牌: '#ee961b',
+  国际银牌: '#939291',
+  国际铜牌: '#9c593b',
+  '前5%': '#ee961b',
+  '前15%': '#939291',
+  '前25%': '#9c593b',
+};
+
+export const awardLevels = Object.keys(awardColors);
