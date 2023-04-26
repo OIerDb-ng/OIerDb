@@ -196,7 +196,7 @@ const Contest: React.FC = () => {
             .slice((page - 1) * perPage, page * perPage)
             .map((contestant) => (
               <PersonCard
-                key={contestant.oier.uid}
+                key={`CONTEST${contest.id}-${contestant.oier.uid}`}
                 oier={contestant.oier}
                 trigger={
                   <>

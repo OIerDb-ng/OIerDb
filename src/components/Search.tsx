@@ -186,7 +186,7 @@ const Search: React.FC = () => {
               </Table.Header>
               <Table.Body>
                 {result.map((oier) => (
-                  <PersonCard key={oier.uid} oier={oier} />
+                  <PersonCard key={`SEARCH-${oier.uid}`} oier={oier} />
                 ))}
               </Table.Body>
             </Table>

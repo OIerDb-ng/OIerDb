@@ -187,7 +187,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
             .slice(page * 30 - 30, page * 30)
             .map((oier, index) => (
               <PersonCard
-                key={oier.uid}
+                key={`SCHOOL${school.id}-${oier.uid}`}
                 oier={oier}
                 trigger={
                   <>
