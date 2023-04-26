@@ -1,23 +1,39 @@
-import React from 'react';
-import { Header, Message, Icon } from 'semantic-ui-react';
+import React, { useState } from 'react';
+import { deleteDB } from 'idb';
+import { Header, Message, Icon, Button } from 'semantic-ui-react';
 
 export const ErrorWhenLoadingOIerDb: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+
+  const clearCache = async () => {
+    setLoading(true);
+
+    localStorage.clear();
+
+    try {
+      await deleteDB('OIerDb');
+    } catch (e) {
+      console.error(e);
+    }
+
+    location.reload();
+  };
+
   return (
     <Message
       error
       icon="remove"
       header="初始化 OIerDb 时出现了错误，请打开控制台以获取详细信息。"
       content={
-        <a
-          onClick={() => {
-            localStorage.clear();
-            window.location.reload();
-          }}
-          href="#"
-          style={{ display: 'inline-block', marginTop: 4 }}
+        <Button
+          loading={loading}
+          onClick={clearCache}
+          color="red"
+          size="small"
+          style={{ marginTop: 6 }}
         >
-          刷新本地缓存
-        </a>
+          清除缓存
+        </Button>
       }
     />
   );

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Header, Segment } from 'semantic-ui-react';
+import { Button, Header, Segment } from 'semantic-ui-react';
+import { deleteDB } from 'idb';
 import FAQ from '@/components/FAQ';
 import Stats from '@/components/Stats';
 import styles from './index.module.less';
@@ -92,6 +93,45 @@ const FriendLinks: React.FC = () => (
   </>
 );
 
+const ClearCache: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+
+  const clearCache = async () => {
+    setLoading(true);
+
+    localStorage.clear();
+
+    try {
+      await deleteDB('OIerDb');
+    } catch (e) {
+      console.error(e);
+    }
+
+    location.reload();
+  };
+
+  return (
+    <>
+      <Header
+        className={styles.header}
+        block
+        as="h4"
+        content="清除缓存"
+        attached="top"
+        icon="database"
+      />
+      <Segment attached="bottom">
+        <p>
+          清除缓存后，将会从服务器重新获取最新数据。清除缓存可能需要一段时间，完成后页面将自动刷新。
+        </p>
+        <Button loading={loading} onClick={clearCache} color="red">
+          清除缓存
+        </Button>
+      </Segment>
+    </>
+  );
+};
+
 const About: React.FC = () => (
   <>
     <Helmet>
@@ -103,6 +143,7 @@ const About: React.FC = () => (
     <Stats />
     <Developers />
     <FriendLinks />
+    <ClearCache />
   </>
 );
 
