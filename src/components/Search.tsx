@@ -59,13 +59,13 @@ const Search: React.FC = () => {
       let result: OIer[] = [];
       if (!advanced) {
         result = OIerDb.oiers.filter(
-          (oier) => oier.lowered_name === input || oier.initials === input
+          (oier) => oier.name === input || oier.lowered_name === input || oier.initials === input
         );
       } else {
         result = OIerDb.oiers.filter((oier) => {
           let res = Boolean(input || province || grade || school);
           if (input) {
-            res &&= oier.lowered_name === input || oier.initials === input;
+            res &&= oier.name === input || oier.lowered_name === input || oier.initials === input;
           }
           if (province) {
             res &&= oier.provinces.includes(province);
