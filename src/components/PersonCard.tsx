@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { Table, Modal, Icon } from 'semantic-ui-react';
 import PersonInfo from '@/components/PersonInfo';
 import getGrade from '@/utils/getGrade';
-import type { OIer } from '@/libs/OIerDb';
+import { genders, type OIer } from '@/libs/OIerDb';
 import { trackMultiDomainPageview } from '@/libs/plausible';
 import styles from './PersonCard.module.less';
+import { useLocalStorage } from 'usehooks-ts';
 
 interface PersonCardProps {
   oier: OIer;
@@ -14,6 +15,7 @@ interface PersonCardProps {
 
 const PersonCard: React.FC<PersonCardProps> = (props) => {
   const { oier } = props;
+  const [displayGender] = useLocalStorage('display_gender', false);
 
   const trigger = (
     <Table.Row className={styles.row}>
@@ -21,6 +23,7 @@ const PersonCard: React.FC<PersonCardProps> = (props) => {
         <>
           <Table.Cell>{oier.rank + 1}</Table.Cell>
           <Table.Cell>{oier.name}</Table.Cell>
+          {displayGender && <Table.Cell>{genders[oier.gender]}</Table.Cell>}
           <Table.Cell>{oier.provinces.join('/')}</Table.Cell>
           <Table.Cell>{getGrade(oier)}</Table.Cell>
           <Table.Cell>{oier.oierdb_score.toFixed(2)}</Table.Cell>

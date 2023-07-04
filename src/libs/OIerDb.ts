@@ -20,6 +20,7 @@ export class OIer {
   provinces: string[];
   rank: number;
   records: Record[];
+  gender: number;
 }
 
 export interface Record {
@@ -495,3 +496,13 @@ export const awardColors = {
 };
 
 export const awardLevels = Object.keys(awardColors);
+
+export const genders = {
+  [-1]: '女',
+  1: '男',
+  0: '不详',
+};
+
+export const gendersKeys = [-1, 0, 1];
+
+export const searchableGenderKeys = [-1, 1];

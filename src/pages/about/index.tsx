@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Button, Header, Segment } from 'semantic-ui-react';
+import { Button, Checkbox, Header, Segment } from 'semantic-ui-react';
 import { deleteDB } from 'idb';
+import { useLocalStorage } from 'usehooks-ts';
 import FAQ from '@/components/FAQ';
 import Stats from '@/components/Stats';
 import styles from './index.module.less';
@@ -93,11 +94,12 @@ const FriendLinks: React.FC = () => (
   </>
 );
 
-const ClearCache: React.FC = () => {
-  const [loading, setLoading] = useState(false);
+const Config: React.FC = () => {
+  // Clear cache
+  const [clearingCache, setClearingCache] = useState(false);
 
-  const clearCache = async () => {
-    setLoading(true);
+  const clearCache = useCallback(async () => {
+    setClearingCache(true);
 
     localStorage.clear();
 
@@ -108,7 +110,13 @@ const ClearCache: React.FC = () => {
     }
 
     location.reload();
-  };
+  }, [setClearingCache]);
+
+  // Gender display
+  const [displayGender, setDisplayGender] = useLocalStorage(
+    'display_gender',
+    false
+  );
 
   return (
     <>
@@ -116,17 +124,28 @@ const ClearCache: React.FC = () => {
         className={styles.header}
         block
         as="h4"
-        content="清除缓存"
+        content="配置"
         attached="top"
-        icon="database"
+        icon="configure"
       />
       <Segment attached="bottom">
+        <h5>清除缓存</h5>
         <p>
           清除缓存后，将会从服务器重新获取最新数据。清除缓存可能需要一段时间，完成后页面将自动刷新。
         </p>
-        <Button loading={loading} onClick={clearCache} color="red">
+        <Button loading={clearingCache} onClick={clearCache} color="red">
           清除缓存
         </Button>
+
+        <h5>性别显示</h5>
+        <Checkbox
+          defaultChecked={displayGender}
+          onClick={useCallback(
+            (_, data) => setDisplayGender(data.checked),
+            [setDisplayGender]
+          )}
+          label="展示在 NOI 公示时显示的登记性别"
+        />
       </Segment>
     </>
   );
@@ -143,7 +162,7 @@ const About: React.FC = () => (
     <Stats />
     <Developers />
     <FriendLinks />
-    <ClearCache />
+    <Config />
   </>
 );
 

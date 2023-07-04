@@ -9,13 +9,22 @@ import {
   Form,
   Loader,
 } from 'semantic-ui-react';
+import { useLocalStorage } from 'usehooks-ts';
 import PersonCard from '@/components/PersonCard';
 import getGrade, { currentYear } from '@/utils/getGrade';
 import compareGrades from '@/utils/compareGrades';
-import { provinces, type OIer } from '@/libs/OIerDb';
+import {
+  provinces,
+  type OIer,
+  genders,
+  searchableGenderKeys,
+} from '@/libs/OIerDb';
 import styles from './Search.module.less';
 
 const Search: React.FC = () => {
+  // Gender display
+  const [displayGender] = useLocalStorage('display_gender', false);
+
   const [searchParams, _setSearchParams] = useSearchParams();
 
   const setSearchParams = (params: { [key: string]: string }) => {
@@ -49,6 +58,10 @@ const Search: React.FC = () => {
   const school = searchParams.get('school') || '';
   const setSchool = (school: string) => setSearchParams({ school });
 
+  const gender = parseInt(searchParams.get('gender') || '0', 10) || 0;
+  const setGender = (gender: number) =>
+    setSearchParams({ gender: gender.toString() });
+
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState(null);
 
@@ -63,7 +76,10 @@ const Search: React.FC = () => {
         );
       } else {
         result = OIerDb.oiers.filter((oier) => {
-          let res = Boolean(input || province || grade || school);
+          if (!(input || province || grade || school)) return false;
+
+          let res = Boolean(input || province || grade || school || gender);
+
           if (input) {
             res &&= oier.lowered_name === input || oier.initials === input;
           }
@@ -78,13 +94,17 @@ const Search: React.FC = () => {
               .map((record) => record.school.name)
               .includes(school);
           }
+          if (gender) {
+            res &&= oier.gender == gender;
+          }
+
           return res;
         });
       }
 
       setResult(result);
     });
-  }, [input, province, grade, school, advanced]);
+  }, [input, province, grade, school, advanced, gender]);
 
   return (
     <>
@@ -160,6 +180,21 @@ const Search: React.FC = () => {
                 defaultValue={grade}
                 onChange={(_, { value }) => setGrade(value as string)}
               />
+              {displayGender && (
+                <Form.Dropdown
+                  label="性别"
+                  placeholder="性别"
+                  selection
+                  clearable
+                  options={searchableGenderKeys.map((key) => ({
+                    key: key,
+                    value: key,
+                    text: genders[key],
+                  }))}
+                  defaultValue={gender || null}
+                  onChange={(_, { value }) => setGender(value as number)}
+                />
+              )}
             </Form.Group>
             <Form.Input
               label="学校"
@@ -178,6 +213,7 @@ const Search: React.FC = () => {
                 <Table.Row>
                   <Table.HeaderCell width={1}>#</Table.HeaderCell>
                   <Table.HeaderCell>姓名</Table.HeaderCell>
+                  {displayGender && <Table.HeaderCell>性别</Table.HeaderCell>}
                   <Table.HeaderCell>省份</Table.HeaderCell>
                   <Table.HeaderCell>年级</Table.HeaderCell>
                   <Table.HeaderCell width={2}>评分</Table.HeaderCell>
@@ -193,8 +229,10 @@ const Search: React.FC = () => {
           </div>
         ) : (
           <>
-            {input || province || grade || school ? (
-              <div style={{ paddingTop: '1rem' }}>未找到结果</div>
+            {input || province || grade || school || gender ? (
+              <div style={{ paddingTop: '1rem' }}>
+                {gender ? '暂时不支持仅按照性别搜索选手。' : '未找到结果。'}
+              </div>
             ) : (
               <></>
             )}
