@@ -378,7 +378,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     sha512: staticSha512,
     size: staticSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/static.info.json`))
+    infoUrls.map((url) => fetch(`${url}/static.info.json?_=${+new Date()}`))
   ).then((res) => res.json());
 
   setProgressPercent(4);
@@ -387,7 +387,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     sha512: resultSha512,
     size: resultSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/result.info.json`))
+    infoUrls.map((url) => fetch(`${url}/result.info.json?_=${+new Date()}`))
   ).then((res) => res.json());
 
   setProgressPercent(8);
