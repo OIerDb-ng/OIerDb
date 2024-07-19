@@ -21,7 +21,7 @@ const data = {
 };
 
 const cdnjsBaseUrl = process.env.VITE_BAOSHUO_CDNJS
-  ? '//cdnjs.loli.net/ajax/libs'
+  ? '//cdnjs.baoshuo.ren/ajax/libs'
   : '//cdnjs.cloudflare.com/ajax/libs';
 
 const externalPackageList = {
