@@ -1,5 +1,13 @@
 blank_issues_enabled: true
 contact_links:
+  - name: 选手信息错误
+    url: https://github.com/OIerDb-ng/OIerDb-data-generator/issues/new/choose
+    about: 选手被错误拆分、合并等情况。点击右侧「Open」按钮前往 OIerDb-ng/OIerDb-data-generator 仓库提交反馈。
+
+  - name: 学校信息错误
+    url: https://github.com/OIerDb-ng/OIerDb-data-generator/issues/new/choose
+    about: 学校名称、地区错误等情况。点击右侧「Open」按钮前往 OIerDb-ng/OIerDb-data-generator 仓库提交反馈。
+
   - name: 数据相关问题
     url: https://github.com/OIerDb-ng/OIerDb-data-generator/issues/new/choose
     about: 选手被错误合并、拆分，学校信息错误？请移步 OIerDb-ng/OIerDb-data-generator 仓库。

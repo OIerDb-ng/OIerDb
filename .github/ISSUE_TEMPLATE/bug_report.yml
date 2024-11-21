@@ -7,6 +7,8 @@ body:
     attributes:
       value: |
         感谢您的反馈！请在提交前仔细填写以下内容。
+
+        欢迎您在 [项目主页](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
   - type: textarea
     id: description
     attributes:
