@@ -1,5 +1,5 @@
-import { useEffect, useState, useTransition } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Header,
   Input,
@@ -14,10 +14,10 @@ import PersonCard from '@/components/PersonCard';
 import getGrade, { currentYear } from '@/utils/getGrade';
 import compareGrades from '@/utils/compareGrades';
 import {
-  provinces,
   type OIer,
   genders,
   searchableGenderKeys,
+  provincesWithId,
 } from '@/libs/OIerDb';
 import styles from './Search.module.less';
 
@@ -49,6 +49,18 @@ const Search: React.FC = () => {
       school: '',
     });
 
+  const provinces = useMemo(
+    () =>
+      Object.entries(provincesWithId).map(([id, province]) => ({
+        key: id,
+        value: province,
+        text: `${province} (${id})`,
+        content: province,
+        label: { content: id, basic: true, size: 'mini' },
+      })),
+    []
+  );
+
   const province = searchParams.get('province') || '';
   const setProvince = (province: string) => setSearchParams({ province });
 
@@ -70,14 +82,15 @@ const Search: React.FC = () => {
 
     startTransition(() => {
       let result: OIer[] = [];
+
       if (!advanced) {
         result = OIerDb.oiers.filter(
           (oier) => oier.lowered_name === input || oier.initials === input
         );
+      } else if (!input && !grade && !school) {
+        result = [];
       } else {
         result = OIerDb.oiers.filter((oier) => {
-          if (!(input || province || grade || school)) return false;
-
           let res = Boolean(input || province || grade || school || gender);
 
           if (input) {
@@ -156,11 +169,7 @@ const Search: React.FC = () => {
                 search
                 selection
                 clearable
-                options={provinces.map((province) => ({
-                  key: province,
-                  value: province,
-                  text: province,
-                }))}
+                options={provinces}
                 defaultValue={province}
                 onChange={(_, { value }) => setProvince(value as string)}
               />
@@ -231,7 +240,18 @@ const Search: React.FC = () => {
           <>
             {input || province || grade || school || gender ? (
               <div style={{ paddingTop: '1rem' }}>
-                {gender ? '暂时不支持仅按照性别搜索选手。' : '未找到结果。'}
+                {gender || province ? (
+                  gender ? (
+                    '暂时不支持仅按照性别搜索选手。'
+                  ) : (
+                    <>
+                      请访问「
+                      <Link to="/oiers">选手</Link>」页面查询某省的所有选手。
+                    </>
+                  )
+                ) : (
+                  '未找到结果。'
+                )}
               </div>
             ) : (
               <></>

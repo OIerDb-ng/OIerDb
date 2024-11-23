@@ -20,7 +20,7 @@ import getProgress from '@/utils/getProgress';
 import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
 import styles from './[id].module.less';
-import { awardColors, awardLevels } from '@/libs/OIerDb';
+import { awardColors, awardLevels, provincesWithId } from '@/libs/OIerDb';
 import compareGrades from '@/utils/compareGrades';
 
 const NotFound = lazy(() => import('@/pages/404'));
@@ -52,12 +52,23 @@ const Contest: React.FC = () => {
     setSearchParams({ grade: String(grade), page: '1' });
   };
 
-  const provinces = useMemo(
-    () => [
+  const provinces = useMemo(() => {
+    const withId2 = Object.fromEntries(
+      Object.entries(provincesWithId).map(([id, province]) => [province, id])
+    );
+
+    return [
       ...new Set(contest.contestants.map((contestant) => contestant.province)),
-    ],
-    [id]
-  );
+    ]
+      .map((province) => ({
+        key: withId2[province],
+        value: province,
+        text: `${province} (${withId2[province]})`,
+        content: province,
+        label: { content: withId2[province], basic: true, size: 'mini' },
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }, [id]);
 
   const grades = useMemo(
     () => [
@@ -172,11 +183,7 @@ const Contest: React.FC = () => {
             clearable
             placeholder="省份"
             value={province}
-            options={provinces.map((province) => ({
-              key: province,
-              value: province,
-              text: province,
-            }))}
+            options={provinces}
             onChange={(_, { value }) => setProvince(value as string)}
           />
         </Form.Group>
