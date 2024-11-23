@@ -184,7 +184,12 @@ const Contest: React.FC = () => {
       <Table basic="very" unstackable>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width={1}>#</Table.HeaderCell>
+            <Table.HeaderCell width={1}>
+              {grade || province ? `总排名` : '#'}
+            </Table.HeaderCell>
+            {Boolean(grade || province) && (
+              <Table.HeaderCell>#</Table.HeaderCell>
+            )}
             <Table.HeaderCell>姓名</Table.HeaderCell>
             <Table.HeaderCell width={2}>年级</Table.HeaderCell>
             <Table.HeaderCell>成绩</Table.HeaderCell>
@@ -195,13 +200,18 @@ const Contest: React.FC = () => {
         <Table.Body>
           {data
             .slice((page - 1) * perPage, page * perPage)
-            .map((contestant) => (
+            .map((contestant, index) => (
               <PersonCard
                 key={`CONTEST${contest.id}-${contestant.oier.uid}`}
                 oier={contestant.oier}
                 trigger={
                   <>
                     <Table.Cell>{contestant.rank}</Table.Cell>
+                    {Boolean(grade || province) && (
+                      <Table.Cell width={1}>
+                        {(page - 1) * perPage + index + 1}
+                      </Table.Cell>
+                    )}
                     <Table.Cell>{contestant.oier.name}</Table.Cell>
                     <Table.Cell>
                       {getGrade(
