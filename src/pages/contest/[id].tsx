@@ -101,8 +101,9 @@ const Contest: React.FC = () => {
       <h1>{contestName}</h1>
       <p>
         举办于 {contest.year} 年（{contest.school_year()}-
-        {contest.school_year() + 1} 学年），共 {contest.contestants.length}{' '}
-        人获奖。
+        {contest.school_year() + 1} 学年），共{' '}
+        {contest.capacity ? `${contest.capacity} 人参赛、` : ''}
+        {contest.contestants.length} 人获奖。
       </p>
       <h4>获奖情况</h4>
       <div style={{ height: 200 }}>

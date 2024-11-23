@@ -26,6 +26,7 @@ const Contests: React.FC = () => {
           <Table.Row>
             <Table.HeaderCell width={1}>#</Table.HeaderCell>
             <Table.HeaderCell>名称</Table.HeaderCell>
+            <Table.HeaderCell width={2}>参赛人数</Table.HeaderCell>
             <Table.HeaderCell width={2}>获奖人数</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
@@ -38,6 +39,7 @@ const Contests: React.FC = () => {
                   {fixChineseSpace(fixContestName(contest.name))}
                 </Link>
               </Table.Cell>
+              <Table.Cell>{contest.capacity ?? '-'}</Table.Cell>
               <Table.Cell>{contest.contestants.length}</Table.Cell>
             </Table.Row>
           ))}
