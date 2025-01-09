@@ -330,7 +330,8 @@ body {
   @selector-button: ~'.ui.button:not(.primary):not(.positive):not(.negative):not(.inverted)@{selector-not-colored}';
   @selector-label: ~'.ui.label:not(.basic)@{selector-not-colored}';
 
-  .ui.basic.label@{selector-not-colored} {
+  .ui.basic.label@{selector-not-colored},
+  .ui.inverted.dimmer .ui.loader {
     color: var(--theme-foreground) !important;
   }
 
