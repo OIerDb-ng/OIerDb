@@ -29,7 +29,7 @@ const NotFound = lazy(() => import('@/pages/404'));
 const About = lazy(() => import('@/pages/about'));
 
 // Styles
-import './main.css';
+import './main.less';
 import styles from './main.module.less';
 
 // 是否支持 indexedDB

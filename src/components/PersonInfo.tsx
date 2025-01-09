@@ -93,14 +93,12 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
                   ) : (
                     <>
                       <span
-                        className={
-                          styles[
-                            `progress-${getProgress(
-                              data.score,
-                              data.contest.full_score
-                            )}`
-                          ]
-                        }
+                        style={{
+                          color: `var(--theme-score-${getProgress(
+                            data.score,
+                            data.contest.full_score
+                          )})`,
+                        }}
                       >
                         {data.score}
                       </span>{' '}
@@ -112,14 +110,12 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
                 </Table.Cell>
                 <Table.Cell>
                   <span
-                    className={
-                      styles[
-                        `progress-${getProgress(
-                          data.contest.n_contestants() - data.rank,
-                          data.contest.n_contestants() - 1
-                        )}`
-                      ]
-                    }
+                    style={{
+                      color: `var(--theme-score-${getProgress(
+                        data.contest.n_contestants() - data.rank,
+                        data.contest.n_contestants() - 1
+                      )})`,
+                    }}
                   >
                     {data.rank}
                   </span>{' '}

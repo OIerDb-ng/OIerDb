@@ -134,6 +134,9 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
                       padding: AXIS_MARGIN_TOP,
                       precision: 0,
                     },
+                    grid: {
+                      color: '#aaaaaa50',
+                    },
                   },
                   y: {
                     ticks: {
@@ -142,6 +145,9 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
                       },
                       padding: AXIS_MARGIN_TOP,
                       precision: 0,
+                    },
+                    grid: {
+                      color: '#aaaaaa50',
                     },
                   },
                 },

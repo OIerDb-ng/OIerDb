@@ -233,14 +233,12 @@ const Contest: React.FC = () => {
                       ) : (
                         <>
                           <span
-                            className={
-                              styles[
-                                `progress-${getProgress(
-                                  contestant.score,
-                                  contestant.contest.full_score
-                                )}`
-                              ]
-                            }
+                            style={{
+                              color: `var(--theme-score-${getProgress(
+                                contestant.score,
+                                contestant.contest.full_score
+                              )})`,
+                            }}
                           >
                             {contestant.score}
                           </span>{' '}
