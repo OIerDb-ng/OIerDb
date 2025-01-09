@@ -25,6 +25,8 @@ body.dimmed > #app > .ui.container {
 // === Theme Variables ===
 
 :root {
+  color-scheme: light dark;
+
   --theme-background: #fff;
   --theme-background-transparent: #ffffffdd;
   --theme-foreground: rgba(0, 0, 0, 0.87);
@@ -118,6 +120,8 @@ body.dimmed > #app > .ui.container {
   --theme-footer-icons: #999;
 
   @media (prefers-color-scheme: dark) {
+    color-scheme: dark light;
+
     --theme-background: #222;
     --theme-background-transparent: #222222dd;
     --theme-foreground: rgba(255, 255, 255, 0.95);
@@ -629,8 +633,10 @@ body {
     }
   }
 
-  .ui.inverted.dimmer {
-    background-color: rgba(25, 25, 25, 0.85);
+  @media (prefers-color-scheme: dark) {
+    .ui.inverted.dimmer {
+      background-color: rgba(25, 25, 25, 0.85);
+    }
   }
 
   // Fix "::selection, ::-moz-selection" not recognized by Chrome
