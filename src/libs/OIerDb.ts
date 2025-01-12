@@ -393,8 +393,14 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   setProgressPercent(8);
 
   if (checkSha512(staticSha512, resultSha512)) {
-    const staticData = await getDataFromIndexedDb('static');
-    const oiers = await getDataFromIndexedDb('oiers');
+    setProgressPercent(91);
+
+    const [staticData, oiers] = await Promise.all([
+      await getDataFromIndexedDb('static'),
+      await getDataFromIndexedDb('oiers'),
+    ]);
+
+    setProgressPercent(96);
 
     if (staticData && oiers) {
       return (__DATA__ = processData({ static: staticData, oiers }));
@@ -420,6 +426,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     90,
     'result.txt'
   ).then(textToRaw);
+
+  setProgressPercent(91);
 
   await saveDataToIndexedDb('static', staticData);
 
