@@ -4,7 +4,7 @@ export class Counter<K> extends Map<K, number> {
     super(entries);
   }
 
-  _counter_common(n: number, k: 1 | -1) {
+  private _counter_common(n: number, k: 1 | -1) {
     const all = [...this.entries()].sort((x, y) => {
       if (x[1] !== y[1]) return k * (y[1] - x[1]);
       return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0;
