@@ -11,7 +11,7 @@ import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
 
 const FilterWithIDE: React.FC = () => {
-  const [searchParams, _] = usePartialSearchParams();
+  const [searchParams] = usePartialSearchParams();
 
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
@@ -109,14 +109,21 @@ module.exports = filter;
     }
 
     try {
-      let { oiers, schools, contests } = OIerDb;
-      let result = (loadAsModule(activeFilter) as Function)(
+      const { oiers, schools, contests } = OIerDb;
+
+      type LoadModuleFunction = (
+        oiers: OIer[],
+        schools: School[],
+        contests: Contest[]
+      ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = (loadAsModule(activeFilter) as LoadModuleFunction)(
         oiers,
         schools,
         contests.reverse()
       );
 
-      for (let type of [OIer, Contest, School]) {
+      for (const type of [OIer, Contest, School]) {
         if (result instanceof type) {
           return { type: type.name, result: [result] };
         } else if (
@@ -128,7 +135,7 @@ module.exports = filter;
       }
 
       throw new Error('Unexpected type of return value');
-    } catch (err: any) {
+    } catch (err) {
       setFilterError(err.message);
       return { type: 'OIer', result: OIerDb.oiers };
     }
