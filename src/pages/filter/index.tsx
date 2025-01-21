@@ -16,25 +16,76 @@ const FilterWithIDE: React.FC = () => {
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
 
+  const handleEditorDidMount = (editor, monaco) => {
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+      `
+      class OIer {
+        uid: number;
+        name: string;
+        lowered_name: string;
+        ccf_level: number;
+        ccf_score: number;
+        enroll_middle: number;
+        initials: string;
+        oierdb_score: number;
+        provinces: string[];
+        rank: number;
+        records: Record[];
+        gender: number;
+      }
+      class Contest {
+        id: number;
+        name: string;
+        year: number;
+        type: string;
+        contestants: Record[];
+        fall_semester: boolean;
+        full_score: number;
+        capacity: number;
+        length: number;
+        school_year(): number;
+        n_contestants(): number;
+      }
+      class School {
+        id: number;
+        name: string;
+        province: string;
+        score: number;
+        city: string;
+        rank: number;
+        members: OIer[];
+        records: Record[];
+      }
+      `
+    );
+  };
+
   const STORAGE_KEY = 'monaco-editor-content';
 
   const [filterCode, setFilterCode] = useState(
     localStorage.getItem(STORAGE_KEY) ||
       `
-module.exports = (oiers, schools, contests) => {
+/**
+ * @param {OIer[]} oiers
+ * @param {School[]} schools
+ * @param {Contest[]} contests
+ */
+function filter(oiers, schools, contests) {
   return oiers.filter((oier) => {
     return oier.ccf_level === 10;
   });
-};
-      `.trim()
+}
+
+module.exports = filter;      
+      `.trim() + '\n'
   );
 
   let saveTimeout: NodeJS.Timeout;
   const handleEditorChange = (value: string | undefined) => {
+    setFilterCode(value);
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
-      if (value !== undefined) {
-        setFilterCode(value);
+      if (value != null) {
         localStorage.setItem(STORAGE_KEY, value);
       }
     }, 300);
@@ -43,7 +94,7 @@ module.exports = (oiers, schools, contests) => {
   const [filterError, setFilterError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>(filterCode);
 
-  function loadAsModule(code) {
+  function loadAsModule(code: string) {
     const module = { exports: {} };
     const func = new Function('module', code);
     func(module);
@@ -100,6 +151,7 @@ module.exports = (oiers, schools, contests) => {
             language="javascript"
             value={filterCode}
             onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
             options={{
               minimap: { enabled: false },
               tabSize: 2,
