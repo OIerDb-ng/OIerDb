@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Table, Button } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { Header, Segment } from 'semantic-ui-react';
-import MonacoEditor from '@monaco-editor/react';
+import MonacoEditor, { Monaco } from '@monaco-editor/react';
 import Pagination from '@/components/Pagination';
 import { Contest, OIer, School } from '@/libs/OIerDb';
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
 import styles from './index.module.less';
 import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
+import jsDoc from './OIerDb.js?raw';
 
 const FilterWithIDE: React.FC = () => {
   const [searchParams] = usePartialSearchParams();
@@ -16,48 +17,8 @@ const FilterWithIDE: React.FC = () => {
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
 
-  const handleEditorDidMount = (editor, monaco) => {
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(
-      `
-      class OIer {
-        uid: number;
-        name: string;
-        lowered_name: string;
-        ccf_level: number;
-        ccf_score: number;
-        enroll_middle: number;
-        initials: string;
-        oierdb_score: number;
-        provinces: string[];
-        rank: number;
-        records: Record[];
-        gender: number;
-      }
-      class Contest {
-        id: number;
-        name: string;
-        year: number;
-        type: string;
-        contestants: Record[];
-        fall_semester: boolean;
-        full_score: number;
-        capacity: number;
-        length: number;
-        school_year(): number;
-        n_contestants(): number;
-      }
-      class School {
-        id: number;
-        name: string;
-        province: string;
-        score: number;
-        city: string;
-        rank: number;
-        members: OIer[];
-        records: Record[];
-      }
-      `
-    );
+  const handleEditorDidMount = (editor, monaco: Monaco) => {
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(jsDoc);
   };
 
   const STORAGE_KEY = 'monaco-editor-content';
