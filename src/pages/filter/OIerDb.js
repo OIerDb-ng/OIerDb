@@ -7,7 +7,7 @@
  * @property {number} rank
  * @property {School} school
  * @property {number} score
- * @property {Object} enroll_middle
+ * @property {Object} [enroll_middle]
  * @property {boolean} enroll_middle.is_stay_down
  * @property {number} enroll_middle.value
  */
