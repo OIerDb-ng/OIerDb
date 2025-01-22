@@ -19,6 +19,9 @@ const FilterWithIDE: React.FC = () => {
 
   const handleEditorDidMount = (editor, monaco: Monaco) => {
     monaco.languages.typescript.javascriptDefaults.addExtraLib(jsDoc);
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      module: monaco.languages.typescript.ModuleKind.CommonJS,
+    });
   };
 
   const STORAGE_KEY = 'monaco-editor-content';
