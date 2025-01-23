@@ -17,11 +17,8 @@ const FilterWithIDE: React.FC = () => {
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
 
-  const handleEditorDidMount = (editor, monaco: Monaco) => {
+  const handleEditorBeforeMount = (monaco: Monaco) => {
     monaco.languages.typescript.javascriptDefaults.addExtraLib(jsDoc);
-    // monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-    //   module: monaco.languages.typescript.ModuleKind.CommonJS,
-    // });
   };
 
   const STORAGE_KEY = 'monaco-editor-content';
@@ -122,7 +119,7 @@ module.exports = filter;
             language="javascript"
             value={filterCode}
             onChange={handleEditorChange}
-            onMount={handleEditorDidMount}
+            beforeMount={handleEditorBeforeMount}
             options={{
               minimap: { enabled: false },
               tabSize: 2,
