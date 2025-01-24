@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Table, Button } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { Header, Segment } from 'semantic-ui-react';
-import MonacoEditor, { Monaco } from '@monaco-editor/react';
 import Pagination from '@/components/Pagination';
 import { Contest, OIer, School } from '@/libs/OIerDb';
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
 import styles from './index.module.less';
 import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
-import jsDoc from './OIerDb.js?raw';
+import jsExtraLib from './OIerDb.js?raw';
+import JSEditor from '@/components/JSEditor';
 
 const FilterWithIDE: React.FC = () => {
   const [searchParams] = usePartialSearchParams();
@@ -17,15 +17,10 @@ const FilterWithIDE: React.FC = () => {
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
 
-  const handleEditorBeforeMount = (monaco: Monaco) => {
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(jsDoc);
-  };
-
   const STORAGE_KEY = 'monaco-editor-content';
 
-  const [filterCode, setFilterCode] = useState(
-    localStorage.getItem(STORAGE_KEY) ||
-      `
+  const DEFAULT_EDITOR_CONTENT =
+    `
 /**
  * @param {OIer[]} oiers
  * @param {School[]} schools
@@ -38,20 +33,11 @@ function filter(oiers, schools, contests) {
 }
 
 module.exports = filter;      
-      `.trim() + '\n'
+      `.trim() + '\n';
+
+  const [filterCode, setFilterCode] = useState<string>(
+    localStorage.getItem(STORAGE_KEY) || DEFAULT_EDITOR_CONTENT
   );
-
-  let saveTimeout: NodeJS.Timeout;
-  const handleEditorChange = (value: string | undefined) => {
-    setFilterCode(value);
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      if (value != null) {
-        localStorage.setItem(STORAGE_KEY, value);
-      }
-    }, 300);
-  };
-
   const [filterError, setFilterError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>(filterCode);
 
@@ -113,23 +99,12 @@ module.exports = filter;
         icon="code"
       />
       <Segment attached="bottom">
-        <div className={styles.filterEditor}>
-          <MonacoEditor
-            height="200px"
-            language="javascript"
-            value={filterCode}
-            onChange={handleEditorChange}
-            beforeMount={handleEditorBeforeMount}
-            options={{
-              minimap: { enabled: false },
-              tabSize: 2,
-              fontSize: 14,
-              lineNumbers: 'on',
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-            }}
-          />
-        </div>
+        <JSEditor
+          storageKey={STORAGE_KEY}
+          defaultValue={DEFAULT_EDITOR_CONTENT}
+          jsExtraLib={jsExtraLib}
+          onChange={(value) => setFilterCode(value || '')}
+        />
 
         <Button
           onClick={() => setActiveFilter(filterCode)}
@@ -173,7 +148,7 @@ module.exports = filter;
                   </Table.Cell>
                   <Table.Cell textAlign="center">{oier.rank + 1}</Table.Cell>
                   <Table.Cell>
-                    <Link to={'/oier/' + oier.uid}>{oier.name}</Link>
+                    <Link to={`/oier/${oier.uid}`}>{oier.name}</Link>
                   </Table.Cell>
                   <Table.Cell>{oier.provinces.join('、')}</Table.Cell>
                   <Table.Cell>{oier.oierdb_score}</Table.Cell>
@@ -202,7 +177,7 @@ module.exports = filter;
                 <Table.Row key={contest.id}>
                   <Table.Cell>{contest.id + 1}</Table.Cell>
                   <Table.Cell>
-                    <Link to={'/contest/' + contest.id}>
+                    <Link to={`/contest/${contest.id}`}>
                       {fixChineseSpace(fixContestName(contest.name))}
                     </Link>
                   </Table.Cell>
@@ -240,7 +215,7 @@ module.exports = filter;
                   </Table.Cell>
                   <Table.Cell textAlign="center">{school.rank + 1}</Table.Cell>
                   <Table.Cell>
-                    <Link to={'/school/' + school.id}>{school.name}</Link>
+                    <Link to={`/school/${school.id}`}>{school.name}</Link>
                   </Table.Cell>
                   <Table.Cell>{school.province}</Table.Cell>
                   <Table.Cell>{school.score}</Table.Cell>
