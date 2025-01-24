@@ -81,7 +81,7 @@ module.exports = filter;
       const result = (loadAsModule(activeFilter) as LoadModuleFunction)(
         oiers,
         schools,
-        contests.reverse()
+        contests.toReversed()
       );
 
       for (const type of [OIer, Contest, School]) {
