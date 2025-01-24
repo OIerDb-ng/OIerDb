@@ -314,8 +314,8 @@ const getData = async (
 
   for (const url of urls) {
     try {
-      let response = await fetch(url);
-      let realUrl = url;
+      const response = await fetch(url);
+      const realUrl = url;
 
       if (!response.ok) continue;
 
