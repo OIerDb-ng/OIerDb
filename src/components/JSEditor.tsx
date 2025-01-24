@@ -1,4 +1,5 @@
-import { memo, useEffect, useState } from 'react';
+/* eslint-disable react/prop-types */
+import { memo, useEffect, useState, useRef, useCallback } from 'react';
 import MonacoEditor, { Monaco } from '@monaco-editor/react';
 import styles from './JSEditor.module.less';
 
@@ -13,7 +14,7 @@ const JSEditor: React.FC<JSEditorProps> = ({
   storageKey,
   defaultValue = '',
   jsExtraLib = '',
-  onChange = () => {},
+  onChange,
 }) => {
   const [theme, setTheme] = useState(
     window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -21,9 +22,15 @@ const JSEditor: React.FC<JSEditorProps> = ({
       : 'light'
   );
 
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const handleChange = useCallback(
+    (value: string | undefined) => onChange?.(value),
+    [onChange]
+  );
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (event) => {
+    const handleChange = (event: MediaQueryListEvent) => {
       setTheme(event.matches ? 'vs-dark' : 'light');
     };
 
@@ -34,26 +41,41 @@ const JSEditor: React.FC<JSEditorProps> = ({
   }, []);
 
   const handleEditorBeforeMount = (monaco: Monaco) => {
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(jsExtraLib);
+    if (jsExtraLib.trim()) {
+      monaco.languages.typescript.javascriptDefaults.addExtraLib(jsExtraLib);
+    }
   };
 
-  let saveTimeout: NodeJS.Timeout;
   const handleEditorChange = (value: string | undefined) => {
-    onChange(value);
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
+    handleChange(value);
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current);
+    }
+    saveTimeout.current = setTimeout(() => {
       if (value != null) {
-        localStorage.setItem(storageKey, value);
+        try {
+          localStorage.setItem(storageKey, value);
+        } catch {
+          console.error('Failed to save to localStorage');
+        }
       }
     }, 300);
   };
 
+  const getStoredValue = (key: string, fallback: string) => {
+    try {
+      return localStorage.getItem(key) || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   return (
-    <div className={styles.filterEditor}>
+    <div className={styles.jsEditorContainer}>
       <MonacoEditor
         height="200px"
         language="javascript"
-        defaultValue={localStorage.getItem(storageKey) || defaultValue}
+        defaultValue={getStoredValue(storageKey, defaultValue)}
         onChange={handleEditorChange}
         beforeMount={handleEditorBeforeMount}
         theme={theme}
