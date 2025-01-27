@@ -54,3 +54,11 @@
  * @property {OIer[]} members
  * @property {OIRecord[]} records
  */
+
+/**
+ * @typedef {Object} OIerDb
+ * @property {OIer[]} oiers
+ * @property {Contest[]} contests
+ * @property {School[]} schools
+ * @property {number[]} enroll_middle_years
+ */

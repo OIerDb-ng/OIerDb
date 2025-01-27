@@ -21,13 +21,9 @@ const CustomSearch: React.FC = () => {
 
   const DEFAULT_EDITOR_CONTENT =
     `
-/**
- * @param {OIer[]} oiers
- * @param {School[]} schools
- * @param {Contest[]} contests
- */
-export default (oiers, schools, contests) => {
-  return oiers.filter((oier) => {
+/** @param {OIerDb} db */
+export default (db) => {
+  return db.oiers.filter((oier) => {
     return oier.ccf_level === 10;
   });
 }
@@ -61,20 +57,10 @@ export default (oiers, schools, contests) => {
       }
 
       try {
-        const { oiers, schools, contests } = OIerDb;
-
-        type LoadModuleFunction = (
-          oiers: OIer[],
-          schools: School[],
-          contests: Contest[]
-        ) => Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+        type LoadModuleFunction = (OIerDbData) => Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
         const filter = await loadAsESModule(activeFilter);
-        const result = await (filter as LoadModuleFunction)(
-          oiers,
-          schools,
-          [...contests].reverse()
-        );
+        const result = await (filter as LoadModuleFunction)(OIerDb);
 
         for (const type of [OIer, Contest, School]) {
           if (result instanceof type) {
