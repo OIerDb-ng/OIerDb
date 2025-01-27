@@ -158,7 +158,12 @@ export default (db) => {
         <Table celled unstackable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell width={1}>#</Table.HeaderCell>
+              <Table.HeaderCell width={1} textAlign="center">
+                #
+              </Table.HeaderCell>
+              <Table.HeaderCell width={2} textAlign="center">
+                比赛编号
+              </Table.HeaderCell>
               <Table.HeaderCell>名称</Table.HeaderCell>
               <Table.HeaderCell width={2}>参赛人数</Table.HeaderCell>
               <Table.HeaderCell width={2}>获奖人数</Table.HeaderCell>
@@ -167,9 +172,12 @@ export default (db) => {
           <Table.Body>
             {(filteredData.result as Contest[])
               .slice(perPage * (page - 1), perPage * page)
-              .map((contest) => (
+              .map((contest, index) => (
                 <Table.Row key={contest.id}>
-                  <Table.Cell>{contest.id + 1}</Table.Cell>
+                  <Table.Cell textAlign="center">
+                    {(page - 1) * perPage + index + 1}
+                  </Table.Cell>
+                  <Table.Cell textAlign="center">{contest.id + 1}</Table.Cell>
                   <Table.Cell>
                     <Link to={`/contest/${contest.id}`}>
                       {fixChineseSpace(fixContestName(contest.name))}
