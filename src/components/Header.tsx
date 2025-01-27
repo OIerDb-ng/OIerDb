@@ -37,11 +37,6 @@ const headerButtons: {
     icon: 'calendar',
   },
   {
-    name: '筛选',
-    to: '/filter',
-    icon: 'filter',
-  },
-  {
     name: '关于',
     to: '/about',
     icon: 'info circle',
