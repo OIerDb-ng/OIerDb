@@ -32,7 +32,7 @@ export default (db) => {
   const [filterCode, setFilterCode] = useState<string>(
     localStorage.getItem(STORAGE_KEY) || DEFAULT_EDITOR_CONTENT
   );
-  const [filterError, setFilterError] = useState<string | null>(null);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>(filterCode);
 
   const [filteredData, setFilteredData] = useState<{
@@ -50,7 +50,7 @@ export default (db) => {
     };
 
     const loadData = async () => {
-      setFilterError(null);
+      setRuntimeError(null);
 
       if (!activeFilter.trim()) {
         return setFilteredData({ type: 'OIer', result: OIerDb.oiers });
@@ -75,7 +75,7 @@ export default (db) => {
 
         throw new Error('Unexpected type of return value');
       } catch (err) {
-        setFilterError(err.message);
+        setRuntimeError(err.message);
         return setFilteredData({ type: 'OIer', result: OIerDb.oiers });
       }
     };
@@ -108,9 +108,9 @@ export default (db) => {
           运行
         </Button>
 
-        {filterError && (
+        {runtimeError && (
           <div style={{ color: 'red', marginTop: '5px' }}>
-            过滤器错误：{filterError}
+            运行时错误：{runtimeError}
           </div>
         )}
       </Segment>
