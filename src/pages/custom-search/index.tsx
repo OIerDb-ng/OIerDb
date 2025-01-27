@@ -26,13 +26,11 @@ const CustomSearch: React.FC = () => {
  * @param {School[]} schools
  * @param {Contest[]} contests
  */
-function filter(oiers, schools, contests) {
+export default (oiers, schools, contests) => {
   return oiers.filter((oier) => {
     return oier.ccf_level === 10;
   });
 }
-
-module.exports = filter;      
       `.trim() + '\n';
 
   const [filterCode, setFilterCode] = useState<string>(
