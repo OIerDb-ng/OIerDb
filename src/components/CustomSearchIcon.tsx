@@ -1,13 +1,13 @@
 import { Icon, Popup } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
-import styles from './FilterIcon.module.less';
+import styles from './CustomSearchIcon.module.less';
 
-const FilterIcon = () => {
+const CustomSearchIcon = () => {
   return (
     <Popup
       content="自定义搜索"
       trigger={
-        <Link to="/filter" className={styles.link}>
+        <Link to="/custom-search" className={styles.link}>
           <Icon name="code" link style={{ cursor: 'pointer' }} />
         </Link>
       }
@@ -16,4 +16,4 @@ const FilterIcon = () => {
   );
 };
 
-export default FilterIcon;
+export default CustomSearchIcon;

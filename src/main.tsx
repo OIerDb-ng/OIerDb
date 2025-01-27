@@ -25,7 +25,7 @@ const SchoolList = lazy(() => import('@/pages/school/index'));
 const SchoolInfo = lazy(() => import('@/pages/school/[id]'));
 const Contest = lazy(() => import('@/pages/contest'));
 const ContestInfo = lazy(() => import('@/pages/contest/[id]'));
-const Filter = lazy(() => import('@/pages/filter'));
+const CustomSearch = lazy(() => import('@/pages/custom-search'));
 const NotFound = lazy(() => import('@/pages/404'));
 const About = lazy(() => import('@/pages/about'));
 
@@ -94,7 +94,7 @@ const App: React.FC = () => {
         <Route path="/contest" element={<Navigate replace to="/contests" />} />
         <Route path="/contests" element={<Contest />} />
         <Route path="/contest/:id" element={<ContestInfo />} />
-        <Route path="/filter" element={<Filter />} />
+        <Route path="/custom-search" element={<CustomSearch />} />
         <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

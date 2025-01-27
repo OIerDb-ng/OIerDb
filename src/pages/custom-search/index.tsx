@@ -11,7 +11,7 @@ import fixChineseSpace from '@/utils/fixChineseSpace';
 import jsExtraLib from './OIerDb.js?raw';
 import JSEditor from '@/components/JSEditor';
 
-const FilterWithIDE: React.FC = () => {
+const CustomSearch: React.FC = () => {
   const [searchParams] = usePartialSearchParams();
 
   const page = Number(searchParams.get('page') || 1);
@@ -94,7 +94,7 @@ module.exports = filter;
         className={styles.header}
         block
         as="h4"
-        content="筛选器"
+        content="自定义搜索"
         attached="top"
         icon="code"
       />
@@ -108,10 +108,9 @@ module.exports = filter;
 
         <Button
           onClick={() => setActiveFilter(filterCode)}
-          color="blue"
-          style={{ marginTop: '10px' }}
+          style={{ marginTop: '10px', width: '100%' }}
         >
-          筛选
+          运行
         </Button>
 
         {filterError && (
@@ -230,4 +229,4 @@ module.exports = filter;
   );
 };
 
-export default FilterWithIDE;
+export default CustomSearch;
