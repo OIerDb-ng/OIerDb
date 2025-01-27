@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Button } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { Header, Segment } from 'semantic-ui-react';
@@ -48,44 +48,53 @@ module.exports = filter;
     return module.exports;
   }
 
-  const filteredData = useMemo(() => {
-    setFilterError(null);
+  const [filteredData, setFilteredData] = useState<{
+    type: string;
+    result: Array<OIer | Contest | School>;
+  }>({ type: 'OIer', result: [] });
 
-    if (!activeFilter.trim()) {
-      return { type: 'OIer', result: OIerDb.oiers };
-    }
+  useEffect(() => {
+    const loadData = async () => {
+      setFilterError(null);
 
-    try {
-      const { oiers, schools, contests } = OIerDb;
-
-      type LoadModuleFunction = (
-        oiers: OIer[],
-        schools: School[],
-        contests: Contest[]
-      ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-      const result = (loadAsModule(activeFilter) as LoadModuleFunction)(
-        oiers,
-        schools,
-        [...contests].reverse()
-      );
-
-      for (const type of [OIer, Contest, School]) {
-        if (result instanceof type) {
-          return { type: type.name, result: [result] };
-        } else if (
-          Array.isArray(result) &&
-          result.every((item) => item instanceof type)
-        ) {
-          return { type: type.name, result: result };
-        }
+      if (!activeFilter.trim()) {
+        return setFilteredData({ type: 'OIer', result: OIerDb.oiers });
       }
 
-      throw new Error('Unexpected type of return value');
-    } catch (err) {
-      setFilterError(err.message);
-      return { type: 'OIer', result: OIerDb.oiers };
-    }
+      try {
+        const { oiers, schools, contests } = OIerDb;
+
+        type LoadModuleFunction = (
+          oiers: OIer[],
+          schools: School[],
+          contests: Contest[]
+        ) => Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+        const result = await (loadAsModule(activeFilter) as LoadModuleFunction)(
+          oiers,
+          schools,
+          [...contests].reverse()
+        );
+
+        for (const type of [OIer, Contest, School]) {
+          if (result instanceof type) {
+            return setFilteredData({ type: type.name, result: [result] });
+          } else if (
+            Array.isArray(result) &&
+            result.every((item) => item instanceof type)
+          ) {
+            return setFilteredData({ type: type.name, result: result });
+          }
+        }
+
+        throw new Error('Unexpected type of return value');
+      } catch (err) {
+        setFilterError(err.message);
+        return setFilteredData({ type: 'OIer', result: OIerDb.oiers });
+      }
+    };
+
+    loadData();
   }, [activeFilter]);
 
   return (
