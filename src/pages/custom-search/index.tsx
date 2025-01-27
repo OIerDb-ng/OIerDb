@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { Header, Segment } from 'semantic-ui-react';
@@ -41,19 +41,20 @@ module.exports = filter;
   const [filterError, setFilterError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>(filterCode);
 
-  function loadAsModule(code: string) {
-    const module = { exports: {} };
-    const func = new Function('module', code);
-    func(module);
-    return module.exports;
-  }
-
   const [filteredData, setFilteredData] = useState<{
     type: string;
     result: Array<OIer | Contest | School>;
   }>({ type: 'OIer', result: [] });
 
   useEffect(() => {
+    const loadAsESModule = async (code: string) => {
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const module = await import(/* @vite-ignore */ url);
+      URL.revokeObjectURL(url);
+      return module.default;
+    };
+
     const loadData = async () => {
       setFilterError(null);
 
@@ -70,7 +71,8 @@ module.exports = filter;
           contests: Contest[]
         ) => Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-        const result = await (loadAsModule(activeFilter) as LoadModuleFunction)(
+        const filter = await loadAsESModule(activeFilter);
+        const result = await (filter as LoadModuleFunction)(
           oiers,
           schools,
           [...contests].reverse()
