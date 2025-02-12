@@ -20,6 +20,7 @@ import {
   provincesWithId,
 } from '@/libs/OIerDb';
 import styles from './Search.module.less';
+import CustomSearchIcon from './CustomSearchIcon';
 
 const Search: React.FC = () => {
   // Gender display
@@ -135,8 +136,11 @@ const Search: React.FC = () => {
             marginBottom: '1em',
             display: 'flex',
             flexDirection: 'row-reverse',
+            gap: '10px',
+            alignItems: 'center',
           }}
         >
+          <CustomSearchIcon />
           <Checkbox
             slider
             label="高级搜索"

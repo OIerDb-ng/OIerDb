@@ -65,6 +65,9 @@ const externalStylesheetList = {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
+  esbuild: {
+    keepNames: true,
+  },
   plugins: [
     splitVendorChunkPlugin(),
     react(),
