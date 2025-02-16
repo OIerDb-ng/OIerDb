@@ -99,8 +99,7 @@ const infoUrls = [
 ];
 
 const urls = [
-  'https://sb.cdn.baoshuo.ren/oier',
-  'https://oier.cdn.baoshuo.dev',
+  'https://cos-1.cdn.baoshuo.xyz/oier',
   'https://oier.api.baoshuo.dev',
   'https://oierdb-ng.github.io/OIerDb-data-generator',
 ];
