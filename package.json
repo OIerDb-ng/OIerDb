@@ -12,6 +12,7 @@
     "postinstall": "husky install"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.0",
     "@monaco-editor/react": "^4.6.0",
     "chart.js": "3.9.1",
     "idb": "^7.1.1",

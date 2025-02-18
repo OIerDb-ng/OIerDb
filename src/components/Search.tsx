@@ -4,13 +4,12 @@ import {
   Header,
   Input,
   Segment,
-  Table,
   Checkbox,
   Form,
   Loader,
 } from 'semantic-ui-react';
 import { useLocalStorage } from 'usehooks-ts';
-import PersonCard from '@/components/PersonCard';
+
 import getGrade, { currentYear } from '@/utils/getGrade';
 import compareGrades from '@/utils/compareGrades';
 import {
@@ -19,8 +18,10 @@ import {
   searchableGenderKeys,
   provincesWithId,
 } from '@/libs/OIerDb';
+
 import styles from './Search.module.less';
 import CustomSearchIcon from './CustomSearchIcon';
+import SearchResult from '@/components/SearchResult';
 
 const Search: React.FC = () => {
   // Gender display
@@ -76,7 +77,7 @@ const Search: React.FC = () => {
     setSearchParams({ gender: gender.toString() });
 
   const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<OIer[]>(null);
 
   useEffect(() => {
     setResult(null);
@@ -130,6 +131,7 @@ const Search: React.FC = () => {
         attached="top"
         icon="search"
       />
+
       <Segment attached="bottom">
         <div
           style={{
@@ -220,26 +222,7 @@ const Search: React.FC = () => {
         {isPending ? (
           <Loader active inline="centered" style={{ marginTop: '1rem' }} />
         ) : result?.length ? (
-          <div style={{ marginTop: '1.5rem' }}>
-            <Table basic="very" unstackable>
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell width={1}>#</Table.HeaderCell>
-                  <Table.HeaderCell>姓名</Table.HeaderCell>
-                  {displayGender && <Table.HeaderCell>性别</Table.HeaderCell>}
-                  <Table.HeaderCell>省份</Table.HeaderCell>
-                  <Table.HeaderCell>年级</Table.HeaderCell>
-                  <Table.HeaderCell width={2}>评分</Table.HeaderCell>
-                  <Table.HeaderCell width={2}>CCF 评级</Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {result.map((oier) => (
-                  <PersonCard key={`SEARCH-${oier.uid}`} oier={oier} />
-                ))}
-              </Table.Body>
-            </Table>
-          </div>
+          <SearchResult result={result} />
         ) : (
           <>
             {input || province || grade || school || gender ? (
