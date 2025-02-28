@@ -20,6 +20,7 @@ import {
 } from '@/libs/OIerDb';
 
 import styles from './Search.module.less';
+import CustomSearchIcon from './CustomSearchIcon';
 import SearchResult from '@/components/SearchResult';
 
 const Search: React.FC = () => {
@@ -137,8 +138,11 @@ const Search: React.FC = () => {
             marginBottom: '1em',
             display: 'flex',
             flexDirection: 'row-reverse',
+            gap: '10px',
+            alignItems: 'center',
           }}
         >
+          <CustomSearchIcon />
           <Checkbox
             slider
             label="高级搜索"
