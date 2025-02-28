@@ -9,7 +9,7 @@ interface EmojiRendererProps {
 }
 
 const cdnjsBaseUrl = import.meta.env.VITE_BAOSHUO_CDNJS
-  ? '//cdnjs.baoshuo.ren/ajax/libs'
+  ? '//cdnjs.baoshuo.xyz/ajax/libs'
   : '//cdnjs.cloudflare.com/ajax/libs';
 
 export const EmojiRenderer: React.FC<EmojiRendererProps> = (props) => {
