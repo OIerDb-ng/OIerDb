@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Header, Segment } from 'semantic-ui-react';
 import styles from './FAQ.module.less';
+import { EmojiRenderer } from '@/components/EmojiRenderer';
 
 const FAQ: React.FC = () => {
   return (
@@ -48,6 +49,18 @@ const FAQ: React.FC = () => {
             813305282
           </a>
           。
+        </p>
+        <p style={{ color: '#dc362e' }}>
+          <EmojiRenderer>🌟</EmojiRenderer> 如果您觉得这个网站有所帮助，请在
+          GitHub 上为{' '}
+          <a
+            href="https://github.com/OIerDb-ng/OIerDb"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            OIerDb-ng/OIerDb
+          </a>{' '}
+          <b>点亮 Star</b>，谢谢！
         </p>
       </Segment>
     </>
