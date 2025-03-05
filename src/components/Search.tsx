@@ -86,7 +86,30 @@ const Search: React.FC = () => {
 
       if (!advanced) {
         result = OIerDb.oiers.filter(
-          (oier) => oier.lowered_name === input || oier.initials === input
+          (oier) =>
+            oier.lowered_name === input ||
+            oier.initials === input ||
+            (() => {
+              //match pinyin
+              const pinyinBatch = Array.from(oier.lowered_name).map((char) => [
+                ...OIerDb.pinyins.getFull(char),
+                ...OIerDb.pinyins.getInitial(char),
+              ]);
+              if (pinyinBatch.some((p) => p.length === 0)) return false;
+              let matched = [-1];
+              for (const pinyins of pinyinBatch) {
+                const newMached = [];
+                for (const i of matched) {
+                  for (const pinyin of pinyins) {
+                    if (input.slice(i + 1).startsWith(pinyin)) {
+                      newMached.push(i + pinyin.length);
+                    }
+                  }
+                }
+                matched = newMached;
+              }
+              return matched.some((i) => i == input.length - 1);
+            })()
         );
       } else if (!input && !grade && !school) {
         result = [];
@@ -149,7 +172,7 @@ const Search: React.FC = () => {
         {!advanced ? (
           <Input
             fluid
-            placeholder="键入学生姓名或其拼音首字母..."
+            placeholder="键入学生姓名，拼音或其拼音首字母..."
             loading={isPending}
             onChange={(_, { value }) => setInput(value.toLowerCase())}
             spellCheck="false"
@@ -160,7 +183,7 @@ const Search: React.FC = () => {
             <Form.Group widths="equal">
               <Form.Input
                 label="姓名"
-                placeholder="姓名或姓名拼音首字母"
+                placeholder="姓名，姓名拼音或姓名拼音首字母"
                 spellCheck="false"
                 onChange={(_, { value }) => setInput(value.toLowerCase())}
                 defaultValue={input}

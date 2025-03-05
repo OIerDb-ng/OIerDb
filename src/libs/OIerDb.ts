@@ -86,10 +86,25 @@ export class School {
   award_counts: { [key: string]: { [key: number]: Counter<string> } };
 }
 
+export class PinyinQueryer extends Map<string, string[]> {
+  //也许需要些什么...?
+  constructor(entries?: any) {
+    super(entries);
+  }
+  getFull(char: string) {
+    return this.get(char) || [];
+  }
+  getInitial(char: string) {
+    //首字母 不去重！！(可提升效率)
+    return (this.get(char) || []).map((p) => p[0]);
+  }
+}
+
 export interface OIerDbData {
   oiers: OIer[];
   schools: School[];
   contests: Contest[];
+  pinyins: PinyinQueryer;
   enroll_middle_years: number[];
 }
 
@@ -106,13 +121,22 @@ const urls = [
 
 let __DATA__: OIerDbData = null;
 
-const checkSha512 = (staticSha512: string, resultSha512: string) => {
+const checkSha512 = (
+  staticSha512: string,
+  resultSha512: string,
+  pinyinSha512: string
+) => {
   try {
-    const { staticSha512: localStaticSha152, resultSha512: localResultSha512 } =
-      localStorage;
+    const {
+      staticSha512: localStaticSha152,
+      resultSha512: localResultSha512,
+      pinyinSha512: localPinyinSha512,
+    } = localStorage;
 
     return (
-      staticSha512 === localStaticSha152 && resultSha512 === localResultSha512
+      staticSha512 === localStaticSha152 &&
+      resultSha512 === localResultSha512 &&
+      pinyinSha512 === localPinyinSha512
     );
   } catch (e) {
     console.error(e);
@@ -120,7 +144,10 @@ const checkSha512 = (staticSha512: string, resultSha512: string) => {
   }
 };
 
-const saveDataToIndexedDb = async (name: 'static' | 'oiers', data: any) => {
+const saveDataToIndexedDb = async (
+  name: 'static' | 'oiers' | 'pinyins',
+  data: any
+) => {
   const db = await openDB('OIerDb', 2, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('main')) {
@@ -134,7 +161,7 @@ const saveDataToIndexedDb = async (name: 'static' | 'oiers', data: any) => {
   await os.put(data, name);
 };
 
-const getDataFromIndexedDb = async (name: 'static' | 'oiers') => {
+const getDataFromIndexedDb = async (name: 'static' | 'oiers' | 'pinyins') => {
   const db = await openDB('OIerDb');
 
   if (!db.objectStoreNames.contains('main')) {
@@ -221,6 +248,14 @@ const textToRaw = (text: string) => {
 
   return data;
 };
+const textToPinyinMap = (text: string) => {
+  const textToPinyinMap = new Map<string, string[]>();
+  text.split('\n').forEach((line) => {
+    const list = line.split(',');
+    textToPinyinMap.set(list[0], list.slice(1));
+  });
+  return textToPinyinMap;
+};
 
 const processData = (data: any) => {
   const add_contestant = function (contest: Contest, record: Record) {
@@ -296,15 +331,15 @@ const processData = (data: any) => {
     ...new Set(result.oiers.map((oier) => oier.enroll_middle)),
   ];
 
+  result.pinyins = new PinyinQueryer(data.pinyins);
+
   return result;
 };
 
 const getData = async (
   urls: string | string[],
   size: number,
-  setProgressPercent?: (p: number) => void,
-  start = 0,
-  end = 100,
+  setProgress?: (p: number) => void,
   trackLabel = ''
 ) => {
   const startTime = performance.now();
@@ -334,10 +369,8 @@ const getData = async (
     chunks.push(value);
     receivedSize += value.length;
 
-    if (setProgressPercent) {
-      setProgressPercent(
-        Math.ceil(start + Math.min((receivedSize / size) * (end - start), end))
-      );
+    if (setProgress) {
+      setProgress(receivedSize / size);
     }
   }
 
@@ -366,6 +399,31 @@ const getData = async (
 
   return data;
 };
+const progressManager = (
+  begin: number,
+  end: number,
+  setProgressPercent: (p: number) => void
+) => {
+  let total = 0;
+  const childCount: number[] = [];
+  const update = () => {
+    setProgressPercent(
+      begin +
+        Math.ceil(
+          (end - begin) * (childCount.reduce((s, v) => s + v, 0) / total)
+        )
+    );
+  };
+  return (size: number) => {
+    total += size;
+    childCount.push(0);
+    const i = childCount.length - 1;
+    return (p: number) => {
+      childCount[i] = p * size;
+      update();
+    };
+  };
+};
 
 export const initDb = async (setProgressPercent?: (p: number) => void) => {
   if (__DATA__) return __DATA__;
@@ -391,40 +449,55 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
 
   setProgressPercent(8);
 
-  if (checkSha512(staticSha512, resultSha512)) {
+  const {
+    sha512: pinyinSha512,
+    size: pinyinSize,
+  }: { sha512: string; size: number } = await promiseAny(
+    infoUrls.map((url) => fetch(`${url}/pinyin.info.json?_=${+new Date()}`))
+  ).then((res) => res.json());
+
+  if (checkSha512(staticSha512, resultSha512, pinyinSha512)) {
     setProgressPercent(91);
 
-    const [staticData, oiers] = await Promise.all([
+    const [staticData, oiers, pinyins] = await Promise.all([
       await getDataFromIndexedDb('static'),
       await getDataFromIndexedDb('oiers'),
+      await getDataFromIndexedDb('pinyins'),
     ]);
 
     setProgressPercent(96);
 
-    if (staticData && oiers) {
-      return (__DATA__ = processData({ static: staticData, oiers }));
+    if (staticData && oiers && pinyins) {
+      return (__DATA__ = processData({
+        static: staticData,
+        oiers,
+        pinyins: pinyins,
+      }));
     }
   }
 
   setProgressPercent(10);
-
-  const staticData = await getData(
-    urls.map((url) => `${url}/static.${staticSha512.substring(0, 7)}.json`),
-    staticSize,
-    setProgressPercent,
-    10,
-    40,
-    'static.json'
-  ).then((res) => JSON.parse(res));
-
-  const oiers = await getData(
-    urls.map((url) => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
-    resultSize,
-    setProgressPercent,
-    40,
-    90,
-    'result.txt'
-  ).then(textToRaw);
+  const setDownlodProgressFunc = progressManager(10, 90, setProgressPercent);
+  const [staticData, oiers, pinyins] = await Promise.all([
+    getData(
+      urls.map((url) => `${url}/static.${staticSha512.substring(0, 7)}.json`),
+      staticSize,
+      setDownlodProgressFunc(staticSize),
+      'static.json'
+    ).then((res) => JSON.parse(res)),
+    getData(
+      urls.map((url) => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
+      resultSize,
+      setDownlodProgressFunc(resultSize),
+      'result.txt'
+    ).then(textToRaw),
+    getData(
+      urls.map((url) => `${url}/pinyin.${pinyinSha512.substring(0, 7)}.txt`),
+      pinyinSize,
+      setDownlodProgressFunc(pinyinSize),
+      'pinyin.txt'
+    ).then(textToPinyinMap),
+  ]);
 
   setProgressPercent(91);
 
@@ -434,14 +507,19 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
 
   await saveDataToIndexedDb('oiers', oiers);
 
+  setProgressPercent(95);
+
+  await saveDataToIndexedDb('pinyins', pinyins);
+
   setProgressPercent(96);
 
   localStorage.setItem('staticSha512', staticSha512);
   localStorage.setItem('resultSha512', resultSha512);
+  localStorage.setItem('pinyinSha512', pinyinSha512);
 
   setProgressPercent(97);
 
-  __DATA__ = processData({ static: staticData, oiers });
+  __DATA__ = processData({ static: staticData, oiers, pinyins: pinyins });
 
   setProgressPercent(100);
 
