@@ -311,60 +311,63 @@ const getData = async (
 
   if (!Array.isArray(urls)) urls = [urls];
 
-  let response: Response = null;
-  let realUrl: string = null;
   for (const url of urls) {
     try {
-      response = await fetch(url);
-      realUrl = url;
-      if (response.ok) break;
+      const response = await fetch(url);
+      const realUrl = url;
+
+      if (!response.ok) continue;
+
+      let receivedSize = 0;
+      const chunks: Uint8Array[] = [];
+
+      const reader = response.body.getReader();
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedSize += value.length;
+
+        if (setProgressPercent) {
+          setProgressPercent(
+            Math.ceil(
+              start + Math.min((receivedSize / size) * (end - start), end)
+            )
+          );
+        }
+      }
+
+      const chunksAll = new Uint8Array(receivedSize);
+      let pos = 0;
+      for (const chunk of chunks) {
+        chunksAll.set(chunk, pos);
+        pos += chunk.length;
+      }
+
+      const data = new TextDecoder().decode(chunksAll);
+
+      if (trackLabel) {
+        const timeUsed = performance.now() - startTime;
+
+        trackEvent('Download: ' + trackLabel, {
+          props: {
+            url: realUrl,
+            time:
+              timeUsed < 100
+                ? Math.floor(timeUsed / 25) * 25
+                : Math.floor(timeUsed / 100) * 100,
+          },
+        });
+      }
+
+      return data;
     } catch (e) {
       console.error(e);
     }
   }
 
-  let receivedSize = 0;
-  const chunks: Uint8Array[] = [];
-
-  const reader = response.body.getReader();
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    receivedSize += value.length;
-
-    if (setProgressPercent) {
-      setProgressPercent(
-        Math.ceil(start + Math.min((receivedSize / size) * (end - start), end))
-      );
-    }
-  }
-
-  const chunksAll = new Uint8Array(receivedSize);
-  let pos = 0;
-  for (const chunk of chunks) {
-    chunksAll.set(chunk, pos);
-    pos += chunk.length;
-  }
-
-  const data = new TextDecoder().decode(chunksAll);
-
-  if (trackLabel) {
-    const timeUsed = performance.now() - startTime;
-
-    trackEvent('Download: ' + trackLabel, {
-      props: {
-        url: realUrl,
-        time:
-          timeUsed < 100
-            ? Math.floor(timeUsed / 25) * 25
-            : Math.floor(timeUsed / 100) * 100,
-      },
-    });
-  }
-
-  return data;
+  throw new Error('Failed to fetch data');
 };
 
 export const initDb = async (setProgressPercent?: (p: number) => void) => {

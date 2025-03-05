@@ -24,7 +24,9 @@ const Contests: React.FC = () => {
       <Table celled unstackable>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width={1}>#</Table.HeaderCell>
+            <Table.HeaderCell width={1} textAlign="center">
+              #
+            </Table.HeaderCell>
             <Table.HeaderCell>名称</Table.HeaderCell>
             <Table.HeaderCell width={2}>参赛人数</Table.HeaderCell>
             <Table.HeaderCell width={2}>获奖人数</Table.HeaderCell>
@@ -33,7 +35,7 @@ const Contests: React.FC = () => {
         <Table.Body>
           {data.slice(perPage * (page - 1), perPage * page).map((contest) => (
             <Table.Row key={contest.id}>
-              <Table.Cell>{contest.id + 1}</Table.Cell>
+              <Table.Cell textAlign="center">{contest.id + 1}</Table.Cell>
               <Table.Cell>
                 <Link to={'/contest/' + contest.id}>
                   {fixChineseSpace(fixContestName(contest.name))}
