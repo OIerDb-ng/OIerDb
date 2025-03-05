@@ -86,11 +86,37 @@ export class School {
   award_counts: { [key: string]: { [key: number]: Counter<string> } };
 }
 
+export class Province {
+  constructor(settings: any[]) {
+    [this.code, this.name] = settings;
+    this.score = 0;
+    this.rank = 0;
+  }
+  code: string;
+  name: string;
+  score: number;
+  rank: number;
+}
+
+export class City {
+  constructor(settings: any[]) {
+    [this.name, this.province] = settings;
+    this.score = 0;
+    this.rank = 0;
+  }
+  name: string;
+  score: number;
+  rank: number;
+  province: string;
+}
+
 export interface OIerDbData {
   oiers: OIer[];
   schools: School[];
   contests: Contest[];
   enroll_middle_years: number[];
+  provinces: Province[];
+  cities: City[];
 }
 
 const infoUrls = [
@@ -252,6 +278,16 @@ const processData = (data: any) => {
     .sort((x: School, y: School) =>
       x.score == y.score ? x.id - y.id : y.score - x.score
     );
+
+  result.provinces = Object.entries(provincesWithId).map(
+    (x) => new Province(x)
+  );
+  result.cities = [
+    ...new Set(
+      result.schools.map((school) => school.city + ' ' + school.province)
+    ),
+  ].map((x) => new City(x.split(' ')));
+
   result.schools.forEach((school, id) => {
     school.rank =
       id && school.score === result.schools[id - 1].score
@@ -265,6 +301,37 @@ const processData = (data: any) => {
       if (!(contest.year in school.award_counts[contest.type]))
         school.award_counts[contest.type][contest.year] = new Counter();
     });
+
+    result.provinces.forEach((province) => {
+      if (province.name === school.province) province.score += school.score;
+    });
+
+    result.cities.forEach((city) => {
+      if (city.name === school.city && city.province === school.province)
+        city.score += school.score;
+    });
+  });
+
+  result.provinces = result.provinces.sort((x: Province, y: Province) =>
+    x.score == y.score ? x.name.localeCompare(y.name) : y.score - x.score
+  );
+  result.provinces.forEach((province, id) => {
+    province.rank =
+      id && province.score === result.provinces[id - 1].score
+        ? result.provinces[id - 1].rank
+        : id;
+  });
+
+  result.cities = result.cities.sort((x: City, y: City) =>
+    x.score == y.score
+      ? (x.province + x.name).localeCompare(y.province + y.name)
+      : y.score - x.score
+  );
+  result.cities.forEach((city, id) => {
+    city.rank =
+      id && city.score === result.cities[id - 1].score
+        ? result.cities[id - 1].rank
+        : id;
   });
 
   result.oiers = data.oiers.map((oier) => {

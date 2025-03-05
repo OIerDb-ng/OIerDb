@@ -37,6 +37,16 @@ const headerButtons: {
     icon: 'calendar',
   },
   {
+    name: '省级行政区',
+    to: '/provinces',
+    icon: 'map',
+  },
+  {
+    name: '城市',
+    to: '/cities',
+    icon: 'map marker alternate',
+  },
+  {
     name: '关于',
     to: '/about',
     icon: 'info circle',
