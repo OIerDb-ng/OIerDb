@@ -1,7 +1,17 @@
 /* eslint-disable react/prop-types */
 import { memo, useEffect, useState, useRef, useCallback } from 'react';
-import MonacoEditor, { Monaco } from '@monaco-editor/react';
+import MonacoEditor, { Monaco, loader } from '@monaco-editor/react';
+import { version as monacoVersion } from 'monaco-editor/package.json';
+
+import { cdnjsBaseUrl } from '../../constant';
+
 import styles from './JSEditor.module.less';
+
+loader.config({
+  paths: {
+    vs: `${cdnjsBaseUrl}/monaco-editor/${monacoVersion}/min/vs`,
+  },
+});
 
 interface JSEditorProps {
   storageKey: string;
