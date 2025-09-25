@@ -1,6 +1,4 @@
-node_modules
+node_modules/
+.turbo/
 .DS_Store
-dist
-dist-ssr
 *.local
-.turbo
