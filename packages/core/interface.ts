@@ -67,43 +67,62 @@ export interface School {
   award_counts: Map<string, Map<string, number>>; // 学校奖项统计（奖项 -> 年份 -> 数量）
 }
 
+export interface MetadataKV {
+  key: string;
+  value: string;
+}
+
+export interface ParseResult {
+  needClearOldData: boolean;
+  oiers: OIer[];
+  schools: School[];
+  contests: Contest[];
+  records: Record[];
+  metadata: MetadataKV[];
+}
+
 // ==============================
 // Response Interfaces
 // ==============================
 
-export interface GetOIerResponse {
-  uid: number;
-  oier: OIer;
-  records: Map<number, Record>;
-  schools: Map<number, School>;
-  contests: Map<number, Contest>;
+export interface ResponseBase {
+  success: boolean;
+  message?: string; // 错误信息（仅在 success 为 false 时存在）
+  backend_data_version: string; // 后端数据版本（通常为 SHA256 哈希值）
 }
 
-export interface ListOIersResponse extends PaginationInfo {
+export interface GetOIerResponse extends ResponseBase {
+  uid: number;
+  oier: OIer;
+  records: Map<number, Record>; // key: record_id
+  schools: Map<number, School>; // key: school_id
+  contests: Map<number, Contest>; // key: contest_id
+}
+
+export interface ListOIersResponse extends ResponseBase, PaginationInfo {
   oiers: OIer[];
 }
 
-export interface GetSchoolResponse {
+export interface GetSchoolResponse extends ResponseBase {
   id: number;
   school: School;
-  members: Map<number, OIer>;
-  records: Map<number, Record>;
-  contests: Map<number, Contest>;
+  members: Map<number, OIer>; // key: uid
+  contests: Map<number, Contest>; // key: contest_id
 }
 
-export interface ListSchoolsResponse extends PaginationInfo {
+export interface ListSchoolsResponse extends ResponseBase, PaginationInfo {
   schools: School[];
 }
 
-export interface GetContestResponse {
+export interface GetContestResponse extends ResponseBase {
   id: number;
   contest: Contest;
-  contestants: Map<number, Record>;
-  schools: Map<number, School>;
-  oiers: Map<number, OIer>;
+  records: Map<number, Record>; // key: record_id
+  schools: Map<number, School>; // key: school_id
+  oiers: Map<number, OIer>; // key: uid
 }
 
-export interface ListContestsResponse extends PaginationInfo {
+export interface ListContestsResponse extends ResponseBase, PaginationInfo {
   contests: Contest[];
 }
 
@@ -112,6 +131,11 @@ export interface ListContestsResponse extends PaginationInfo {
 // ==============================
 
 export interface IAdapter {
+  /**
+   * 检查可用性
+   */
+  checkAvailability(): Promise<boolean>;
+
   /**
    * 获取选手信息
    * @param uid 选手 UID
@@ -136,8 +160,8 @@ export interface IAdapter {
     enroll_middle: number | null,
     gender: Gender | null,
     province: string | null,
-    page?: number,
-    perPage?: number
+    page: number,
+    perPage: number
   ): Promise<ListOIersResponse>;
 
   /**
@@ -160,8 +184,8 @@ export interface IAdapter {
     name: string | null, // includes, not full match
     province: string | null,
     city: string | null,
-    page?: number,
-    perPage?: number
+    page: number,
+    perPage: number
   ): Promise<ListSchoolsResponse>;
 
   /**
@@ -181,7 +205,11 @@ export interface IAdapter {
   listContests(
     type: string | null,
     year: number | null,
-    page?: number,
-    perPage?: number
+    page: number,
+    perPage: number
   ): Promise<ListContestsResponse>;
+}
+
+export interface IAdapterWithLoader extends IAdapter {
+  loadData(result: ParseResult): Promise<void>;
 }
