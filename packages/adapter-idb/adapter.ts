@@ -176,7 +176,7 @@ export class IDBAdapter implements IAdapterWithLoader {
     }
   }
 
-  getConnectionState(): string {
+  getConnectionState(): ConnectionState {
     return this.connectionState;
   }
 
