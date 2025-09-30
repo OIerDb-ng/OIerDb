@@ -15,7 +15,7 @@ export interface PaginationInfo {
 // Basic Interfaces
 // ==============================
 
-export interface OIer {
+export interface DbOIer {
   uid: number; // OIerDb UID（为选手相关记录在 raw.txt 中首次出现的有效行号）
   name: string; // 姓名
   lowered_name: string; // 姓名（小写）
@@ -31,7 +31,7 @@ export interface OIer {
   rank: number; // OIerDb 排名（从 0 开始）
 }
 
-export interface Record {
+export interface DbRecord {
   contest_id: number; // 比赛 ID
   school_id: number; // 学校 ID
   uid: number; // 选手 ID
@@ -42,7 +42,7 @@ export interface Record {
   province: string; // 省份
 }
 
-export interface Contest {
+export interface DbContest {
   id: number; // 比赛 ID
   name: string; // 比赛名称
   year: number; // 比赛年份
@@ -52,10 +52,10 @@ export interface Contest {
   full_score: number; // 满分
   capacity: number; // 参赛总人数（可能与 contestants.length 不同，因为有些选手可能没有成绩记录）
   length: number; // 获奖人数
-  level_counts: Map<string, number>; // 奖项统计
+  level_counts: Record<string, number>; // 奖项统计
 }
 
-export interface School {
+export interface DbSchool {
   id: number; // 学校 ID
   name: string; // 学校名称
   province: string; // 省份
@@ -64,21 +64,20 @@ export interface School {
   rank: number; // 学校排名
   member_ids: number[]; // 学校成员 UID 列表
   record_ids: number[]; // 学校成员的记录 ID 列表
-  award_counts: Map<string, Map<string, number>>; // 学校奖项统计（奖项 -> 年份 -> 数量）
+  award_counts: Record<string, Record<string, number>>; // 学校奖项统计（奖项 -> 年份 -> 数量）
 }
 
-export interface MetadataKV {
+export interface DbMetadata {
   key: string;
   value: string;
 }
 
-export interface ParseResult {
-  needClearOldData: boolean;
-  oiers: OIer[];
-  schools: School[];
-  contests: Contest[];
-  records: Record[];
-  metadata: MetadataKV[];
+export interface DbParseResult {
+  oiers: DbOIer[];
+  schools: DbSchool[];
+  contests: DbContest[];
+  records: DbRecord[];
+  metadata: DbMetadata[];
 }
 
 // ==============================
@@ -86,44 +85,42 @@ export interface ParseResult {
 // ==============================
 
 export interface ResponseBase {
-  success: boolean;
-  message?: string; // 错误信息（仅在 success 为 false 时存在）
   backend_data_version: string; // 后端数据版本（通常为 SHA256 哈希值）
 }
 
 export interface GetOIerResponse extends ResponseBase {
   uid: number;
-  oier: OIer;
-  records: Map<number, Record>; // key: record_id
-  schools: Map<number, School>; // key: school_id
-  contests: Map<number, Contest>; // key: contest_id
+  oier: DbOIer;
+  records: DbRecord[];
+  schools_map: Record<number, DbSchool>; // key: school_id
+  contests_map: Record<number, DbContest>; // key: contest_id
 }
 
 export interface ListOIersResponse extends ResponseBase, PaginationInfo {
-  oiers: OIer[];
+  oiers: DbOIer[];
 }
 
 export interface GetSchoolResponse extends ResponseBase {
   id: number;
-  school: School;
-  members: Map<number, OIer>; // key: uid
-  contests: Map<number, Contest>; // key: contest_id
+  school: DbSchool;
+  members_map: Record<number, DbOIer>; // key: uid
+  contests_map: Record<number, DbContest>; // key: contest_id
 }
 
 export interface ListSchoolsResponse extends ResponseBase, PaginationInfo {
-  schools: School[];
+  schools: DbSchool[];
 }
 
 export interface GetContestResponse extends ResponseBase {
   id: number;
-  contest: Contest;
-  records: Map<number, Record>; // key: record_id
-  schools: Map<number, School>; // key: school_id
-  oiers: Map<number, OIer>; // key: uid
+  contest: DbContest;
+  records: DbRecord[];
+  schools: Record<number, DbSchool>; // key: school_id
+  oiers: Record<number, DbOIer>; // key: uid
 }
 
 export interface ListContestsResponse extends ResponseBase, PaginationInfo {
-  contests: Contest[];
+  contests: DbContest[];
 }
 
 // ==============================
@@ -134,7 +131,7 @@ export interface IAdapter {
   /**
    * 检查可用性
    */
-  checkAvailability(): Promise<boolean>;
+  checkAvailability(targetVersion?: string): Promise<boolean>;
 
   /**
    * 获取选手信息
@@ -173,7 +170,7 @@ export interface IAdapter {
 
   /**
    * 获取学校列表
-   * @param name 学校名称（模糊匹配）
+   * @param name 学校名称
    * @param province 省份
    * @param city 城市
    * @param page 页码
@@ -211,5 +208,5 @@ export interface IAdapter {
 }
 
 export interface IAdapterWithLoader extends IAdapter {
-  loadData(result: ParseResult): Promise<void>;
+  loadData(result: DbParseResult): Promise<void>;
 }

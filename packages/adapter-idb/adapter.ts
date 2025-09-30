@@ -1,219 +1,178 @@
-import type { IAdapterWithLoader, ParseResult } from '@oierdb/core';
+import type {
+  DbContest,
+  GetOIerResponse,
+  IAdapterWithLoader,
+  DbMetadata,
+  DbOIer,
+  DbParseResult,
+  DbRecord,
+  DbSchool,
+  Gender,
+  GetSchoolResponse,
+  ListSchoolsResponse,
+  ListOIersResponse,
+  GetContestResponse,
+  ListContestsResponse,
+} from '@oierdb/core';
+import { Dexie, type EntityTable } from 'dexie';
+import { DB_NAME, DB_VERSION } from './constants';
 
-import {
-  DB_VERSION,
-  CONTEST_STORE,
-  OIER_STORE,
-  RECORD_STORE,
-  SCHOOL_STORE,
-  DB_NAME,
-} from './constants';
-import { runMigrations } from './upgrades';
-
-enum ConnectionState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  ERROR = 'error',
+interface OIerDbDexie extends Dexie {
+  oiers: EntityTable<DbOIer, 'uid'>;
+  schools: EntityTable<DbSchool, 'id'>;
+  contests: EntityTable<DbContest, 'id'>;
+  records: EntityTable<DbRecord, 'uid' | 'contest_id'>;
+  meta: EntityTable<DbMetadata, 'key'>;
 }
 
 export class IDBAdapter implements IAdapterWithLoader {
-  private factory: IDBFactory;
-  private db: IDBDatabase | null = null;
-  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
-  private connectionPromise: Promise<IDBDatabase> | null = null;
+  private db: OIerDbDexie;
 
-  constructor(factory: IDBFactory) {
-    this.factory = factory;
-  }
+  constructor(factory: IDBFactory, keyRange: typeof IDBKeyRange) {
+    this.db = new Dexie(DB_NAME, {
+      indexedDB: factory,
+      IDBKeyRange: keyRange,
+    }) as OIerDbDexie;
 
-  private async initializeDatabase(): Promise<IDBDatabase> {
-    if (this.connectionState === ConnectionState.CONNECTED && this.db) {
-      return this.db;
-    }
-
-    if (this.connectionState === ConnectionState.CONNECTING && this.connectionPromise) {
-      return this.connectionPromise;
-    }
-
-    this.connectionState = ConnectionState.CONNECTING;
-
-    this.connectionPromise = new Promise<IDBDatabase>((resolve, reject) => {
-      const openReq = this.factory.open(DB_NAME, DB_VERSION);
-
-      openReq.onerror = () => {
-        this.connectionState = ConnectionState.ERROR;
-        reject(new Error(`Failed to open database: ${openReq.error?.message || 'Unknown error'}`));
-      };
-
-      openReq.onblocked = () => {
-        console.warn('Database upgrade blocked. Please close other tabs using this database.');
-      };
-
-      openReq.onupgradeneeded = async (event) => {
-        try {
-          const db = openReq.result;
-          const oldVersion = event.oldVersion;
-          const newVersion = event.newVersion || DB_VERSION;
-
-          console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
-          await runMigrations(db, oldVersion, newVersion);
-          console.log('Database upgrade completed successfully');
-        } catch (error) {
-          console.error('Database upgrade failed:', error);
-          reject(error);
-        }
-      };
-
-      openReq.onsuccess = () => {
-        this.db = openReq.result;
-        this.connectionState = ConnectionState.CONNECTED;
-
-        this.db.onclose = () => {
-          console.warn('Database connection closed unexpectedly');
-          this.connectionState = ConnectionState.DISCONNECTED;
-          this.db = null;
-          this.connectionPromise = null;
-        };
-
-        this.db.onversionchange = () => {
-          console.warn(
-            'Database version changed by another connection.',
-            'Closing current connection.'
-          );
-          this.db?.close();
-          this.connectionState = ConnectionState.DISCONNECTED;
-          this.db = null;
-          this.connectionPromise = null;
-        };
-
-        resolve(this.db);
-      };
+    // 改这里的定义之后，必须更新 DB_VERSION 的值
+    this.db.version(DB_VERSION).stores({
+      oiers: 'uid, name, lowered_name, initials, enroll_middle, gender, rank, *provinces',
+      schools: 'id, name, province, city, rank',
+      contests: 'id, name, year, type',
+      records: '[uid+contest_id], contest_id, school_id, uid, level, province',
+      meta: 'key',
     });
-
-    return this.connectionPromise;
   }
 
-  private async ensureConnection(): Promise<IDBDatabase> {
-    if (this.connectionState === ConnectionState.ERROR) {
-      this.connectionState = ConnectionState.DISCONNECTED;
-      this.connectionPromise = null;
-    }
+  // ==============================
+  // IAdapterWithLoader Interface
+  // ==============================
+  async loadData(data: DbParseResult): Promise<void> {
+    await this.db.transaction(
+      'readwrite',
+      [this.db.oiers, this.db.schools, this.db.contests, this.db.records, this.db.meta],
+      async () => {
+        await this.db.oiers.clear();
+        await this.db.oiers.bulkAdd(data.oiers);
 
-    return this.initializeDatabase();
-  }
+        await this.db.schools.clear();
+        await this.db.schools.bulkAdd(data.schools);
 
-  async loadData(result: ParseResult): Promise<void> {
-    const db = await this.ensureConnection();
+        await this.db.contests.clear();
+        await this.db.contests.bulkAdd(data.contests);
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        const tx = db.transaction(
-          [OIER_STORE, SCHOOL_STORE, CONTEST_STORE, RECORD_STORE],
-          'readwrite'
-        );
+        await this.db.records.clear();
+        await this.db.records.bulkAdd(data.records);
 
-        tx.onerror = () => {
-          reject(new Error(`Transaction failed: ${tx.error?.message || 'Unknown error'}`));
-        };
-
-        tx.onabort = () => {
-          reject(new Error('Transaction was aborted'));
-        };
-
-        const oiersStore = tx.objectStore(OIER_STORE);
-        const schoolsStore = tx.objectStore(SCHOOL_STORE);
-        const contestsStore = tx.objectStore(CONTEST_STORE);
-        const recordsStore = tx.objectStore(RECORD_STORE);
-
-        // 在一些情况下需要清空旧数据
-        if (result.needClearOldData) {
-          console.log('Clearing old data...');
-          oiersStore.clear();
-          schoolsStore.clear();
-          contestsStore.clear();
-          recordsStore.clear();
-        }
-
-        console.log(
-          'Loading:',
-          `${result.oiers.length} oiers,`,
-          `${result.schools.length} schools,`,
-          `${result.contests.length} contests,`,
-          `${result.records.length} records`
-        );
-
-        result.oiers.forEach((oier) => {
-          oiersStore.put(oier);
-        });
-        result.schools.forEach((school) => {
-          schoolsStore.put(school);
-        });
-        result.contests.forEach((contest) => {
-          contestsStore.put(contest);
-        });
-        result.records.forEach((record) => {
-          recordsStore.put(record);
-        });
-
-        tx.oncomplete = () => {
-          console.log('Data loading completed successfully');
-          resolve();
-        };
-      } catch (error) {
-        reject(error);
+        await this.db.meta.clear();
+        await this.db.meta.bulkAdd(data.metadata);
       }
-    });
-  }
-
-  async close(): Promise<void> {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-      this.connectionState = ConnectionState.DISCONNECTED;
-      this.connectionPromise = null;
-      console.log('Database connection closed');
-    }
-  }
-
-  getConnectionState(): ConnectionState {
-    return this.connectionState;
-  }
-
-  isConnected(): boolean {
-    return this.connectionState === ConnectionState.CONNECTED && this.db !== null;
+    );
   }
 
   // ==============================
   // IAdapter Interface
   // ==============================
 
-  async checkAvailability(): Promise<boolean> {
+  async checkAvailability(targetVersion?: string): Promise<boolean> {
     // TODO: 实现检查可用性的逻辑
     throw new Error('Method not implemented');
   }
 
-  async getOIer(uid: number): Promise<any> {
-    // TODO: 实现获取选手信息的逻辑
-    throw new Error('Method not implemented');
+  async getOIer(uid: number): Promise<GetOIerResponse | null> {
+    const oier = await this.db.oiers.get(uid);
+    if (!oier) {
+      return null;
+    }
+
+    const [records, schools] = await Promise.all([
+      this.db.records.where('uid').equals(uid).toArray(),
+      this.db.schools.where('id').anyOf(oier.school_ids).toArray(),
+    ]);
+    const contests = await this.db.contests
+      .where('id')
+      .anyOf(records.map((r) => r.contest_id))
+      .toArray();
+
+    return {
+      uid,
+      oier,
+      records,
+      schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
+      contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
 
   async listOIers(
     name: string | null,
     initials: string | null,
     enroll_middle: number | null,
-    gender: any,
+    gender: Gender | null,
     province: string | null,
     page: number,
     perPage: number
-  ): Promise<any> {
-    // TODO: 实现列出选手的逻辑
-    throw new Error('Method not implemented');
+  ): Promise<ListOIersResponse> {
+    const where: Record<string, any> = {};
+    if (name) where.name = name;
+    if (initials) where.initials = initials;
+    if (enroll_middle) where.enroll_middle = enroll_middle;
+    if (gender) where.gender = gender;
+    if (province) where.province = province;
+
+    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
+    // const [oiers, total] = await Promise.all([
+    //   this.db.oiers
+    //     .where(where)
+    //     .orderBy('rank')
+    //     .offset((page - 1) * perPage)
+    //     .limit(perPage)
+    //     .toArray(),
+    //   this.db.oiers.where(where).orderBy('rank').count(),
+    // ]);
+    const [oiers, total] = await Promise.all([
+      this.db.oiers
+        .orderBy('rank')
+        .filter(whereClauseToFilter(where))
+        .offset((page - 1) * perPage)
+        .limit(perPage)
+        .toArray(),
+      this.db.oiers.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+    ]);
+
+    return {
+      oiers,
+      total,
+      totalPages: Math.ceil(total / perPage),
+      page,
+      perPage,
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
 
-  async getSchool(id: number): Promise<any> {
-    // TODO: 实现获取学校信息的逻辑
-    throw new Error('Method not implemented');
+  async getSchool(id: number): Promise<GetSchoolResponse | null> {
+    const school = await this.db.schools.get(id);
+    if (!school) {
+      return null;
+    }
+
+    const contest_ids = await this.db.records
+      .where('school_id')
+      .equals(id)
+      .toArray()
+      .then((records) => records.map((r) => r.contest_id));
+    const [members, contests] = await Promise.all([
+      this.db.oiers.where('uid').anyOf(school.member_ids).toArray(),
+      this.db.contests.where('id').anyOf(contest_ids).toArray(),
+    ]);
+
+    return {
+      id,
+      school,
+      members_map: Object.fromEntries(members.map((m) => [m.uid, m])),
+      contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
 
   async listSchools(
@@ -222,14 +181,64 @@ export class IDBAdapter implements IAdapterWithLoader {
     city: string | null,
     page: number,
     perPage: number
-  ): Promise<any> {
-    // TODO: 实现列出学校的逻辑
-    throw new Error('Method not implemented');
+  ): Promise<ListSchoolsResponse> {
+    const where: Record<string, any> = {};
+    if (name) where.name = name;
+    if (province) where.province = province;
+    if (city) where.city = city;
+
+    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
+    // const [schools, total] = await Promise.all([
+    //   this.db.schools
+    //     .where(where)
+    //     .orderBy('rank')
+    //     .offset((page - 1) * perPage)
+    //     .limit(perPage)
+    //     .toArray(),
+    //   this.db.schools.where(where).orderBy('rank').count(),
+    // ]);
+    const [schools, total] = await Promise.all([
+      this.db.schools
+        .orderBy('rank')
+        .filter(whereClauseToFilter(where))
+        .offset((page - 1) * perPage)
+        .limit(perPage)
+        .toArray(),
+      this.db.schools.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+    ]);
+
+    return {
+      schools,
+      total,
+      totalPages: Math.ceil(total / perPage),
+      page,
+      perPage,
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
 
-  async getContest(id: number): Promise<any> {
-    // TODO: 实现获取比赛信息的逻辑
-    throw new Error('Method not implemented');
+  async getContest(id: number): Promise<GetContestResponse | null> {
+    const contest = await this.db.contests.get(id);
+    if (!contest) {
+      return null;
+    }
+
+    const records = await this.db.records.where('contest_id').equals(id).toArray();
+    const school_ids = Array.from(new Set(records.map((r) => r.school_id)));
+    const uids = Array.from(new Set(records.map((r) => r.uid)));
+    const [schools, oiers] = await Promise.all([
+      this.db.schools.where('id').anyOf(school_ids).toArray(),
+      this.db.oiers.where('uid').anyOf(uids).toArray(),
+    ]);
+
+    return {
+      id,
+      contest,
+      records,
+      schools: Object.fromEntries(schools.map((s) => [s.id, s])),
+      oiers: Object.fromEntries(oiers.map((o) => [o.uid, o])),
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
 
   async listContests(
@@ -237,8 +246,59 @@ export class IDBAdapter implements IAdapterWithLoader {
     year: number | null,
     page: number,
     perPage: number
-  ): Promise<any> {
-    // TODO: 实现列出比赛的逻辑
-    throw new Error('Method not implemented');
+  ): Promise<ListContestsResponse> {
+    const where: Record<string, any> = {};
+    if (type) where.type = type;
+    if (year) where.year = year;
+
+    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
+    // const [contests, total] = await Promise.all([
+    //   this.db.contests
+    //     .where(where)
+    //     .orderBy('id')
+    //     .reverse()
+    //     .offset((page - 1) * perPage)
+    //     .limit(perPage)
+    //     .toArray(),
+    //   this.db.contests.where(where).orderBy('id').reverse().count(),
+    // ]);
+    const [contests, total] = await Promise.all([
+      this.db.contests
+        .orderBy('id')
+        .reverse()
+        .filter(whereClauseToFilter(where))
+        .offset((page - 1) * perPage)
+        .limit(perPage)
+        .toArray(),
+      this.db.contests.orderBy('id').reverse().filter(whereClauseToFilter(where)).count(),
+    ]);
+
+    return {
+      contests,
+      total,
+      totalPages: Math.ceil(total / perPage),
+      page,
+      perPage,
+      backend_data_version: '', // TODO: 返回数据版本
+    };
   }
+}
+
+function whereClauseToFilter(where: Record<string, any>): (item: any) => boolean {
+  return (item) => {
+    for (const key in where) {
+      const whereValue = where[key];
+      const itemValue = item[key];
+      if (Array.isArray(itemValue)) {
+        if (!itemValue.includes(whereValue)) {
+          return false;
+        }
+      } else {
+        if (itemValue !== whereValue) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
 }

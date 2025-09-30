@@ -2,19 +2,13 @@
  * @jest-environment jsdom
  */
 
+import type { DbParseResult } from '@oierdb/core/interface';
+
 import { IDBAdapter } from '../adapter';
-import type { ParseResult } from '@oierdb/core/interface';
-import {
-  DB_NAME,
-  DB_VERSION,
-  OIER_STORE,
-  SCHOOL_STORE,
-  CONTEST_STORE,
-  RECORD_STORE,
-} from '../constants';
+import { DB_NAME, DB_VERSION } from '../constants';
 
 // Mock data
-const mockParseResult: ParseResult = {
+const mockParseResult: DbParseResult = {
   oiers: [
     {
       uid: 1,
@@ -50,25 +44,33 @@ const mockParseResult: ParseResult = {
   schools: [
     {
       id: 1,
-      name: '北京市第一中学',
-      province: '北京市',
-      city: '北京市',
+      name: '北京市示例中学',
+      province: '北京',
+      city: '海淀区',
       score: 100,
       rank: 1,
       member_ids: [1],
       record_ids: [1],
-      award_counts: new Map(),
+      award_counts: {
+        Au: {
+          2023: 1,
+        },
+      },
     },
     {
       id: 2,
-      name: '上海市第二中学',
-      province: '上海市',
-      city: '上海市',
+      name: '上海市示例中学',
+      province: '上海',
+      city: '闵行区',
       score: 95,
       rank: 2,
       member_ids: [2],
       record_ids: [2],
-      award_counts: new Map(),
+      award_counts: {
+        Ag: {
+          2023: 1,
+        },
+      },
     },
   ],
   contests: [
@@ -82,10 +84,10 @@ const mockParseResult: ParseResult = {
       full_score: 600,
       capacity: 100,
       length: 50,
-      level_counts: new Map([
-        ['Au', 10],
-        ['Ag', 20],
-      ]),
+      level_counts: {
+        Au: 1,
+        Ag: 1,
+      },
     },
   ],
   records: [
@@ -96,7 +98,7 @@ const mockParseResult: ParseResult = {
       level: 'Au',
       score: 600,
       rank: 1,
-      province: '北京市',
+      province: '北京',
     },
     {
       contest_id: 1,
@@ -105,25 +107,25 @@ const mockParseResult: ParseResult = {
       level: 'Ag',
       score: 550,
       rank: 2,
-      province: '上海市',
+      province: '上海',
     },
   ],
-  metadata: [],
-  needClearOldData: true,
+  metadata: [
+    { key: 'data_version', value: 'mock-version' },
+    { key: 'generated_at', value: new Date().toISOString() },
+  ],
 };
 
 describe('IDBAdapter', () => {
   let adapter: IDBAdapter;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create a new adapter instance before each test
-    adapter = new IDBAdapter(indexedDB);
+    adapter = new IDBAdapter(indexedDB, IDBKeyRange);
+    await adapter.loadData(mockParseResult);
   });
 
   afterEach(async () => {
-    // Close connection after each test
-    await adapter.close();
-
     // Clear all databases
     if (indexedDB.databases) {
       const databases = await indexedDB.databases();
@@ -145,215 +147,176 @@ describe('IDBAdapter', () => {
     }
   });
 
-  describe('Constructor', () => {
-    it('should create instance with given IDBFactory', () => {
-      expect(adapter).toBeInstanceOf(IDBAdapter);
-      expect(adapter.getConnectionState()).toBe('disconnected');
-      expect(adapter.isConnected()).toBe(false);
+  it('should throw error for checkAvailability', async () => {
+    await expect(adapter.checkAvailability()).rejects.toThrow('Method not implemented');
+  });
+
+  it('should get existing oier', async () => {
+    const response = await adapter.getOIer(1);
+    expect(response).not.toBeNull();
+    expect(response!.uid).toBe(1);
+    expect(response!.oier.name).toBe('张三');
+    expect(response!.records.length).toBe(1);
+    expect(Object.keys(response!.schools_map).length).toBe(1);
+    expect(Object.keys(response!.contests_map).length).toBe(1);
+  });
+
+  it('should return null for non-existing oier', async () => {
+    const response = await adapter.getOIer(999);
+    expect(response).toBeNull();
+  });
+
+  it('should list oiers without filters', async () => {
+    const response = await adapter.listOIers(null, null, null, null, null, 1, 10);
+    expect(response.oiers.length).toBe(2);
+    expect(response.total).toBe(2);
+    expect(response.totalPages).toBe(1);
+    expect(response.page).toBe(1);
+    expect(response.perPage).toBe(10);
+  });
+
+  it('should list oiers with name filter', async () => {
+    const response = await adapter.listOIers('张三', null, null, null, null, 1, 10);
+    expect(response.oiers.length).toBe(1);
+    expect(response.oiers[0].name).toBe('张三');
+    expect(response.total).toBe(1);
+  });
+
+  it('should list oiers with gender filter', async () => {
+    const response = await adapter.listOIers(null, null, null, 1, null, 1, 10);
+    expect(response.oiers.length).toBe(1);
+    expect(response.oiers[0].gender).toBe(1);
+  });
+
+  it('should list oiers with pagination', async () => {
+    const response = await adapter.listOIers(null, null, null, null, null, 1, 1);
+    expect(response.oiers.length).toBe(1);
+    expect(response.total).toBe(2);
+    expect(response.totalPages).toBe(2);
+    expect(response.page).toBe(1);
+    expect(response.perPage).toBe(1);
+  });
+
+  it('should get existing school', async () => {
+    const response = await adapter.getSchool(1);
+    expect(response).not.toBeNull();
+    expect(response!.id).toBe(1);
+    expect(response!.school.name).toBe('北京市示例中学');
+    expect(Object.keys(response!.members_map).length).toBe(1);
+    expect(Object.keys(response!.contests_map).length).toBe(1);
+  });
+
+  it('should return null for non-existing school', async () => {
+    const response = await adapter.getSchool(999);
+    expect(response).toBeNull();
+  });
+
+  it('should list schools without filters', async () => {
+    const response = await adapter.listSchools(null, null, null, 1, 10);
+    expect(response.schools.length).toBe(2);
+    expect(response.total).toBe(2);
+    expect(response.totalPages).toBe(1);
+    expect(response.page).toBe(1);
+    expect(response.perPage).toBe(10);
+  });
+
+  it('should list schools with province filter', async () => {
+    const response = await adapter.listSchools(null, '北京', null, 1, 10);
+    expect(response.schools.length).toBe(1);
+    expect(response.schools[0].province).toBe('北京');
+  });
+
+  it('should get existing contest', async () => {
+    const response = await adapter.getContest(1);
+    expect(response).not.toBeNull();
+    expect(response!.id).toBe(1);
+    expect(response!.contest.name).toBe('NOI2023');
+    expect(response!.records.length).toBe(2);
+    expect(Object.keys(response!.schools).length).toBe(2);
+    expect(Object.keys(response!.oiers).length).toBe(2);
+  });
+
+  it('should return null for non-existing contest', async () => {
+    const response = await adapter.getContest(999);
+    expect(response).toBeNull();
+  });
+
+  it('should list contests without filters', async () => {
+    const response = await adapter.listContests(null, null, 1, 10);
+    expect(response.contests.length).toBe(1);
+    expect(response.total).toBe(1);
+    expect(response.totalPages).toBe(1);
+    expect(response.page).toBe(1);
+    expect(response.perPage).toBe(10);
+  });
+
+  it('should list contests with type filter', async () => {
+    const response = await adapter.listContests('NOI', null, 1, 10);
+    expect(response.contests.length).toBe(1);
+    expect(response.contests[0].type).toBe('NOI');
+  });
+
+  it('should list contests with year filter', async () => {
+    const response = await adapter.listContests(null, 2023, 1, 10);
+    expect(response.contests.length).toBe(1);
+    expect(response.contests[0].year).toBe(2023);
+  });
+
+  it('should handle database connection errors gracefully', async () => {
+    // Close the database to simulate connection error
+    adapter['db'].close();
+
+    await expect(adapter.getOIer(1)).rejects.toThrow();
+  });
+
+  it('should handle empty query results', async () => {
+    const response = await adapter.listOIers('不存在的姓名', null, null, null, null, 1, 10);
+    expect(response.oiers.length).toBe(0);
+    expect(response.total).toBe(0);
+  });
+
+  it('should maintain referential integrity for oier records', async () => {
+    const response = await adapter.getOIer(1);
+    expect(response).not.toBeNull();
+
+    // Check that all referenced school IDs exist in schools_map
+    const oier = response!.oier;
+    oier.school_ids.forEach((schoolId) => {
+      expect(response!.schools_map[schoolId]).toBeDefined();
+    });
+
+    // Check that all record contest IDs exist in contests_map
+    response!.records.forEach((record) => {
+      expect(response!.contests_map[record.contest_id]).toBeDefined();
     });
   });
 
-  describe('Database Connection', () => {
-    it('should initialize database successfully', async () => {
-      expect(adapter.getConnectionState()).toBe('disconnected');
+  it('should maintain referential integrity for school records', async () => {
+    const response = await adapter.getSchool(1);
+    expect(response).not.toBeNull();
 
-      // Loading data should initialize the database
-      await adapter.loadData(mockParseResult);
+    const school = response!.school;
 
-      expect(adapter.getConnectionState()).toBe('connected');
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
-
-    it('should handle multiple connection attempts correctly', async () => {
-      // Start multiple connection attempts
-      const promises = [
-        adapter.loadData(mockParseResult),
-        adapter.loadData(mockParseResult),
-        adapter.loadData(mockParseResult),
-      ];
-
-      await Promise.all(promises);
-
-      expect(adapter.getConnectionState()).toBe('connected');
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
-
-    it('should properly close database connection', async () => {
-      await adapter.loadData(mockParseResult);
-      expect(adapter.isConnected()).toBe(true);
-
-      await adapter.close();
-      expect(adapter.isConnected()).toBe(false);
-      expect(adapter.getConnectionState()).toBe('disconnected');
-    }, 10000);
-
-    it('should not throw error when closing unconnected adapter', async () => {
-      expect(adapter.isConnected()).toBe(false);
-
-      await expect(adapter.close()).resolves.toBeUndefined();
-
-      expect(adapter.isConnected()).toBe(false);
+    // Check that all member IDs exist in members_map
+    school.member_ids.forEach((uid) => {
+      expect(response!.members_map[uid]).toBeDefined();
     });
   });
 
-  describe('Data Loading', () => {
-    it('should handle empty data', async () => {
-      const emptyParseResult: ParseResult = {
-        oiers: [],
-        schools: [],
-        contests: [],
-        records: [],
-        metadata: [],
-        needClearOldData: false,
-      };
+  it('should maintain referential integrity for contest records', async () => {
+    const response = await adapter.getContest(1);
+    expect(response).not.toBeNull();
 
-      await expect(adapter.loadData(emptyParseResult)).resolves.toBeUndefined();
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
+    const contest = response!.contest;
 
-    it('should verify data is actually stored in IndexedDB', async () => {
-      await adapter.loadData(mockParseResult);
-
-      // Directly read data from database for verification
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const openReq = indexedDB.open(DB_NAME, DB_VERSION);
-        openReq.onsuccess = () => resolve(openReq.result);
-        openReq.onerror = () => reject(openReq.error);
-      });
-
-      // Verify oiers data
-      const oiersTransaction = db.transaction([OIER_STORE], 'readonly');
-      const oiersStore = oiersTransaction.objectStore(OIER_STORE);
-      const oiersCount = await new Promise<number>((resolve, reject) => {
-        const countReq = oiersStore.count();
-        countReq.onsuccess = () => resolve(countReq.result);
-        countReq.onerror = () => reject(countReq.error);
-      });
-      expect(oiersCount).toBe(2);
-
-      // Verify schools data
-      const schoolsTransaction = db.transaction([SCHOOL_STORE], 'readonly');
-      const schoolsStore = schoolsTransaction.objectStore(SCHOOL_STORE);
-      const schoolsCount = await new Promise<number>((resolve, reject) => {
-        const countReq = schoolsStore.count();
-        countReq.onsuccess = () => resolve(countReq.result);
-        countReq.onerror = () => reject(countReq.error);
-      });
-      expect(schoolsCount).toBe(2);
-
-      db.close();
-    }, 10000);
-  });
-
-  describe('Database Schema', () => {
-    it('should create correct object stores during upgrade', async () => {
-      await adapter.loadData(mockParseResult);
-
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const openReq = indexedDB.open(DB_NAME, DB_VERSION);
-        openReq.onsuccess = () => resolve(openReq.result);
-        openReq.onerror = () => reject(openReq.error);
-      });
-
-      // Verify all stores are created
-      expect(db.objectStoreNames.contains(OIER_STORE)).toBe(true);
-      expect(db.objectStoreNames.contains(SCHOOL_STORE)).toBe(true);
-      expect(db.objectStoreNames.contains(CONTEST_STORE)).toBe(true);
-      expect(db.objectStoreNames.contains(RECORD_STORE)).toBe(true);
-
-      // Verify indexes
-      const transaction = db.transaction([OIER_STORE], 'readonly');
-      const oierStore = transaction.objectStore(OIER_STORE);
-
-      expect(oierStore.indexNames.contains('name')).toBe(true);
-      expect(oierStore.indexNames.contains('lowered_name')).toBe(true);
-      expect(oierStore.indexNames.contains('initials')).toBe(true);
-      expect(oierStore.indexNames.contains('enroll_middle')).toBe(true);
-      expect(oierStore.indexNames.contains('gender')).toBe(true);
-      expect(oierStore.indexNames.contains('rank')).toBe(true);
-
-      db.close();
-    }, 10000);
-  });
-
-  describe('Connection State Management', () => {
-    it('should return correct connection states', () => {
-      expect(adapter.getConnectionState()).toBe('disconnected');
-      expect(adapter.isConnected()).toBe(false);
+    // Check that all contestant IDs exist in oiers
+    contest.contestant_ids.forEach((uid) => {
+      expect(response!.oiers[uid]).toBeDefined();
     });
 
-    it('should update connection state during initialization', async () => {
-      expect(adapter.getConnectionState()).toBe('disconnected');
-
-      await adapter.loadData(mockParseResult);
-
-      expect(adapter.getConnectionState()).toBe('connected');
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
-  });
-
-  describe('Multiple Operations', () => {
-    it('should handle multiple data loading operations', async () => {
-      // First load
-      await adapter.loadData(mockParseResult);
-      expect(adapter.isConnected()).toBe(true);
-
-      // Second load (should reuse connection)
-      const secondLoadResult = { ...mockParseResult, needClearOldData: true };
-      await adapter.loadData(secondLoadResult);
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
-
-    it('should handle operations after connection is closed', async () => {
-      await adapter.loadData(mockParseResult);
-      expect(adapter.isConnected()).toBe(true);
-
-      await adapter.close();
-      expect(adapter.isConnected()).toBe(false);
-
-      // Loading after close should re-establish connection
-      await adapter.loadData(mockParseResult);
-      expect(adapter.isConnected()).toBe(true);
-    }, 10000);
-  });
-
-  describe('Methods', () => {
-    beforeEach(async () => {
-      await adapter.loadData(mockParseResult);
-    });
-
-    it('should throw error for checkAvailability', async () => {
-      await expect(adapter.checkAvailability()).rejects.toThrow('Method not implemented');
-    });
-
-    it('should throw error for getOIer', async () => {
-      await expect(adapter.getOIer(1)).rejects.toThrow('Method not implemented');
-    });
-
-    it('should throw error for listOIers', async () => {
-      await expect(adapter.listOIers(null, null, null, null, null, 1, 10)).rejects.toThrow(
-        'Method not implemented'
-      );
-    });
-
-    it('should throw error for getSchool', async () => {
-      await expect(adapter.getSchool(1)).rejects.toThrow('Method not implemented');
-    });
-
-    it('should throw error for listSchools', async () => {
-      await expect(adapter.listSchools(null, null, null, 1, 10)).rejects.toThrow(
-        'Method not implemented'
-      );
-    });
-
-    it('should throw error for getContest', async () => {
-      await expect(adapter.getContest(1)).rejects.toThrow('Method not implemented');
-    });
-
-    it('should throw error for listContests', async () => {
-      await expect(adapter.listContests(null, null, 1, 10)).rejects.toThrow(
-        'Method not implemented'
-      );
+    // Check that all records reference valid schools
+    response!.records.forEach((record) => {
+      expect(response!.schools[record.school_id]).toBeDefined();
     });
   });
 });
