@@ -110,10 +110,9 @@ const mockParseResult: DbParseResult = {
       province: '上海',
     },
   ],
-  metadata: [
-    { key: 'data_version', value: 'mock-version' },
-    { key: 'generated_at', value: new Date().toISOString() },
-  ],
+  meta: {
+    data_version: 'mock-version',
+  },
 };
 
 describe('IDBAdapter', () => {
@@ -147,8 +146,9 @@ describe('IDBAdapter', () => {
     }
   });
 
-  it('should throw error for checkAvailability', async () => {
-    await expect(adapter.checkAvailability()).rejects.toThrow('Method not implemented');
+  it('checkAvailability', async () => {
+    expect(await adapter.checkAvailability('mock-version')).toBe(true);
+    expect(await adapter.checkAvailability('wrong-version')).toBe(false);
   });
 
   it('should get existing oier', async () => {
@@ -159,6 +159,7 @@ describe('IDBAdapter', () => {
     expect(response!.records.length).toBe(1);
     expect(Object.keys(response!.schools_map).length).toBe(1);
     expect(Object.keys(response!.contests_map).length).toBe(1);
+    expect(response!.backend_data_version).toBe('mock-version');
   });
 
   it('should return null for non-existing oier', async () => {

@@ -15,7 +15,7 @@ import type {
   ListContestsResponse,
 } from '@oierdb/core';
 import { Dexie, type EntityTable } from 'dexie';
-import { DB_NAME, DB_VERSION } from './constants';
+import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
@@ -65,7 +65,9 @@ export class IDBAdapter implements IAdapterWithLoader {
         await this.db.records.bulkAdd(data.records);
 
         await this.db.meta.clear();
-        await this.db.meta.bulkAdd(data.metadata);
+        await this.db.meta.bulkAdd(
+          Object.entries(data.meta).map(([key, value]) => ({ key, value }))
+        );
       }
     );
   }
@@ -74,9 +76,10 @@ export class IDBAdapter implements IAdapterWithLoader {
   // IAdapter Interface
   // ==============================
 
-  async checkAvailability(targetVersion?: string): Promise<boolean> {
-    // TODO: 实现检查可用性的逻辑
-    throw new Error('Method not implemented');
+  async checkAvailability(targetVersion: string): Promise<boolean> {
+    return await this.db.meta
+      .get(META_KEY_DATA_VERSION)
+      .then((meta) => meta?.value === targetVersion);
   }
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
@@ -85,9 +88,10 @@ export class IDBAdapter implements IAdapterWithLoader {
       return null;
     }
 
-    const [records, schools] = await Promise.all([
+    const [records, schools, version] = await Promise.all([
       this.db.records.where('uid').equals(uid).toArray(),
       this.db.schools.where('id').anyOf(oier.school_ids).toArray(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
     const contests = await this.db.contests
       .where('id')
@@ -100,7 +104,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       records,
       schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
       contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 
@@ -130,7 +134,7 @@ export class IDBAdapter implements IAdapterWithLoader {
     //     .toArray(),
     //   this.db.oiers.where(where).orderBy('rank').count(),
     // ]);
-    const [oiers, total] = await Promise.all([
+    const [oiers, total, version] = await Promise.all([
       this.db.oiers
         .orderBy('rank')
         .filter(whereClauseToFilter(where))
@@ -138,6 +142,7 @@ export class IDBAdapter implements IAdapterWithLoader {
         .limit(perPage)
         .toArray(),
       this.db.oiers.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
     return {
@@ -146,7 +151,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 
@@ -161,9 +166,10 @@ export class IDBAdapter implements IAdapterWithLoader {
       .equals(id)
       .toArray()
       .then((records) => records.map((r) => r.contest_id));
-    const [members, contests] = await Promise.all([
+    const [members, contests, version] = await Promise.all([
       this.db.oiers.where('uid').anyOf(school.member_ids).toArray(),
       this.db.contests.where('id').anyOf(contest_ids).toArray(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
     return {
@@ -171,7 +177,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       school,
       members_map: Object.fromEntries(members.map((m) => [m.uid, m])),
       contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 
@@ -197,7 +203,7 @@ export class IDBAdapter implements IAdapterWithLoader {
     //     .toArray(),
     //   this.db.schools.where(where).orderBy('rank').count(),
     // ]);
-    const [schools, total] = await Promise.all([
+    const [schools, total, version] = await Promise.all([
       this.db.schools
         .orderBy('rank')
         .filter(whereClauseToFilter(where))
@@ -205,6 +211,7 @@ export class IDBAdapter implements IAdapterWithLoader {
         .limit(perPage)
         .toArray(),
       this.db.schools.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
     return {
@@ -213,7 +220,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 
@@ -226,9 +233,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     const records = await this.db.records.where('contest_id').equals(id).toArray();
     const school_ids = Array.from(new Set(records.map((r) => r.school_id)));
     const uids = Array.from(new Set(records.map((r) => r.uid)));
-    const [schools, oiers] = await Promise.all([
+    const [schools, oiers, version] = await Promise.all([
       this.db.schools.where('id').anyOf(school_ids).toArray(),
       this.db.oiers.where('uid').anyOf(uids).toArray(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
     return {
@@ -237,7 +245,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       records,
       schools: Object.fromEntries(schools.map((s) => [s.id, s])),
       oiers: Object.fromEntries(oiers.map((o) => [o.uid, o])),
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 
@@ -262,7 +270,7 @@ export class IDBAdapter implements IAdapterWithLoader {
     //     .toArray(),
     //   this.db.contests.where(where).orderBy('id').reverse().count(),
     // ]);
-    const [contests, total] = await Promise.all([
+    const [contests, total, version] = await Promise.all([
       this.db.contests
         .orderBy('id')
         .reverse()
@@ -271,6 +279,7 @@ export class IDBAdapter implements IAdapterWithLoader {
         .limit(perPage)
         .toArray(),
       this.db.contests.orderBy('id').reverse().filter(whereClauseToFilter(where)).count(),
+      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
     return {
@@ -279,7 +288,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: '', // TODO: 返回数据版本
+      backend_data_version: version,
     };
   }
 }

@@ -77,7 +77,7 @@ export interface DbParseResult {
   schools: DbSchool[];
   contests: DbContest[];
   records: DbRecord[];
-  metadata: DbMetadata[];
+  meta: Record<string, string>;
 }
 
 // ==============================
@@ -131,7 +131,7 @@ export interface IAdapter {
   /**
    * 检查可用性
    */
-  checkAvailability(targetVersion?: string): Promise<boolean>;
+  checkAvailability(targetVersion: string): Promise<boolean>;
 
   /**
    * 获取选手信息
