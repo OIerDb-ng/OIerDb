@@ -1,8 +1,13 @@
 {
   "name": "@oierdb/core",
   "version": "0.0.0",
+  "description": "OIerDb core types and interfaces",
   "main": "index.ts",
+  "types": "index.ts",
   "scripts": {
     "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

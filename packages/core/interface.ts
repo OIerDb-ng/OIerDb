@@ -24,7 +24,7 @@ export interface DbOIer {
   gender: Gender; // 性别
   provinces: string[]; // 省份列表
   school_ids: number[]; // 学校 ID 列表
-  record_ids: number[]; // 记录 ID 列表
+  contest_ids: number[]; // 参加的比赛 ID 列表（记录通过 uid + contest_id 复合主键关联）
   oierdb_score: number; // OIerDb 分数
   ccf_level: number; // CCF 等级
   ccf_score: number; // CCF 分数
@@ -40,6 +40,11 @@ export interface DbRecord {
   score: number; // 分数
   rank: number; // 名次
   province: string; // 省份
+  enroll_middle?: {
+    // 初中入学年份信息（可选）
+    is_stay_down: boolean; // 是否留级
+    value: number; // 初中入学年份
+  };
 }
 
 export interface DbContest {
@@ -63,8 +68,7 @@ export interface DbSchool {
   score: number; // 学校分数
   rank: number; // 学校排名
   member_ids: number[]; // 学校成员 UID 列表
-  record_ids: number[]; // 学校成员的记录 ID 列表
-  award_counts: Record<string, Record<string, number>>; // 学校奖项统计（奖项 -> 年份 -> 数量）
+  award_counts: Record<string, Record<string, Record<string, number>>>; // 学校奖项统计（比赛类型 -> 年份 -> 奖项 -> 数量）
 }
 
 export interface DbMetadata {

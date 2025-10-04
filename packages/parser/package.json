@@ -1,4 +1,21 @@
 {
   "name": "@oierdb/parser",
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "description": "OIerDb data parser",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "@oierdb/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.4",
+    "typescript": "^5.9.3"
+  }
 }
