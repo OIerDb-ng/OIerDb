@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "main": "index.ts",
   "scripts": {
+    "check-types": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

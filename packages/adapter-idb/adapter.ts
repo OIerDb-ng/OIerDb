@@ -7,15 +7,19 @@ import type {
   DbParseResult,
   DbRecord,
   DbSchool,
-  Gender,
   GetSchoolResponse,
   ListSchoolsResponse,
   ListOIersResponse,
   GetContestResponse,
   ListContestsResponse,
+  ListOIersQuery,
+  ListSchoolsQuery,
+  ListContestsQuery,
 } from '@oierdb/core';
 import { Dexie, type EntityTable } from 'dexie';
+
 import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
+import { whereClauseToFilter, normalizePaginationParams } from './util';
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
@@ -108,15 +112,16 @@ export class IDBAdapter implements IAdapterWithLoader {
     };
   }
 
-  async listOIers(
-    name: string | null,
-    initials: string | null,
-    enroll_middle: number | null,
-    gender: Gender | null,
-    province: string | null,
-    page: number,
-    perPage: number
-  ): Promise<ListOIersResponse> {
+  async listOIers(query: ListOIersQuery): Promise<ListOIersResponse> {
+    const {
+      name = null,
+      initials = null,
+      enroll_middle = null,
+      gender = null,
+      province = null,
+    } = query;
+    const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
+
     const where: Record<string, any> = {};
     if (name) where.name = name;
     if (initials) where.initials = initials;
@@ -181,13 +186,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     };
   }
 
-  async listSchools(
-    name: string | null,
-    province: string | null,
-    city: string | null,
-    page: number,
-    perPage: number
-  ): Promise<ListSchoolsResponse> {
+  async listSchools(query: ListSchoolsQuery): Promise<ListSchoolsResponse> {
+    const { name = null, province = null, city = null } = query;
+    const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
+
     const where: Record<string, any> = {};
     if (name) where.name = name;
     if (province) where.province = province;
@@ -249,12 +251,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     };
   }
 
-  async listContests(
-    type: string | null,
-    year: number | null,
-    page: number,
-    perPage: number
-  ): Promise<ListContestsResponse> {
+  async listContests(query: ListContestsQuery): Promise<ListContestsResponse> {
+    const { type = null, year = null } = query;
+    const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
+
     const where: Record<string, any> = {};
     if (type) where.type = type;
     if (year) where.year = year;
@@ -291,23 +291,4 @@ export class IDBAdapter implements IAdapterWithLoader {
       backend_data_version: version,
     };
   }
-}
-
-function whereClauseToFilter(where: Record<string, any>): (item: any) => boolean {
-  return (item) => {
-    for (const key in where) {
-      const whereValue = where[key];
-      const itemValue = item[key];
-      if (Array.isArray(itemValue)) {
-        if (!itemValue.includes(whereValue)) {
-          return false;
-        }
-      } else {
-        if (itemValue !== whereValue) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
 }

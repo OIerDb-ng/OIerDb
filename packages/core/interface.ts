@@ -128,6 +128,35 @@ export interface ListContestsResponse extends ResponseBase, PaginationInfo {
 }
 
 // ==============================
+// Query Parameters Interfaces
+// ==============================
+
+export interface ListOIersQuery {
+  name?: string | null; // 姓名（完全匹配）
+  initials?: string | null; // 姓名拼音首字母（完全匹配）
+  enroll_middle?: number | null; // 初中入学年份
+  gender?: Gender | null; // 性别
+  province?: string | null; // 省份
+  page?: number; // 页码（默认为 1）
+  perPage?: number; // 每页数量（默认为 20，最大 100）
+}
+
+export interface ListSchoolsQuery {
+  name?: string | null; // 学校名称（包含匹配）
+  province?: string | null; // 省份
+  city?: string | null; // 城市
+  page?: number; // 页码（默认为 1）
+  perPage?: number; // 每页数量（默认为 20，最大 100）
+}
+
+export interface ListContestsQuery {
+  type?: string | null; // 比赛类型
+  year?: number | null; // 比赛年份
+  page?: number; // 页码（默认为 1）
+  perPage?: number; // 每页数量（默认为 20，最大 100）
+}
+
+// ==============================
 // Adapter Interface
 // ==============================
 
@@ -146,24 +175,10 @@ export interface IAdapter {
 
   /**
    * 获取选手列表
-   * @param name 姓名（完全匹配）
-   * @param initials 姓名拼音首字母（完全匹配）
-   * @param enroll_middle 初中入学年份
-   * @param gender 性别
-   * @param province 省份
-   * @param page 页码
-   * @param perPage 每页数量（最大 100）
+   * @param query 查询参数
    * @returns 符合查询条件的选手列表及相关信息
    */
-  listOIers(
-    name: string | null, // full match
-    initials: string | null, // full match
-    enroll_middle: number | null,
-    gender: Gender | null,
-    province: string | null,
-    page: number,
-    perPage: number
-  ): Promise<ListOIersResponse>;
+  listOIers(query: ListOIersQuery): Promise<ListOIersResponse>;
 
   /**
    * 获取学校信息
@@ -174,20 +189,10 @@ export interface IAdapter {
 
   /**
    * 获取学校列表
-   * @param name 学校名称
-   * @param province 省份
-   * @param city 城市
-   * @param page 页码
-   * @param perPage 每页数量（最大 100）
+   * @param query 查询参数
    * @returns 符合查询条件的学校列表及相关信息
    */
-  listSchools(
-    name: string | null, // includes, not full match
-    province: string | null,
-    city: string | null,
-    page: number,
-    perPage: number
-  ): Promise<ListSchoolsResponse>;
+  listSchools(query: ListSchoolsQuery): Promise<ListSchoolsResponse>;
 
   /**
    * 获取比赛信息
@@ -198,17 +203,10 @@ export interface IAdapter {
 
   /**
    * 获取比赛列表
-   * @param type 比赛类型
-   * @param year 比赛年份
-   * @param page 页码
-   * @param perPage 每页数量（最大 100）
+   * @param query 查询参数
+   * @returns 符合查询条件的比赛列表及相关信息
    */
-  listContests(
-    type: string | null,
-    year: number | null,
-    page: number,
-    perPage: number
-  ): Promise<ListContestsResponse>;
+  listContests(query: ListContestsQuery): Promise<ListContestsResponse>;
 }
 
 export interface IAdapterWithLoader extends IAdapter {

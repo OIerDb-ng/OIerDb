@@ -5,7 +5,6 @@
 import type { DbParseResult } from '@oierdb/core/interface';
 
 import { IDBAdapter } from '../adapter';
-import { DB_NAME, DB_VERSION } from '../constants';
 
 // Mock data
 const mockParseResult: DbParseResult = {
@@ -19,7 +18,7 @@ const mockParseResult: DbParseResult = {
       gender: 1,
       provinces: ['北京市'],
       school_ids: [1],
-      record_ids: [1],
+      contest_ids: [1],
       oierdb_score: 100,
       ccf_level: 5,
       ccf_score: 500,
@@ -34,7 +33,7 @@ const mockParseResult: DbParseResult = {
       gender: 0,
       provinces: ['上海市'],
       school_ids: [2],
-      record_ids: [2],
+      contest_ids: [2],
       oierdb_score: 95,
       ccf_level: 4,
       ccf_score: 450,
@@ -50,10 +49,11 @@ const mockParseResult: DbParseResult = {
       score: 100,
       rank: 1,
       member_ids: [1],
-      record_ids: [1],
       award_counts: {
-        Au: {
-          2023: 1,
+        NOI: {
+          '2023': {
+            Au: 1,
+          },
         },
       },
     },
@@ -65,10 +65,11 @@ const mockParseResult: DbParseResult = {
       score: 95,
       rank: 2,
       member_ids: [2],
-      record_ids: [2],
       award_counts: {
-        Ag: {
-          2023: 1,
+        NOI: {
+          '2023': {
+            Ag: 1,
+          },
         },
       },
     },
@@ -168,7 +169,7 @@ describe('IDBAdapter', () => {
   });
 
   it('should list oiers without filters', async () => {
-    const response = await adapter.listOIers(null, null, null, null, null, 1, 10);
+    const response = await adapter.listOIers({ page: 1, perPage: 10 });
     expect(response.oiers.length).toBe(2);
     expect(response.total).toBe(2);
     expect(response.totalPages).toBe(1);
@@ -177,20 +178,20 @@ describe('IDBAdapter', () => {
   });
 
   it('should list oiers with name filter', async () => {
-    const response = await adapter.listOIers('张三', null, null, null, null, 1, 10);
+    const response = await adapter.listOIers({ name: '张三', page: 1, perPage: 10 });
     expect(response.oiers.length).toBe(1);
     expect(response.oiers[0].name).toBe('张三');
     expect(response.total).toBe(1);
   });
 
   it('should list oiers with gender filter', async () => {
-    const response = await adapter.listOIers(null, null, null, 1, null, 1, 10);
+    const response = await adapter.listOIers({ gender: 1, page: 1, perPage: 10 });
     expect(response.oiers.length).toBe(1);
     expect(response.oiers[0].gender).toBe(1);
   });
 
   it('should list oiers with pagination', async () => {
-    const response = await adapter.listOIers(null, null, null, null, null, 1, 1);
+    const response = await adapter.listOIers({ page: 1, perPage: 1 });
     expect(response.oiers.length).toBe(1);
     expect(response.total).toBe(2);
     expect(response.totalPages).toBe(2);
@@ -213,7 +214,7 @@ describe('IDBAdapter', () => {
   });
 
   it('should list schools without filters', async () => {
-    const response = await adapter.listSchools(null, null, null, 1, 10);
+    const response = await adapter.listSchools({ page: 1, perPage: 10 });
     expect(response.schools.length).toBe(2);
     expect(response.total).toBe(2);
     expect(response.totalPages).toBe(1);
@@ -222,7 +223,7 @@ describe('IDBAdapter', () => {
   });
 
   it('should list schools with province filter', async () => {
-    const response = await adapter.listSchools(null, '北京', null, 1, 10);
+    const response = await adapter.listSchools({ province: '北京', page: 1, perPage: 10 });
     expect(response.schools.length).toBe(1);
     expect(response.schools[0].province).toBe('北京');
   });
@@ -243,7 +244,7 @@ describe('IDBAdapter', () => {
   });
 
   it('should list contests without filters', async () => {
-    const response = await adapter.listContests(null, null, 1, 10);
+    const response = await adapter.listContests({ page: 1, perPage: 10 });
     expect(response.contests.length).toBe(1);
     expect(response.total).toBe(1);
     expect(response.totalPages).toBe(1);
@@ -252,13 +253,13 @@ describe('IDBAdapter', () => {
   });
 
   it('should list contests with type filter', async () => {
-    const response = await adapter.listContests('NOI', null, 1, 10);
+    const response = await adapter.listContests({ type: 'NOI', page: 1, perPage: 10 });
     expect(response.contests.length).toBe(1);
     expect(response.contests[0].type).toBe('NOI');
   });
 
   it('should list contests with year filter', async () => {
-    const response = await adapter.listContests(null, 2023, 1, 10);
+    const response = await adapter.listContests({ year: 2023, page: 1, perPage: 10 });
     expect(response.contests.length).toBe(1);
     expect(response.contests[0].year).toBe(2023);
   });
@@ -271,7 +272,7 @@ describe('IDBAdapter', () => {
   });
 
   it('should handle empty query results', async () => {
-    const response = await adapter.listOIers('不存在的姓名', null, null, null, null, 1, 10);
+    const response = await adapter.listOIers({ name: '不存在的姓名', page: 1, perPage: 10 });
     expect(response.oiers.length).toBe(0);
     expect(response.total).toBe(0);
   });
