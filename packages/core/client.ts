@@ -1,3 +1,4 @@
+import QuickLRU from 'quick-lru';
 import type {
   IAdapter,
   GetOIerResponse,
@@ -11,19 +12,63 @@ import type {
   ListContestsQuery,
 } from './interface';
 
+export interface OIerDbClientOptions {
+  /**
+   * 缓存配置
+   */
+  cache?: {
+    /**
+     * 是否启用缓存，默认为 true
+     */
+    enabled?: boolean;
+    /**
+     * 缓存的最大条目数，默认为 1000
+     */
+    maxSize?: number;
+  };
+}
+
 export class OIerDbClient {
   private adapter: IAdapter;
+  private cacheEnabled: boolean;
+  private cache: QuickLRU<string, GetOIerResponse | GetSchoolResponse | GetContestResponse | null>;
 
-  constructor(adapter: IAdapter) {
+  constructor(adapter: IAdapter, options: OIerDbClientOptions = {}) {
     this.adapter = adapter;
+
+    const cacheConfig = options.cache ?? {};
+    this.cacheEnabled = cacheConfig.enabled ?? true;
+    const maxSize = cacheConfig.maxSize ?? 2000;
+
+    this.cache = new QuickLRU({ maxSize });
+  }
+
+  private getCacheKey(type: 'oier' | 'school' | 'contest', id: number): string {
+    return `${type}:${id}`;
   }
 
   setAdapter(adapter: IAdapter): void {
     this.adapter = adapter;
+    this.clearCache();
   }
 
   getAdapter(): IAdapter {
     return this.adapter;
+  }
+
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  setCacheEnabled(enabled: boolean): void {
+    this.cacheEnabled = enabled;
+    if (!enabled) {
+      this.clearCache();
+    }
+  }
+
+  isCacheEnabled(): boolean {
+    return this.cacheEnabled;
   }
 
   /**
@@ -40,7 +85,19 @@ export class OIerDbClient {
    * @returns 选手信息及相关记录，若不存在则返回 null
    */
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
-    return this.adapter.getOIer(uid);
+    const cacheKey = this.getCacheKey('oier', uid);
+
+    if (this.cacheEnabled && this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as GetOIerResponse | null;
+    }
+
+    const result = await this.adapter.getOIer(uid);
+
+    if (this.cacheEnabled) {
+      this.cache.set(cacheKey, result);
+    }
+
+    return result;
   }
 
   /**
@@ -58,7 +115,19 @@ export class OIerDbClient {
    * @returns 学校信息及相关记录，若不存在则返回 null
    */
   async getSchool(id: number): Promise<GetSchoolResponse | null> {
-    return this.adapter.getSchool(id);
+    const cacheKey = this.getCacheKey('school', id);
+
+    if (this.cacheEnabled && this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as GetSchoolResponse | null;
+    }
+
+    const result = await this.adapter.getSchool(id);
+
+    if (this.cacheEnabled) {
+      this.cache.set(cacheKey, result);
+    }
+
+    return result;
   }
 
   /**
@@ -76,7 +145,19 @@ export class OIerDbClient {
    * @returns 比赛信息及相关记录，若不存在则返回 null
    */
   async getContest(id: number): Promise<GetContestResponse | null> {
-    return this.adapter.getContest(id);
+    const cacheKey = this.getCacheKey('contest', id);
+
+    if (this.cacheEnabled && this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as GetContestResponse | null;
+    }
+
+    const result = await this.adapter.getContest(id);
+
+    if (this.cacheEnabled) {
+      this.cache.set(cacheKey, result);
+    }
+
+    return result;
   }
 
   /**

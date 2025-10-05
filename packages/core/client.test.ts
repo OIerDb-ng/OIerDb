@@ -216,4 +216,139 @@ describe('OIerDbClient', () => {
     expect(result?.oier.name).toBe('李四');
     expect(result?.backend_data_version).toBe('new-version');
   });
+
+  describe('Cache functionality', () => {
+    test('should cache OIer data by default', async () => {
+      const spy = jest.spyOn(adapter, 'getOIer');
+
+      // First call - should hit adapter
+      const result1 = await client.getOIer(12345);
+      expect(result1?.oier.name).toBe('张三');
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      // Second call - should use cache
+      const result2 = await client.getOIer(12345);
+      expect(result2?.oier.name).toBe('张三');
+      expect(spy).toHaveBeenCalledTimes(1); // Still 1, not 2
+
+      spy.mockRestore();
+    });
+
+    test('should cache School data', async () => {
+      const spy = jest.spyOn(adapter, 'getSchool');
+
+      await client.getSchool(1);
+      await client.getSchool(1);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      spy.mockRestore();
+    });
+
+    test('should cache Contest data', async () => {
+      const spy = jest.spyOn(adapter, 'getContest');
+
+      await client.getContest(1);
+      await client.getContest(1);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      spy.mockRestore();
+    });
+
+    test('should allow disabling cache', async () => {
+      const spy = jest.spyOn(adapter, 'getOIer');
+
+      client.setCacheEnabled(false);
+      expect(client.isCacheEnabled()).toBe(false);
+
+      await client.getOIer(12345);
+      await client.getOIer(12345);
+
+      expect(spy).toHaveBeenCalledTimes(2); // Both calls hit adapter
+      spy.mockRestore();
+    });
+
+    test('should clear cache when disabling', async () => {
+      const spy = jest.spyOn(adapter, 'getOIer');
+
+      // Cache data first
+      await client.getOIer(12345);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      // Disable cache - should clear existing cache
+      client.setCacheEnabled(false);
+
+      // Re-enable cache
+      client.setCacheEnabled(true);
+
+      // This should hit adapter again since cache was cleared
+      await client.getOIer(12345);
+      expect(spy).toHaveBeenCalledTimes(2);
+
+      spy.mockRestore();
+    });
+
+    test('should clear all caches', async () => {
+      const oierSpy = jest.spyOn(adapter, 'getOIer');
+      const schoolSpy = jest.spyOn(adapter, 'getSchool');
+      const contestSpy = jest.spyOn(adapter, 'getContest');
+
+      // Cache data
+      await client.getOIer(12345);
+      await client.getSchool(1);
+      await client.getContest(1);
+
+      // Clear cache
+      client.clearCache();
+
+      // These should hit adapter again
+      await client.getOIer(12345);
+      await client.getSchool(1);
+      await client.getContest(1);
+
+      expect(oierSpy).toHaveBeenCalledTimes(2);
+      expect(schoolSpy).toHaveBeenCalledTimes(2);
+      expect(contestSpy).toHaveBeenCalledTimes(2);
+
+      oierSpy.mockRestore();
+      schoolSpy.mockRestore();
+      contestSpy.mockRestore();
+    });
+
+    test('should clear cache when switching adapters', async () => {
+      const spy = jest.spyOn(adapter, 'getOIer');
+
+      // Cache data
+      await client.getOIer(12345);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      // Switch adapter
+      const newAdapter = new MockAdapter();
+      client.setAdapter(newAdapter);
+
+      // Should hit new adapter, not use old cache
+      const newSpy = jest.spyOn(newAdapter, 'getOIer');
+      await client.getOIer(12345);
+      expect(newSpy).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+      newSpy.mockRestore();
+    });
+
+    test('should create client with cache disabled', () => {
+      const clientNoCache = new OIerDbClient(adapter, {
+        cache: { enabled: false },
+      });
+
+      expect(clientNoCache.isCacheEnabled()).toBe(false);
+    });
+
+    test('should create client with custom cache size', () => {
+      const clientCustomCache = new OIerDbClient(adapter, {
+        cache: { maxSize: 500 },
+      });
+
+      expect(clientCustomCache.isCacheEnabled()).toBe(true);
+      // The cache size is internal, we just verify it doesn't throw
+    });
+  });
 });

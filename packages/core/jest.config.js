@@ -1,5 +1,4 @@
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>'],
   testMatch: ['**/*.test.ts'],
@@ -10,5 +9,12 @@ module.exports = {
     '!**/tests/**',
     '!**/tmp/**',
     '!jest.config.js',
+    '!babel.config.js',
   ],
+  // 使用 babel-jest 转换 TypeScript 和 ESM
+  transform: {
+    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
+  },
+  // 转换 node_modules 中的 quick-lru
+  transformIgnorePatterns: ['/node_modules/(?!quick-lru)'],
 };
