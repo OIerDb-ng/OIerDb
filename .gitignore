@@ -3,3 +3,5 @@ node_modules/
 .DS_Store
 *.local
 dist/
+tmp/
+coverage/
