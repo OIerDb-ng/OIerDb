@@ -2,6 +2,10 @@
   "name": "oierdb-monorepo",
   "version": "0.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -14,11 +18,7 @@
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0"
   },
-  "packageManager": "yarn@1.22.19",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "yarn@1.22.22",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,less}": [
       "prettier --write",
