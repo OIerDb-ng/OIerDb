@@ -5,18 +5,17 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  CI: true
-
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 16
-        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          fetch-depth: 0
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
           cache: yarn
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
