@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Table } from 'semantic-ui-react';
-import { Helmet } from 'react-helmet';
+
 import Pagination from '@/components/Pagination';
-import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
+import fixContestName from '@/utils/fixContestName';
 
 const Contests: React.FC = () => {
   const [searchParams] = useSearchParams();

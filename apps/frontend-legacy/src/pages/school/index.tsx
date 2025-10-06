@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Dropdown, Table } from 'semantic-ui-react';
-import { Helmet } from 'react-helmet';
-import { provinces } from '@/libs/OIerDb';
+
 import Pagination from '@/components/Pagination';
+import { provinces } from '@/libs/OIerDb';
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
+
 import styles from './index.module.less';
 
 const SchoolList: React.FC = () => {
@@ -24,7 +26,7 @@ const SchoolList: React.FC = () => {
       isWholeCountry
         ? OIerDb.schools
         : OIerDb.schools.filter((school) => school.province === province),
-    [province]
+    [province],
   );
 
   return (

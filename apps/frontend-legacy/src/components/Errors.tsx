@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { deleteDB } from 'idb';
-import { Header, Message, Icon, Button } from 'semantic-ui-react';
+import React, { useState } from 'react';
+import { Button, Header, Icon, Message } from 'semantic-ui-react';
 
 export const ErrorWhenLoadingOIerDb: React.FC = () => {
   const [loading, setLoading] = useState(false);

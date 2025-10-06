@@ -1,12 +1,14 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Popup } from 'semantic-ui-react';
-import getGrade from '@/utils/getGrade';
-import fixChineseSpace from '@/utils/fixChineseSpace';
+import { Popup, Table } from 'semantic-ui-react';
+
 import AwardEmoji from '@/components/AwardEmoji';
 import type { OIer, Record } from '@/libs/OIerDb';
-import getProgress from '@/utils/getProgress';
+import fixChineseSpace from '@/utils/fixChineseSpace';
 import fixContestName from '@/utils/fixContestName';
+import getGrade from '@/utils/getGrade';
+import getProgress from '@/utils/getProgress';
+
 import styles from './PersonInfo.module.less';
 
 interface PersonInfoProps {
@@ -36,7 +38,7 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
         position="top center"
         content={`此记录的年级与原始数据不一致，原始数据为「${getGrade(
           record,
-          true
+          true,
         )}」。`}
         trigger={
           <span style={{ color: 'fuchsia', cursor: 'help' }}>
@@ -96,7 +98,7 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
                         style={{
                           color: `var(--theme-score-${getProgress(
                             data.score,
-                            data.contest.full_score
+                            data.contest.full_score,
                           )})`,
                         }}
                       >
@@ -113,7 +115,7 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
                     style={{
                       color: `var(--theme-score-${getProgress(
                         data.contest.n_contestants() - data.rank,
-                        data.contest.n_contestants() - 1
+                        data.contest.n_contestants() - 1,
                       )})`,
                     }}
                   >

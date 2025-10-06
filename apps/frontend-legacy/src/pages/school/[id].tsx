@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
+
 import SchoolInfo from '@/components/SchoolInfo';
 
 const NotFound = lazy(() => import('@/pages/404'));

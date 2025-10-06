@@ -1,27 +1,29 @@
+import {
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Tooltip,
+} from 'chart.js';
 import React, { lazy, useMemo } from 'react';
+import { Bar } from 'react-chartjs-2';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 import { Form, Table } from 'semantic-ui-react';
-import { Helmet } from 'react-helmet';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+
 import AwardEmoji from '@/components/AwardEmoji';
-import PersonCard from '@/components/PersonCard';
-import usePartialSearchParams from '@/utils/usePartialSearchParams';
-import fixChineseSpace from '@/utils/fixChineseSpace';
-import getGrade from '@/utils/getGrade';
-import getProgress from '@/utils/getProgress';
-import fixContestName from '@/utils/fixContestName';
 import Pagination from '@/components/Pagination';
-import styles from './[id].module.less';
+import PersonCard from '@/components/PersonCard';
 import { awardColors, awardLevels, provincesWithId } from '@/libs/OIerDb';
 import compareGrades from '@/utils/compareGrades';
+import fixChineseSpace from '@/utils/fixChineseSpace';
+import fixContestName from '@/utils/fixContestName';
+import getGrade from '@/utils/getGrade';
+import getProgress from '@/utils/getProgress';
+import usePartialSearchParams from '@/utils/usePartialSearchParams';
+
+import styles from './[id].module.less';
 
 const NotFound = lazy(() => import('@/pages/404'));
 
@@ -34,7 +36,7 @@ const Contest: React.FC = () => {
   const id = Number(params.id) ?? -1;
   const contest = useMemo(
     () => OIerDb.contests.find((contest) => contest.id === id),
-    [id]
+    [id],
   );
 
   const page = Number(searchParams.get('page')) || 1;
@@ -54,7 +56,7 @@ const Contest: React.FC = () => {
 
   const provinces = useMemo(() => {
     const withId2 = Object.fromEntries(
-      Object.entries(provincesWithId).map(([id, province]) => [province, id])
+      Object.entries(provincesWithId).map(([id, province]) => [province, id]),
     );
 
     return [
@@ -75,30 +77,30 @@ const Contest: React.FC = () => {
       ...new Set(
         contest.contestants.map(
           (contestant) =>
-            contestant.enroll_middle?.value || contestant.oier.enroll_middle
-        )
+            contestant.enroll_middle?.value || contestant.oier.enroll_middle,
+        ),
       ),
     ],
-    [id]
+    [id],
   );
 
   const data = useMemo(
     () =>
       contest.contestants
         .filter((contestant) =>
-          province ? contestant.province === province : true
+          province ? contestant.province === province : true,
         )
         .filter((contestant) =>
           grade
             ? (contestant.enroll_middle?.value ||
                 contestant.oier.enroll_middle) === grade
-            : true
+            : true,
         ),
-    [contest, province, grade]
+    [contest, province, grade],
   );
 
   const awards = awardLevels.filter((awardLevel) =>
-    contest.level_counts.has(awardLevel)
+    contest.level_counts.has(awardLevel),
   );
 
   const contestName = fixChineseSpace(fixContestName(contest.name));
@@ -224,7 +226,7 @@ const Contest: React.FC = () => {
                       {getGrade(
                         contestant.enroll_middle?.value ||
                           contestant.oier.enroll_middle,
-                        contest.school_year()
+                        contest.school_year(),
                       )}
                     </Table.Cell>
                     <Table.Cell>
@@ -236,7 +238,7 @@ const Contest: React.FC = () => {
                             style={{
                               color: `var(--theme-score-${getProgress(
                                 contestant.score,
-                                contestant.contest.full_score
+                                contestant.contest.full_score,
                               )})`,
                             }}
                           >

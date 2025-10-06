@@ -1,22 +1,24 @@
-import React, { memo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
 import {
-  Chart as ChartJS,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
   type ChartData,
 } from 'chart.js';
+import React, { memo } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Table, Tab } from 'semantic-ui-react';
-import PersonCard from '@/components/PersonCard';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Tab, Table } from 'semantic-ui-react';
+
 import Pagination from '@/components/Pagination';
-import getGrade from '@/utils/getGrade';
+import PersonCard from '@/components/PersonCard';
 import { awardColors, awardLevels, School as SchoolType } from '@/libs/OIerDb';
+import getGrade from '@/utils/getGrade';
+
 import styles from './SchoolInfo.module.less';
 
 ChartJS.register(
@@ -26,7 +28,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 interface SchoolProps {
@@ -43,7 +45,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
       // 奖项名称列表
       const years = Object.keys(school.award_counts[key]).map(Number);
       const setAwards = new Set(
-        years.flatMap((year) => [...school.award_counts[key][year].keys()])
+        years.flatMap((year) => [...school.award_counts[key][year].keys()]),
       );
       const awards = awardLevels.filter((award) => setAwards.has(award));
 
@@ -55,7 +57,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
           return {
             label: award,
             data: years.map((year) =>
-              school.award_counts[key][year].get(award)
+              school.award_counts[key][year].get(award),
             ),
             backgroundColor: awardColors[award] || null,
             borderColor: awardColors[award] || null,

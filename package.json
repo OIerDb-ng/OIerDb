@@ -12,11 +12,14 @@
     "lint": "turbo run lint",
     "lint:check": "turbo run lint:check",
     "check-types": "turbo run check-types",
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "fmt": "prettier --write ."
   },
   "devDependencies": {
     "husky": "^8.0.2",
-    "lint-staged": "^13.1.0"
+    "lint-staged": "^13.1.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-organize-imports": "^4.3.0"
   },
   "packageManager": "yarn@1.22.22",
   "lint-staged": {

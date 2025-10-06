@@ -1,15 +1,16 @@
 import QuickLRU from 'quick-lru';
+
 import type {
-  IAdapter,
-  GetOIerResponse,
-  ListOIersResponse,
-  GetSchoolResponse,
-  ListSchoolsResponse,
   GetContestResponse,
+  GetOIerResponse,
+  GetSchoolResponse,
+  IAdapter,
+  ListContestsQuery,
   ListContestsResponse,
   ListOIersQuery,
+  ListOIersResponse,
   ListSchoolsQuery,
-  ListContestsQuery,
+  ListSchoolsResponse,
 } from './interface';
 
 export interface OIerDbClientOptions {

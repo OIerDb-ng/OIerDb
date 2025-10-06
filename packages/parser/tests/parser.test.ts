@@ -1,6 +1,6 @@
-import { parseOIerDbData, provinces, awardLevels } from '../index';
-import { parseResultText } from '../parser';
 import { Counter } from '../counter';
+import { awardLevels, parseOIerDbData, provinces } from '../index';
+import { parseResultText } from '../parser';
 
 describe('OIerDb Parser', () => {
   const sampleStaticJson = JSON.stringify({

@@ -2,5 +2,6 @@
   "tabWidth": 2,
   "printWidth": 100,
   "endOfLine": "lf",
-  "singleQuote": true
+  "singleQuote": true,
+  "plugins": ["prettier-plugin-organize-imports"]
 }

@@ -1,13 +1,15 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Modal, Icon } from 'semantic-ui-react';
+import { Icon, Modal, Table } from 'semantic-ui-react';
+import { useLocalStorage } from 'usehooks-ts';
+
 import PersonInfo from '@/components/PersonInfo';
-import getGrade from '@/utils/getGrade';
 import { genders, type OIer } from '@/libs/OIerDb';
 import { trackMultiDomainPageview } from '@/libs/plausible';
-import styles from './PersonCard.module.less';
-import { useLocalStorage } from 'usehooks-ts';
+import getGrade from '@/utils/getGrade';
 import useScreenWidthWithin from '@/utils/useScreenWidthWithin';
+
+import styles from './PersonCard.module.less';
 
 interface PersonCardProps {
   oier: OIer;
@@ -48,7 +50,7 @@ const PersonCard: React.FC<
           trackMultiDomainPageview({
             url: new URL(
               `/oier/${oier.uid}`,
-              window.location.origin
+              window.location.origin,
             ).toString(),
           })
         }

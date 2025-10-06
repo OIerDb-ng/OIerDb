@@ -1,5 +1,6 @@
-import { Icon, Popup } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
+import { Icon, Popup } from 'semantic-ui-react';
+
 import styles from './CustomSearchIcon.module.less';
 
 const CustomSearchIcon = () => {

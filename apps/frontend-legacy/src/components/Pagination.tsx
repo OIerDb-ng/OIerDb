@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pagination as SemanticUIPagination, Icon } from 'semantic-ui-react';
-import useScreenWidthWithin from '@/utils/useScreenWidthWithin';
+import { Icon, Pagination as SemanticUIPagination } from 'semantic-ui-react';
+
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
+import useScreenWidthWithin from '@/utils/useScreenWidthWithin';
+
 import styles from './Pagination.module.less';
 
 interface PaginationProps {

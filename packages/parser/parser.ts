@@ -1,7 +1,7 @@
-import type { DbParseResult, DbOIer, DbRecord, DbContest, DbSchool, Gender } from '@oierdb/core';
+import type { DbContest, DbOIer, DbParseResult, DbRecord, DbSchool, Gender } from '@oierdb/core';
 
+import { awardLevels, provinces } from './constants';
 import { Counter } from './counter';
-import { provinces, awardLevels } from './constants';
 
 interface ParsedRecordData {
   contest: number;

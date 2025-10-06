@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useLocalStorage } from 'usehooks-ts';
 import { Table } from 'semantic-ui-react';
+import { useLocalStorage } from 'usehooks-ts';
 
 import PersonCard from '@/components/PersonCard';
 import type { OIer } from '@/libs/OIerDb';

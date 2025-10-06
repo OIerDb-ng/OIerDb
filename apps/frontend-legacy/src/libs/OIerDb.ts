@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { openDB } from 'idb';
+
 import { trackEvent } from '@/libs/plausible';
-import { Counter } from './Counter';
 import promiseAny from '@/utils/promiseAny';
+
+import { Counter } from './Counter';
 
 export class OIer {
   constructor(settings: any) {
@@ -232,7 +235,7 @@ const processData = (data: any) => {
     school.records.push(record);
     school.members.push(record.oier);
     school.award_counts[record.contest.type][record.contest.year].update(
-      record.level
+      record.level,
     );
   };
 
@@ -240,17 +243,17 @@ const processData = (data: any) => {
   const result: OIerDbData = {};
 
   result.contests = data.static.contests.map(
-    (x, id: number) => new Contest(id, x)
+    (x, id: number) => new Contest(id, x),
   );
 
   const originSchools = (result.schools = data.static.schools.map(
-    (x: any[], id: number) => new School(id, x)
+    (x: any[], id: number) => new School(id, x),
   ));
 
   result.schools = result.schools
     .filter((school: School) => school.name)
     .sort((x: School, y: School) =>
-      x.score == y.score ? x.id - y.id : y.score - x.score
+      x.score == y.score ? x.id - y.id : y.score - x.score,
     );
   result.schools.forEach((school, id) => {
     school.rank =
@@ -305,7 +308,7 @@ const getData = async (
   setProgressPercent?: (p: number) => void,
   start = 0,
   end = 100,
-  trackLabel = ''
+  trackLabel = '',
 ) => {
   const startTime = performance.now();
 
@@ -332,8 +335,8 @@ const getData = async (
         if (setProgressPercent) {
           setProgressPercent(
             Math.ceil(
-              start + Math.min((receivedSize / size) * (end - start), end)
-            )
+              start + Math.min((receivedSize / size) * (end - start), end),
+            ),
           );
         }
       }
@@ -380,7 +383,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     sha512: staticSha512,
     size: staticSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/static.info.json?_=${+new Date()}`))
+    infoUrls.map((url) => fetch(`${url}/static.info.json?_=${+new Date()}`)),
   ).then((res) => res.json());
 
   setProgressPercent(4);
@@ -389,7 +392,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     sha512: resultSha512,
     size: resultSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/result.info.json?_=${+new Date()}`))
+    infoUrls.map((url) => fetch(`${url}/result.info.json?_=${+new Date()}`)),
   ).then((res) => res.json());
 
   setProgressPercent(8);
@@ -417,7 +420,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     setProgressPercent,
     10,
     40,
-    'static.json'
+    'static.json',
   ).then((res) => JSON.parse(res));
 
   const oiers = await getData(
@@ -426,7 +429,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     setProgressPercent,
     40,
     90,
-    'result.txt'
+    'result.txt',
   ).then(textToRaw);
 
   setProgressPercent(91);
@@ -490,7 +493,7 @@ export const provincesWithId = {
 } as const;
 
 export const provinces = Object.values(
-  provincesWithId
+  provincesWithId,
 ) as (typeof provincesWithId)[keyof typeof provincesWithId][];
 
 // 奖项列表及颜色

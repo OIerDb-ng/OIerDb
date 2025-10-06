@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+
 import { EmojiRenderer } from '@/components/EmojiRenderer';
 
 interface AwardEmojiProps {
@@ -10,7 +11,7 @@ const AwardEmoji: React.FC<AwardEmojiProps> = (props) => {
   const emojis = ['🥇', '🥈', '🥉'];
 
   const type = keywordsOfType.findIndex((keywords) =>
-    keywords.some((keyword) => props.level.includes(keyword))
+    keywords.some((keyword) => props.level.includes(keyword)),
   );
   const emoji = emojis[type];
 

@@ -1,7 +1,9 @@
 import React, { memo } from 'react';
 import { Header, Segment } from 'semantic-ui-react';
-import styles from './FAQ.module.less';
+
 import { EmojiRenderer } from '@/components/EmojiRenderer';
+
+import styles from './FAQ.module.less';
 
 const FAQ: React.FC = () => {
   return (

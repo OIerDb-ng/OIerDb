@@ -1,27 +1,27 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  Header,
-  Input,
-  Segment,
   Checkbox,
   Form,
+  Header,
+  Input,
   Loader,
+  Segment,
 } from 'semantic-ui-react';
 import { useLocalStorage } from 'usehooks-ts';
 
-import getGrade, { currentYear } from '@/utils/getGrade';
-import compareGrades from '@/utils/compareGrades';
+import SearchResult from '@/components/SearchResult';
 import {
   type OIer,
   genders,
-  searchableGenderKeys,
   provincesWithId,
+  searchableGenderKeys,
 } from '@/libs/OIerDb';
+import compareGrades from '@/utils/compareGrades';
+import getGrade, { currentYear } from '@/utils/getGrade';
 
-import styles from './Search.module.less';
 import CustomSearchIcon from './CustomSearchIcon';
-import SearchResult from '@/components/SearchResult';
+import styles from './Search.module.less';
 
 const Search: React.FC = () => {
   // Gender display
@@ -60,7 +60,7 @@ const Search: React.FC = () => {
         content: province,
         label: { content: id, basic: true, size: 'mini' },
       })),
-    []
+    [],
   );
 
   const province = searchParams.get('province') || '';
@@ -87,7 +87,7 @@ const Search: React.FC = () => {
 
       if (!advanced) {
         result = OIerDb.oiers.filter(
-          (oier) => oier.lowered_name === input || oier.initials === input
+          (oier) => oier.lowered_name === input || oier.initials === input,
         );
       } else if (!input && !grade && !school) {
         result = [];

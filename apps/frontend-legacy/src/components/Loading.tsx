@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Segment, Dimmer, Loader } from 'semantic-ui-react';
+import { Dimmer, Loader, Segment } from 'semantic-ui-react';
 
 type LoadingProps = {
   progress?: number;

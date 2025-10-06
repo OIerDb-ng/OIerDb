@@ -1,10 +1,12 @@
+import { deleteDB } from 'idb';
 import React, { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Button, Checkbox, Header, Segment } from 'semantic-ui-react';
-import { deleteDB } from 'idb';
 import { useLocalStorage } from 'usehooks-ts';
+
 import FAQ from '@/components/FAQ';
 import Stats from '@/components/Stats';
+
 import styles from './index.module.less';
 
 const AboutHeader: React.FC = () => (
@@ -115,7 +117,7 @@ const Config: React.FC = () => {
   // Gender display
   const [displayGender, setDisplayGender] = useLocalStorage(
     'display_gender',
-    false
+    false,
   );
 
   return (
@@ -142,7 +144,7 @@ const Config: React.FC = () => {
           defaultChecked={displayGender}
           onClick={useCallback(
             (_, data) => setDisplayGender(data.checked),
-            [setDisplayGender]
+            [setDisplayGender],
           )}
           label="展示在 NOI 公示时显示的登记性别"
         />

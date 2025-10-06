@@ -1,25 +1,25 @@
 import type {
   DbContest,
-  GetOIerResponse,
-  IAdapterWithLoader,
   DbMetadata,
   DbOIer,
   DbParseResult,
   DbRecord,
   DbSchool,
-  GetSchoolResponse,
-  ListSchoolsResponse,
-  ListOIersResponse,
   GetContestResponse,
+  GetOIerResponse,
+  GetSchoolResponse,
+  IAdapterWithLoader,
+  ListContestsQuery,
   ListContestsResponse,
   ListOIersQuery,
+  ListOIersResponse,
   ListSchoolsQuery,
-  ListContestsQuery,
+  ListSchoolsResponse,
 } from '@oierdb/core';
 import { Dexie, type EntityTable } from 'dexie';
 
 import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
-import { whereClauseToFilter, normalizePaginationParams } from './util';
+import { normalizePaginationParams, whereClauseToFilter } from './util';
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
@@ -70,9 +70,9 @@ export class IDBAdapter implements IAdapterWithLoader {
 
         await this.db.meta.clear();
         await this.db.meta.bulkAdd(
-          Object.entries(data.meta).map(([key, value]) => ({ key, value }))
+          Object.entries(data.meta).map(([key, value]) => ({ key, value })),
         );
-      }
+      },
     );
   }
 

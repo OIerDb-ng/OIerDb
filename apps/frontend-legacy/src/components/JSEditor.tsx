@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
-import { memo, useEffect, useState, useRef, useCallback } from 'react';
 import MonacoEditor, { Monaco, loader } from '@monaco-editor/react';
 import { version as monacoVersion } from 'monaco-editor/package.json';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { cdnjsBaseUrl } from '../../constant';
 
@@ -29,13 +29,13 @@ const JSEditor: React.FC<JSEditorProps> = ({
   const [theme, setTheme] = useState(
     window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'vs-dark'
-      : 'light'
+      : 'light',
   );
 
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
   const handleChange = useCallback(
     (value: string | undefined) => onChange?.(value),
-    [onChange]
+    [onChange],
   );
 
   useEffect(() => {

@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { Dropdown, Table } from 'semantic-ui-react';
-import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { Link } from 'react-router-dom';
+import { Dropdown, Table } from 'semantic-ui-react';
+
 import Pagination from '@/components/Pagination';
 import { provinces } from '@/libs/OIerDb';
 import usePartialSearchParams from '@/utils/usePartialSearchParams';
+
 import styles from './index.module.less';
 
 const OIerList: React.FC = () => {
@@ -24,7 +26,7 @@ const OIerList: React.FC = () => {
       isWholeCountry
         ? OIerDb.oiers
         : OIerDb.oiers.filter((oier) => oier.provinces.includes(province)),
-    [province]
+    [province],
   );
 
   return (

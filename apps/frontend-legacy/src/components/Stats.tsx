@@ -1,5 +1,6 @@
-import React, { memo, useState, useEffect } from 'react';
-import { Header, Segment, Dimmer, Loader } from 'semantic-ui-react';
+import React, { memo, useEffect, useState } from 'react';
+import { Dimmer, Header, Loader, Segment } from 'semantic-ui-react';
+
 import styles from './Stats.module.less';
 
 const Stats: React.FC = () => {

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button } from 'semantic-ui-react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Header, Segment } from 'semantic-ui-react';
+import { Button, Header, Segment, Table } from 'semantic-ui-react';
+import styles from './index.module.less';
+import jsExtraLib from './OIerDb.js?raw';
+
+import JSEditor from '@/components/JSEditor';
 import Pagination from '@/components/Pagination';
 import { Contest, OIer, School } from '@/libs/OIerDb';
-import usePartialSearchParams from '@/utils/usePartialSearchParams';
-import styles from './index.module.less';
-import fixContestName from '@/utils/fixContestName';
 import fixChineseSpace from '@/utils/fixChineseSpace';
-import jsExtraLib from './OIerDb.js?raw';
-import JSEditor from '@/components/JSEditor';
+import fixContestName from '@/utils/fixContestName';
+import usePartialSearchParams from '@/utils/usePartialSearchParams';
 
 const CustomSearch: React.FC = () => {
   const [searchParams] = usePartialSearchParams();
@@ -30,7 +30,7 @@ export default (db) => {
       `.trim() + '\n';
 
   const [filterCode, setFilterCode] = useState<string>(
-    localStorage.getItem(STORAGE_KEY) || DEFAULT_EDITOR_CONTENT
+    localStorage.getItem(STORAGE_KEY) || DEFAULT_EDITOR_CONTENT,
   );
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>(filterCode);

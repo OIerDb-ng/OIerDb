@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { Message, Icon } from 'semantic-ui-react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
+import { Icon, Message } from 'semantic-ui-react';
 
 const NotFound: React.FC = () => (
   <Message icon error>

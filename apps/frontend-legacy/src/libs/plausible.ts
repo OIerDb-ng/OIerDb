@@ -1,4 +1,4 @@
-import Plausible, { PlausibleOptions, EventOptions } from 'plausible-tracker';
+import Plausible, { EventOptions, PlausibleOptions } from 'plausible-tracker';
 
 export const { enableAutoPageviews, trackEvent, trackPageview } = Plausible({
   domain: 'oier.baoshuo.dev',
@@ -10,14 +10,14 @@ export const trackMultiDomain = (url?: string) => {
     trackEvent(
       'Domain',
       { props: { domain: window.location.host } },
-      { url: url || window.location.href }
+      { url: url || window.location.href },
     );
   }
 };
 
 export const trackMultiDomainPageview = (
   eventData?: PlausibleOptions,
-  options?: EventOptions
+  options?: EventOptions,
 ) => {
   trackPageview(eventData, options);
   trackMultiDomain(eventData.url);

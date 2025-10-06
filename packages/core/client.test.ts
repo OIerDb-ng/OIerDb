@@ -1,15 +1,15 @@
 import { OIerDbClient } from './client';
 import type {
-  IAdapter,
-  GetOIerResponse,
-  ListOIersResponse,
-  GetSchoolResponse,
-  ListSchoolsResponse,
   GetContestResponse,
+  GetOIerResponse,
+  GetSchoolResponse,
+  IAdapter,
+  ListContestsQuery,
   ListContestsResponse,
   ListOIersQuery,
+  ListOIersResponse,
   ListSchoolsQuery,
-  ListContestsQuery,
+  ListSchoolsResponse,
 } from './interface';
 
 // Mock adapter for testing

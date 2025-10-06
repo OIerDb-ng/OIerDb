@@ -7,7 +7,9 @@ import {
   Sidebar,
   type SemanticICONS,
 } from 'semantic-ui-react';
+
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
+
 import styles from './Header.module.less';
 
 // Header Buttons

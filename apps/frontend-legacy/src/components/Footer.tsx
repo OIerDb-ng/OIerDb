@@ -1,10 +1,7 @@
 import React from 'react';
+import { Container, Icon, Segment } from 'semantic-ui-react';
 
-// Components
-import { Container, Segment, Icon } from 'semantic-ui-react';
 import { EmojiRenderer } from './EmojiRenderer';
-
-// Styles
 import styles from './Footer.module.less';
 
 /*
