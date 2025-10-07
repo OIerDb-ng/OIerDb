@@ -1,7 +1,18 @@
 node_modules/
-.turbo/
 .DS_Store
 *.local
 dist/
 tmp/
 coverage/
+
+# Turborepo
+.turbo/
+
+# Yarn
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
