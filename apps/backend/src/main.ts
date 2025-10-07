@@ -17,7 +17,7 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: false,
       },
-    })
+    }),
   );
 
   await app.listen(PORT);

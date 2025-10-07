@@ -13,7 +13,7 @@ export class OierController {
    * GET /oier/:uid
    */
   @Get(':uid')
-  async getOIer(@Param('uid', ParseIntPipe) uid: number): Promise {
+  getOIer(@Param('uid', ParseIntPipe) uid: number): Promise<GetOIerResponse> {
     return this.oierService.getOIer(uid);
   }
 
@@ -22,7 +22,7 @@ export class OierController {
    * GET /oier/list?name=xxx&initials=xxx&enroll_middle=2020&gender=1&province=xxx&page=1&perPage=20
    */
   @Get()
-  async listOIers(@Query() query: ListOIersQueryDto): Promise {
+  listOIers(@Query() query: ListOIersQueryDto): Promise<ListOIersResponse> {
     return this.oierService.listOIers(query);
   }
 }
