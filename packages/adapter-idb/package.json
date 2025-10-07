@@ -1,8 +1,10 @@
 {
   "name": "@oierdb/adapter-idb",
   "version": "0.0.0",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "check-types": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -15,6 +17,7 @@
     "@oierdb/core": "workspace:*"
   },
   "devDependencies": {
+    "@oierdb/core": "workspace:*",
     "@types/jest": "^30.0.0",
     "fake-indexeddb": "^6.2.2",
     "jest": "^30.2.0",

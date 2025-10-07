@@ -1,1 +1,1 @@
-export * from './adapter';
+export { IDBAdapter } from './adapter';

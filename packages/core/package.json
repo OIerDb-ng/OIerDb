@@ -2,9 +2,10 @@
   "name": "@oierdb/core",
   "version": "0.0.0",
   "description": "OIerDb core types and interfaces",
-  "main": "index.ts",
-  "types": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "check-types": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",

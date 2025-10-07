@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev:backend": "turbo run @oierdb/backend#dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "lint:check": "turbo run lint:check",

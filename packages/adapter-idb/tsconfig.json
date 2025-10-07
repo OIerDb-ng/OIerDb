@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM"],
+    "target": "esnext",
+    "module": "nodenext",
+    "lib": ["esnext"],
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./",
@@ -10,11 +10,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "types": ["jest", "node"]
+    "moduleResolution": "nodenext"
   },
-  "include": ["*.ts", "tests/**/*.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }
