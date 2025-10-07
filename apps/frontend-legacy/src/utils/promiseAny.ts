@@ -1,5 +1,5 @@
 const promiseAny = async <T>(
-  iterable: Iterable<T | PromiseLike<T>>
+  iterable: Iterable<T | PromiseLike<T>>,
 ): Promise<T> => {
   if (Promise.any) {
     return Promise.any(iterable);
@@ -8,12 +8,12 @@ const promiseAny = async <T>(
   return Promise.all(
     [...iterable].map((promise) => {
       return new Promise((resolve, reject) =>
-        Promise.resolve(promise).then(reject, resolve)
+        Promise.resolve(promise).then(reject, resolve),
       );
-    })
+    }),
   ).then(
     (errors) => Promise.reject(errors),
-    (value) => Promise.resolve<T>(value)
+    (value) => Promise.resolve<T>(value),
   );
 };
 

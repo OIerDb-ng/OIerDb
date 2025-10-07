@@ -16,7 +16,7 @@ export function useScreenWidthWithin(l: number, r: number): boolean {
             `only screen`,
             `(min-width: ${l}px)`,
             `(max-width: ${r - 1}px)`,
-          ].join(' and ')
+          ].join(' and '),
         )
       : window.matchMedia([`only screen`, `(min-width: ${l}px)`].join(' and '));
   }

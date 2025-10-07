@@ -8,7 +8,7 @@ export default function fixChineseSpace(str: string) {
         char +
         (i < str.length - 1 && isChinese(str[i]) && isLatin(str[i + 1])
           ? ' '
-          : '')
+          : ''),
     )
     .join('');
 }

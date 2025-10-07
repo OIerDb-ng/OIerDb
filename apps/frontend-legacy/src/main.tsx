@@ -111,5 +111,5 @@ createRoot(rootElement).render(
       <App />
     </Container>
     <Footer />
-  </BrowserRouter>
+  </BrowserRouter>,
 );
