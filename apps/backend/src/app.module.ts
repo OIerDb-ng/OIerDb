@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { OIerDbModule } from './common/oierdb/oierdb.module';
 import { ContestModule } from './contest/contest.module';
 import { OierModule } from './oier/oier.module';
+import { SchoolModule } from './school/school.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { OierModule } from './oier/oier.module';
     OIerDbModule,
     OierModule,
     ContestModule,
+    SchoolModule,
   ],
 })
 export class AppModule {}
