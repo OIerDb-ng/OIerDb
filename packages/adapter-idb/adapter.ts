@@ -92,13 +92,14 @@ export class IDBAdapter implements IAdapterWithLoader {
 
     const [records, schools, version] = await Promise.all([
       this.db.records.where('uid').equals(uid).toArray(),
-      this.db.schools.where('id').anyOf(oier.school_ids).toArray(),
+      this.db.schools
+        .bulkGet(oier.school_ids)
+        .then((items) => items.filter((s): s is DbSchool => s !== undefined)),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
     const contests = await this.db.contests
-      .where('id')
-      .anyOf(records.map((r) => r.contest_id))
-      .toArray();
+      .bulkGet(records.map((r) => r.contest_id))
+      .then((items) => items.filter((c): c is DbContest => c !== undefined));
 
     return {
       uid,
@@ -164,14 +165,14 @@ export class IDBAdapter implements IAdapterWithLoader {
       return null;
     }
 
-    const contest_ids = await this.db.records
-      .where('school_id')
-      .equals(id)
-      .toArray()
-      .then((records) => records.map((r) => r.contest_id));
+    const records = await this.db.records.where('school_id').equals(id).toArray();
     const [members, contests, version] = await Promise.all([
-      this.db.oiers.where('uid').anyOf(school.member_ids).toArray(),
-      this.db.contests.where('id').anyOf(contest_ids).toArray(),
+      this.db.oiers
+        .bulkGet(school.member_ids)
+        .then((items) => items.filter((m): m is DbOIer => m !== undefined)),
+      this.db.contests
+        .bulkGet(Array.from(new Set(records.map((r) => r.contest_id))))
+        .then((items) => items.filter((c): c is DbContest => c !== undefined)),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
@@ -234,8 +235,12 @@ export class IDBAdapter implements IAdapterWithLoader {
     const school_ids = Array.from(new Set(records.map((r) => r.school_id)));
     const uids = Array.from(new Set(records.map((r) => r.uid)));
     const [schools, oiers, version] = await Promise.all([
-      this.db.schools.where('id').anyOf(school_ids).toArray(),
-      this.db.oiers.where('uid').anyOf(uids).toArray(),
+      this.db.schools
+        .bulkGet(school_ids)
+        .then((items) => items.filter((s): s is DbSchool => s !== undefined)),
+      this.db.oiers
+        .bulkGet(uids)
+        .then((items) => items.filter((o): o is DbOIer => o !== undefined)),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
