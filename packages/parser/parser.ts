@@ -1,4 +1,5 @@
 import type { DbContest, DbOIer, DbParseResult, DbRecord, DbSchool, Gender } from '@oierdb/core';
+import md5 from 'md5';
 
 import { awardLevels, provinces } from './constants';
 import { Counter } from './counter';
@@ -272,5 +273,9 @@ export function parseOIerDbData(resultText: string, staticJsonText: string): DbP
   const staticData = JSON.parse(staticJsonText);
   const parsedOiers = parseResultText(resultText);
 
-  return processData(parsedOiers, staticData);
+  const parsed = processData(parsedOiers, staticData);
+
+  parsed.meta['data_version'] = md5(resultText + staticJsonText);
+
+  return parsed;
 }

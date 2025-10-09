@@ -9,12 +9,16 @@
     "check-types": "tsc --noEmit",
     "test": "jest"
   },
+  "dependencies": {
+    "md5": "^2.3.0"
+  },
   "peerDependencies": {
     "@oierdb/core": "workspace:*"
   },
   "devDependencies": {
     "@oierdb/core": "workspace:*",
     "@types/jest": "^30.0.0",
+    "@types/md5": "^2.3.5",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.4",
     "typescript": "^5.9.3"
