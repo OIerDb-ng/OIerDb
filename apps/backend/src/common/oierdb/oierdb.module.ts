@@ -1,9 +1,10 @@
 import { Global, Module } from '@nestjs/common';
 import { IDBAdapter } from '@oierdb/adapter-idb';
 import { OIerDbClient } from '@oierdb/core';
+import { parseOIerDbData } from '@oierdb/parser';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 
-import { OIERDB_CLIENT } from './oierdb.constants';
+import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constants';
 
 @Global()
 @Module({
@@ -13,17 +14,14 @@ import { OIERDB_CLIENT } from './oierdb.constants';
       useFactory: async () => {
         const adapter = new IDBAdapter(indexedDB, IDBKeyRange);
 
-        // FIXME: Load initial data into IndexedDB
-        await adapter.loadData({
-          // TODO: Provide initial data
-          oiers: [],
-          schools: [],
-          contests: [],
-          records: [],
-          meta: {
-            data_version: 'empty',
-          },
-        });
+        const [result, staticJsonText] = await Promise.all([
+          fetch(RESULT_TXT_URL).then((res) => res.text()),
+          fetch(STATIC_JSON_URL).then((res) => res.text()),
+        ]);
+
+        const parseResult = parseOIerDbData(result, staticJsonText);
+
+        await adapter.loadData(parseResult);
 
         const client = new OIerDbClient(adapter, {
           cache: {
