@@ -107,7 +107,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       records,
       schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
       contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
-      backend_data_version: version,
+      data_version: version,
     };
   }
 
@@ -155,7 +155,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: version,
+      data_version: version,
     };
   }
 
@@ -181,7 +181,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       school,
       members_map: Object.fromEntries(members.map((m) => [m.uid, m])),
       contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
-      backend_data_version: version,
+      data_version: version,
     };
   }
 
@@ -221,7 +221,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: version,
+      data_version: version,
     };
   }
 
@@ -250,7 +250,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       records,
       schools: Object.fromEntries(schools.map((s) => [s.id, s])),
       oiers: Object.fromEntries(oiers.map((o) => [o.uid, o])),
-      backend_data_version: version,
+      data_version: version,
     };
   }
 
@@ -291,7 +291,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       totalPages: Math.ceil(total / perPage),
       page,
       perPage,
-      backend_data_version: version,
+      data_version: version,
     };
   }
 }
