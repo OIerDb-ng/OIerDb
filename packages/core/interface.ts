@@ -89,7 +89,7 @@ export interface DbParseResult {
 // ==============================
 
 export interface ResponseBase {
-  backend_data_version: string; // 后端数据版本（通常为 SHA256 哈希值）
+  data_version: string; // 后端数据版本（通常为 SHA256 哈希值）
 }
 
 export interface GetOIerResponse extends ResponseBase {

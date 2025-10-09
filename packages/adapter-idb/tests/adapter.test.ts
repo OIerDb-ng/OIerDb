@@ -142,7 +142,7 @@ describe('IDBAdapter', () => {
             });
           }
           return Promise.resolve();
-        })
+        }),
       );
     }
   });
@@ -160,7 +160,7 @@ describe('IDBAdapter', () => {
     expect(response!.records.length).toBe(1);
     expect(Object.keys(response!.schools_map).length).toBe(1);
     expect(Object.keys(response!.contests_map).length).toBe(1);
-    expect(response!.backend_data_version).toBe('mock-version');
+    expect(response!.data_version).toBe('mock-version');
   });
 
   it('should return null for non-existing oier', async () => {

@@ -40,7 +40,7 @@ class MockAdapter implements IAdapter {
         records: [],
         schools_map: {},
         contests_map: {},
-        backend_data_version: 'test-version',
+        data_version: 'test-version',
       };
     }
     return null;
@@ -54,7 +54,7 @@ class MockAdapter implements IAdapter {
       totalPages: 0,
       page,
       perPage,
-      backend_data_version: 'test-version',
+      data_version: 'test-version',
     };
   }
 
@@ -70,7 +70,7 @@ class MockAdapter implements IAdapter {
       totalPages: 0,
       page,
       perPage,
-      backend_data_version: 'test-version',
+      data_version: 'test-version',
     };
   }
 
@@ -86,7 +86,7 @@ class MockAdapter implements IAdapter {
       totalPages: 0,
       page,
       perPage,
-      backend_data_version: 'test-version',
+      data_version: 'test-version',
     };
   }
 }
@@ -204,7 +204,7 @@ describe('OIerDbClient', () => {
           records: [],
           schools_map: {},
           contests_map: {},
-          backend_data_version: 'new-version',
+          data_version: 'new-version',
         };
       }
     }
@@ -214,7 +214,7 @@ describe('OIerDbClient', () => {
 
     const result = await client.getOIer(99999);
     expect(result?.oier.name).toBe('李四');
-    expect(result?.backend_data_version).toBe('new-version');
+    expect(result?.data_version).toBe('new-version');
   });
 
   describe('Cache functionality', () => {
