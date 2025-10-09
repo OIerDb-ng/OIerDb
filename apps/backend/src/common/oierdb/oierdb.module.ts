@@ -25,7 +25,7 @@ import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constan
 
         const client = new OIerDbClient(adapter, {
           cache: {
-            enabled: true,
+            enabled: process.env.NODE_ENV === 'production',
             maxSize: 2000,
           },
         });
