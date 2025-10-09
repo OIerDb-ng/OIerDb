@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 
 import { OIerDbModule } from './common/oierdb/oierdb.module';
+import { ContestModule } from './contest/contest.module';
 import { OierModule } from './oier/oier.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { OierModule } from './oier/oier.module';
     }),
     OIerDbModule,
     OierModule,
+    ContestModule,
   ],
 })
 export class AppModule {}
