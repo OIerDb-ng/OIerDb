@@ -55,23 +55,21 @@ export class IDBAdapter implements IAdapterWithLoader {
     await this.db.transaction(
       'readwrite',
       [this.db.oiers, this.db.schools, this.db.contests, this.db.records, this.db.meta],
-      async () => {
-        await this.db.oiers.clear();
-        await this.db.oiers.bulkAdd(data.oiers);
+      async (tx) => {
+        await tx.oiers.clear();
+        await tx.oiers.bulkAdd(data.oiers);
 
-        await this.db.schools.clear();
-        await this.db.schools.bulkAdd(data.schools);
+        await tx.schools.clear();
+        await tx.schools.bulkAdd(data.schools);
 
-        await this.db.contests.clear();
-        await this.db.contests.bulkAdd(data.contests);
+        await tx.contests.clear();
+        await tx.contests.bulkAdd(data.contests);
 
-        await this.db.records.clear();
-        await this.db.records.bulkAdd(data.records);
+        await tx.records.clear();
+        await tx.records.bulkAdd(data.records);
 
-        await this.db.meta.clear();
-        await this.db.meta.bulkAdd(
-          Object.entries(data.meta).map(([key, value]) => ({ key, value })),
-        );
+        await tx.meta.clear();
+        await tx.meta.bulkAdd(Object.entries(data.meta).map(([key, value]) => ({ key, value })));
       },
     );
   }
