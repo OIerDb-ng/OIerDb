@@ -11,7 +11,7 @@
       "outputs": []
     },
     "lint:check": {
-      "dependsOn": ["check-types"],
+      "dependsOn": ["^build", "check-types"],
       "outputs": []
     },
     "dev": {
