@@ -9660,6 +9660,7 @@ __metadata:
     lint-staged: "npm:^13.1.0"
     prettier: "npm:^3.6.2"
     prettier-plugin-organize-imports: "npm:^4.3.0"
+    turbo: "npm:^2.5.8"
   languageName: unknown
   linkType: soft
 

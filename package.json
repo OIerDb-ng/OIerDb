@@ -19,7 +19,8 @@
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0",
     "prettier": "^3.6.2",
-    "prettier-plugin-organize-imports": "^4.3.0"
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "turbo": "^2.5.8"
   },
   "packageManager": "yarn@4.10.3",
   "lint-staged": {
