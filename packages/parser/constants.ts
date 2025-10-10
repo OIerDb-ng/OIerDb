@@ -1,5 +1,5 @@
 // 省份/直辖市映射表
-export const provinces: Record<string, string> = {
+export const provincesMap = {
   AH: '安徽',
   BJ: '北京',
   FJ: '福建',
@@ -34,7 +34,11 @@ export const provinces: Record<string, string> = {
   QH: '青海',
   XC: '西藏',
   TW: '台湾',
-};
+} as const;
+
+export const provinces = Object.values(provincesMap) as Array<
+  (typeof provincesMap)[keyof typeof provincesMap]
+>;
 
 // 奖项映射表
 export const awardLevels: Record<string, string> = {

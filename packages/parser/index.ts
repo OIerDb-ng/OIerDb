@@ -1,2 +1,2 @@
-export { awardLevels, provinces } from './constants';
+export { awardLevels, provinces, provincesMap } from './constants';
 export { parseOIerDbData } from './parser';

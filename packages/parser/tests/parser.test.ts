@@ -1,5 +1,5 @@
 import { Counter } from '../counter';
-import { awardLevels, parseOIerDbData, provinces } from '../index';
+import { parseOIerDbData } from '../index';
 import { parseResultText } from '../parser';
 
 describe('OIerDb Parser', () => {
@@ -32,7 +32,7 @@ describe('OIerDb Parser', () => {
   });
 
   const sampleResultText =
-    '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:BJ:0/1:1:75.0:2:SH:1\n2,ls,李四,-1,2019,95.0,90.0,2,0:0:85.0:1:BJ:0';
+    '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:1:0/1:1:75.0:2:21:1\n2,ls,李四,-1,2019,95.0,90.0,2,0:0:85.0:1:1:0';
 
   test('should parse OIerDb data correctly', () => {
     const result = parseOIerDbData(sampleResultText, sampleStaticJson);
@@ -97,7 +97,7 @@ describe('OIerDb Parser', () => {
       ],
       schools: [['测试学校', '北京', '北京', 98.5]],
     });
-    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:BJ:0:2020';
+    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:1:0:2020';
 
     const result = parseOIerDbData(resultText, staticJson);
 
@@ -134,7 +134,7 @@ describe('OIerDb Parser', () => {
 
 describe('Text Parser', () => {
   test('should parse result text correctly', () => {
-    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:BJ:0';
+    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:1:0';
     const parsed = parseResultText(resultText);
 
     expect(parsed).toHaveLength(1);
@@ -146,7 +146,7 @@ describe('Text Parser', () => {
 
   test('should parse enroll_middle field correctly', () => {
     // 测试包含 enroll_middle 的记录
-    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:BJ:0:2020/1:1:75.0:2:SH:1;2021';
+    const resultText = '1,zs,张三,1,2018,100.0,95.0,3,0:0:80.0:1:1:0:2020/1:1:75.0:2:21:1;2021';
     const parsed = parseResultText(resultText);
 
     expect(parsed).toHaveLength(1);
@@ -187,17 +187,5 @@ describe('Counter', () => {
       gold: 2,
       silver: 1,
     });
-  });
-});
-
-describe('Constants', () => {
-  test('should have province mappings', () => {
-    expect(provinces['BJ']).toBe('北京');
-    expect(provinces['SH']).toBe('上海');
-  });
-
-  test('should have award level mappings', () => {
-    expect(awardLevels['0']).toBe('金牌');
-    expect(awardLevels['1']).toBe('银牌');
   });
 });

@@ -72,7 +72,7 @@ export function parseResultText(text: string): ParsedOIerData[] {
         school: parseInt(school),
         ...(score !== '' && { score: parseFloat(score) }),
         rank: parseInt(rank),
-        province: province_id in provinces ? provinces[province_id] : province_id,
+        province: (+province_id) in provinces ? provinces[+province_id] : province_id,
         level: award_level_id in awardLevels ? awardLevels[award_level_id] : award_level_id,
         ...(enroll_middle != null && {
           enroll_middle: {
