@@ -14,14 +14,26 @@ import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constan
       useFactory: async () => {
         const adapter = new IDBAdapter(indexedDB, IDBKeyRange);
 
+        console.time('load data');
         const [result, staticJsonText] = await Promise.all([
           fetch(RESULT_TXT_URL).then((res) => res.text()),
           fetch(STATIC_JSON_URL).then((res) => res.text()),
         ]);
+        console.timeEnd('load data');
 
+        console.time('parse data');
         const parseResult = parseOIerDbData(result, staticJsonText);
+        console.timeEnd('parse data');
+        console.log(
+          `oiers=${parseResult.oiers.length}`,
+          `schools=${parseResult.schools.length}`,
+          `contests=${parseResult.contests.length}`,
+          `records=${parseResult.records.length}`,
+        );
 
+        console.time('load data into db');
         await adapter.loadData(parseResult);
+        console.timeEnd('load data into db');
 
         const client = new OIerDbClient(adapter, {
           cache: {
