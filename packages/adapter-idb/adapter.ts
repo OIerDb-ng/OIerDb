@@ -19,7 +19,7 @@ import type {
 import { Dexie, type EntityTable } from 'dexie';
 
 import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
-import { normalizePaginationParams, whereClauseToFilter } from './util';
+import { normalizePaginationParams } from './util';
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
@@ -51,6 +51,7 @@ export class IDBAdapter implements IAdapterWithLoader {
   // ==============================
   // IAdapterWithLoader Interface
   // ==============================
+
   async loadData(data: DbParseResult): Promise<void> {
     await this.db.transaction(
       'readwrite',
@@ -123,10 +124,31 @@ export class IDBAdapter implements IAdapterWithLoader {
 
     const where: Record<string, any> = {};
     if (name) where.name = name;
-    if (initials) where.initials = initials;
+    if (initials) where.initials = initials.toLowerCase();
     if (enroll_middle) where.enroll_middle = enroll_middle;
+    if (province) where.provinces = province;
     if (gender) where.gender = gender;
-    if (province) where.province = province;
+
+    if (Object.keys(where).length === 0) {
+      const [oiers, total, version] = await Promise.all([
+        this.db.oiers
+          .orderBy('rank')
+          .offset((page - 1) * perPage)
+          .limit(perPage)
+          .toArray(),
+        this.db.oiers.count(),
+        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+      ]);
+
+      return {
+        oiers,
+        total,
+        totalPages: Math.ceil(total / perPage),
+        page,
+        perPage,
+        data_version: version,
+      };
+    }
 
     // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
     // const [oiers, total] = await Promise.all([
@@ -140,12 +162,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     // ]);
     const [oiers, total, version] = await Promise.all([
       this.db.oiers
-        .orderBy('rank')
-        .filter(whereClauseToFilter(where))
-        .offset((page - 1) * perPage)
-        .limit(perPage)
-        .toArray(),
-      this.db.oiers.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+        .where(where)
+        .sortBy('rank')
+        .then((arr) => arr.slice((page - 1) * perPage, page * perPage)),
+      this.db.oiers.where(where).count(),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
@@ -192,7 +212,28 @@ export class IDBAdapter implements IAdapterWithLoader {
     const where: Record<string, any> = {};
     if (name) where.name = name;
     if (province) where.province = province;
-    if (city) where.city = city;
+    if (province && city) where.city = city;
+
+    if (Object.keys(where).length === 0) {
+      const [schools, total, version] = await Promise.all([
+        this.db.schools
+          .orderBy('rank')
+          .offset((page - 1) * perPage)
+          .limit(perPage)
+          .toArray(),
+        this.db.schools.count(),
+        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+      ]);
+
+      return {
+        schools,
+        total,
+        totalPages: Math.ceil(total / perPage),
+        page,
+        perPage,
+        data_version: version,
+      };
+    }
 
     // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
     // const [schools, total] = await Promise.all([
@@ -206,12 +247,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     // ]);
     const [schools, total, version] = await Promise.all([
       this.db.schools
-        .orderBy('rank')
-        .filter(whereClauseToFilter(where))
-        .offset((page - 1) * perPage)
-        .limit(perPage)
-        .toArray(),
-      this.db.schools.orderBy('rank').filter(whereClauseToFilter(where)).count(),
+        .where(where)
+        .sortBy('rank')
+        .then((arr) => arr.slice((page - 1) * perPage, page * perPage)),
+      this.db.schools.where(where).count(),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
@@ -262,6 +301,28 @@ export class IDBAdapter implements IAdapterWithLoader {
     if (type) where.type = type;
     if (year) where.year = year;
 
+    if (Object.keys(where).length === 0) {
+      const [contests, total, version] = await Promise.all([
+        this.db.contests
+          .orderBy('id')
+          .reverse()
+          .offset((page - 1) * perPage)
+          .limit(perPage)
+          .toArray(),
+        this.db.contests.count(),
+        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+      ]);
+
+      return {
+        contests,
+        total,
+        totalPages: Math.ceil(total / perPage),
+        page,
+        perPage,
+        data_version: version,
+      };
+    }
+
     // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
     // const [contests, total] = await Promise.all([
     //   this.db.contests
@@ -275,13 +336,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     // ]);
     const [contests, total, version] = await Promise.all([
       this.db.contests
-        .orderBy('id')
-        .reverse()
-        .filter(whereClauseToFilter(where))
-        .offset((page - 1) * perPage)
-        .limit(perPage)
-        .toArray(),
-      this.db.contests.orderBy('id').reverse().filter(whereClauseToFilter(where)).count(),
+        .where(where)
+        .sortBy('id')
+        .then((arr) => arr.reverse().slice((page - 1) * perPage, page * perPage)),
+      this.db.contests.where(where).count(),
       this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
     ]);
 
