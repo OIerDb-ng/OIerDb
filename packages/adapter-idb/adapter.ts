@@ -53,24 +53,38 @@ export class IDBAdapter implements IAdapterWithLoader {
   // ==============================
 
   async loadData(data: DbParseResult): Promise<void> {
+    const CHUNK_SIZE = 5000;
+
+    const bulkAddInChunks = async <T, TKeyPropName extends keyof T>(
+      table: EntityTable<T, TKeyPropName>,
+      items: readonly T[],
+      chunkSize: number,
+    ) => {
+      for (let i = 0; i < items.length; i += chunkSize) {
+        const chunk = items.slice(i, i + chunkSize);
+        await table.bulkAdd(chunk as T[]);
+      }
+    };
+
     await this.db.transaction(
       'readwrite',
       [this.db.oiers, this.db.schools, this.db.contests, this.db.records, this.db.meta],
       async (tx) => {
-        await tx.oiers.clear();
-        await tx.oiers.bulkAdd(data.oiers);
+        await Promise.all([
+          tx.oiers.clear(),
+          tx.schools.clear(),
+          tx.contests.clear(),
+          tx.records.clear(),
+          tx.meta.clear(),
+        ]);
 
-        await tx.schools.clear();
-        await tx.schools.bulkAdd(data.schools);
-
-        await tx.contests.clear();
-        await tx.contests.bulkAdd(data.contests);
-
-        await tx.records.clear();
-        await tx.records.bulkAdd(data.records);
-
-        await tx.meta.clear();
-        await tx.meta.bulkAdd(Object.entries(data.meta).map(([key, value]) => ({ key, value })));
+        await Promise.all([
+          bulkAddInChunks(tx.oiers, data.oiers, CHUNK_SIZE),
+          bulkAddInChunks(tx.schools, data.schools, CHUNK_SIZE),
+          bulkAddInChunks(tx.records, data.records, CHUNK_SIZE),
+          tx.contests.bulkAdd(data.contests),
+          tx.meta.bulkAdd(Object.entries(data.meta).map(([key, value]) => ({ key, value }))),
+        ]);
       },
     );
   }
