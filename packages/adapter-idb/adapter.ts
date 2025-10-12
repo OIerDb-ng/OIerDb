@@ -16,7 +16,7 @@ import type {
   ListSchoolsQuery,
   ListSchoolsResponse,
 } from '@oierdb/core';
-import { Dexie, type EntityTable } from 'dexie';
+import { Dexie, type EntityTable, type Table } from 'dexie';
 
 import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
 import { normalizePaginationParams } from './util';
@@ -25,7 +25,7 @@ interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
   schools: EntityTable<DbSchool, 'id'>;
   contests: EntityTable<DbContest, 'id'>;
-  records: EntityTable<DbRecord, 'uid' | 'contest_id'>;
+  records: Table<DbRecord, [number, number]>; // [uid, contest_id]
   meta: EntityTable<DbMetadata, 'key'>;
 }
 
@@ -57,14 +57,14 @@ export class IDBAdapter implements IAdapterWithLoader {
 
     const CHUNK_SIZE = 5000;
 
-    const bulkAddInChunks = async <T, TKeyPropName extends keyof T>(
-      table: EntityTable<T, TKeyPropName>,
-      items: readonly T[],
+    const bulkAddInChunks = async <T, TKey, TInsertType = T>(
+      table: Table<T, TKey, TInsertType>,
+      items: readonly TInsertType[],
       chunkSize: number,
     ) => {
       for (let i = 0; i < items.length; i += chunkSize) {
         const chunk = items.slice(i, i + chunkSize);
-        await table.bulkAdd(chunk as T[]);
+        await table.bulkAdd(chunk);
       }
     };
 
