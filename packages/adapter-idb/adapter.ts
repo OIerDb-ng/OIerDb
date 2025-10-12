@@ -41,8 +41,8 @@ export class IDBAdapter implements IAdapterWithLoader {
     // 改这里的定义之后，必须更新 DB_VERSION 的值
     this.db.version(DB_VERSION).stores({
       oiers: 'uid, name, lowered_name, initials, enroll_middle, gender, rank, *provinces',
-      schools: 'id, name, province, city, rank',
-      contests: 'id, name, year, type',
+      schools: 'id, name, province, city, rank, [province+city]',
+      contests: 'id, name, year, type, [type+year]',
       records: '[uid+contest_id], contest_id, school_id, uid, level, province',
       meta: 'key',
     });
@@ -53,6 +53,8 @@ export class IDBAdapter implements IAdapterWithLoader {
   // ==============================
 
   async loadData(data: DbParseResult): Promise<void> {
+    // TODO: load data incrementally
+
     const CHUNK_SIZE = 5000;
 
     const bulkAddInChunks = async <T, TKeyPropName extends keyof T>(
