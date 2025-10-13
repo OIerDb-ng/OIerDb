@@ -17,8 +17,8 @@ export class ContestService {
    * @param id 比赛 ID
    * @returns 比赛信息及相关记录
    */
-  async getContest(id: number): Promise<GetContestResponse> {
-    const result = await this.oierDbClient.getContest(id);
+  async getContest(id: number, page?: number, perPage?: number): Promise<GetContestResponse> {
+    const result = await this.oierDbClient.getContest(id, page, perPage);
 
     if (!result) {
       throw new NotFoundException(`Contest ${id} not found`);
