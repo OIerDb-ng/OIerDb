@@ -44,8 +44,8 @@ export class OIerDbClient {
     this.cache = new QuickLRU({ maxSize });
   }
 
-  private getCacheKey(type: 'oier' | 'school' | 'contest', id: number): string {
-    return `${type}:${id}`;
+  private getCacheKey(type: 'oier' | 'school' | 'contest', id: number, ...extra: any[]): string {
+    return `${type}:${id}:${extra.join(':')}`;
   }
 
   setAdapter(adapter: IAdapter): void {
@@ -145,14 +145,18 @@ export class OIerDbClient {
    * @param id 比赛 ID
    * @returns 比赛信息及相关记录，若不存在则返回 null
    */
-  async getContest(id: number): Promise<GetContestResponse | null> {
-    const cacheKey = this.getCacheKey('contest', id);
+  async getContest(
+    id: number,
+    page?: number,
+    perPage?: number,
+  ): Promise<GetContestResponse | null> {
+    const cacheKey = this.getCacheKey('contest', id, page, perPage);
 
     if (this.cacheEnabled && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) as GetContestResponse | null;
     }
 
-    const result = await this.adapter.getContest(id);
+    const result = await this.adapter.getContest(id, page, perPage);
 
     if (this.cacheEnabled) {
       this.cache.set(cacheKey, result);
