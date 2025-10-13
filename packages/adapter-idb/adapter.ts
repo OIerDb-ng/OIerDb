@@ -43,7 +43,7 @@ export class IDBAdapter implements IAdapterWithLoader {
       oiers: 'uid, name, lowered_name, initials, enroll_middle, gender, rank, *provinces',
       schools: 'id, name, province, city, rank, [province+city]',
       contests: 'id, name, year, type, [type+year]',
-      records: '[uid+contest_id], contest_id, school_id, uid, level, province',
+      records: '[uid+contest_id], contest_id, [contest_id+rank], school_id, uid, level, province',
       meta: 'key',
     });
   }
@@ -280,13 +280,28 @@ export class IDBAdapter implements IAdapterWithLoader {
     };
   }
 
-  async getContest(id: number): Promise<GetContestResponse | null> {
+  async getContest(
+    id: number,
+    _page?: number,
+    _perPage?: number,
+  ): Promise<GetContestResponse | null> {
     const contest = await this.db.contests.get(id);
     if (!contest) {
       return null;
     }
 
-    const records = await this.db.records.where('contest_id').equals(id).toArray();
+    const { page, perPage } = normalizePaginationParams(_page, _perPage);
+
+    const [records, total] = await Promise.all([
+      this.db.records
+        .where('[contest_id+rank]')
+        .between([id, Dexie.minKey], [id, Dexie.maxKey], true, true)
+        .offset((page - 1) * perPage)
+        .limit(perPage)
+        .toArray(),
+      this.db.records.where('contest_id').equals(id).count(),
+    ]);
+
     const school_ids = Array.from(new Set(records.map((r) => r.school_id)));
     const uids = Array.from(new Set(records.map((r) => r.uid)));
     const [schools, oiers, version] = await Promise.all([
@@ -303,8 +318,12 @@ export class IDBAdapter implements IAdapterWithLoader {
       id,
       contest,
       records,
-      schools: Object.fromEntries(schools.map((s) => [s.id, s])),
-      oiers: Object.fromEntries(oiers.map((o) => [o.uid, o])),
+      schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
+      oiers_map: Object.fromEntries(oiers.map((o) => [o.uid, o])),
+      page,
+      perPage,
+      total,
+      totalPages: Math.ceil(total / perPage),
       data_version: version,
     };
   }

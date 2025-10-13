@@ -234,8 +234,8 @@ describe('IDBAdapter', () => {
     expect(response!.id).toBe(1);
     expect(response!.contest.name).toBe('NOI2023');
     expect(response!.records.length).toBe(2);
-    expect(Object.keys(response!.schools).length).toBe(2);
-    expect(Object.keys(response!.oiers).length).toBe(2);
+    expect(Object.keys(response!.schools_map).length).toBe(2);
+    expect(Object.keys(response!.oiers_map).length).toBe(2);
   });
 
   it('should return null for non-existing contest', async () => {
@@ -313,12 +313,12 @@ describe('IDBAdapter', () => {
 
     // Check that all contestant IDs exist in oiers
     contest.contestant_ids.forEach((uid) => {
-      expect(response!.oiers[uid]).toBeDefined();
+      expect(response!.oiers_map[uid]).toBeDefined();
     });
 
     // Check that all records reference valid schools
     response!.records.forEach((record) => {
-      expect(response!.schools[record.school_id]).toBeDefined();
+      expect(response!.schools_map[record.school_id]).toBeDefined();
     });
   });
 });

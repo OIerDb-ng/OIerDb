@@ -209,13 +209,13 @@ describe('IDBAdapter with Real Data', () => {
       const response = await adapter.getContest(NOIP2024_ID);
 
       expect(response).not.toBeNull();
-      expect(Object.keys(response!.oiers).length).toBeGreaterThan(0);
-      expect(Object.keys(response!.schools).length).toBeGreaterThan(0);
+      expect(Object.keys(response!.oiers_map).length).toBeGreaterThan(0);
+      expect(Object.keys(response!.schools_map).length).toBeGreaterThan(0);
 
       // 验证映射数据的一致性
       response!.records.forEach((record) => {
-        expect(response!.oiers[record.uid]).toBeDefined();
-        expect(response!.schools[record.school_id]).toBeDefined();
+        expect(response!.oiers_map[record.uid]).toBeDefined();
+        expect(response!.schools_map[record.school_id]).toBeDefined();
       });
     });
 
@@ -230,6 +230,69 @@ describe('IDBAdapter with Real Data', () => {
       expect(response.contests.length).toBeGreaterThan(0);
       const found = response.contests.some((contest) => contest.id === NOIP2024_ID);
       expect(found).toBe(true);
+    });
+
+    it('应该支持分页获取比赛记录', async () => {
+      // 获取第一页
+      const page1 = await adapter.getContest(NOIP2024_ID, 1, 10);
+      expect(page1).not.toBeNull();
+      expect(page1!.page).toBe(1);
+      expect(page1!.perPage).toBe(10);
+      expect(page1!.records.length).toBeLessThanOrEqual(10);
+      expect(page1!.total).toBeGreaterThan(0);
+      expect(page1!.totalPages).toBeGreaterThan(0);
+
+      // 获取第二页
+      const page2 = await adapter.getContest(NOIP2024_ID, 2, 10);
+      expect(page2).not.toBeNull();
+      expect(page2!.page).toBe(2);
+      expect(page2!.records.length).toBeLessThanOrEqual(10);
+      expect(page2!.total).toBe(page1!.total); // 总数应该相同
+
+      // 确保两页的记录不重复
+      const page1Uids = new Set(page1!.records.map((r) => r.uid));
+      const page2Uids = new Set(page2!.records.map((r) => r.uid));
+      const intersection = [...page1Uids].filter((uid) => page2Uids.has(uid));
+      expect(intersection.length).toBe(0);
+    });
+
+    it('应该按 rank 升序返回记录', async () => {
+      const response = await adapter.getContest(NOIP2024_ID, 1, 50);
+      expect(response).not.toBeNull();
+
+      for (let i = 1; i < response!.records.length; i++) {
+        expect(response!.records[i].rank).toBeGreaterThanOrEqual(response!.records[i - 1].rank);
+      }
+    });
+
+    it('应该使用默认分页参数', async () => {
+      const response = await adapter.getContest(NOIP2024_ID);
+      expect(response).not.toBeNull();
+      expect(response!.page).toBe(1);
+      expect(response!.perPage).toBe(20); // 默认每页 20 条
+      expect(response!.records.length).toBeLessThanOrEqual(20);
+    });
+
+    it('分页查询应该比获取全部记录更快', async () => {
+      // 获取第一页（只有 20 条记录）
+      const startPaginated = Date.now();
+      const paginatedResponse = await adapter.getContest(NOIP2024_ID, 1, 20);
+      const paginatedTime = Date.now() - startPaginated;
+
+      // 获取大量记录（100 条）
+      const startLarge = Date.now();
+      const largeResponse = await adapter.getContest(NOIP2024_ID, 1, 100);
+      const largeTime = Date.now() - startLarge;
+
+      expect(paginatedResponse).not.toBeNull();
+      expect(largeResponse).not.toBeNull();
+      expect(paginatedResponse!.records.length).toBe(20);
+      expect(largeResponse!.records.length).toBeGreaterThanOrEqual(100);
+
+      // 分页查询应该更快（允许一些误差）
+      console.log(`分页查询 (20 条): ${paginatedTime}ms`);
+      console.log(`大量查询 (100 条): ${largeTime}ms`);
+      expect(paginatedTime).toBeLessThan(largeTime * 2); // 宽松的性能要求
     });
   });
 

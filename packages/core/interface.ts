@@ -115,12 +115,12 @@ export interface ListSchoolsResponse extends ResponseBase, PaginationInfo {
   schools: DbSchool[];
 }
 
-export interface GetContestResponse extends ResponseBase {
+export interface GetContestResponse extends ResponseBase, PaginationInfo {
   id: number;
   contest: DbContest;
   records: DbRecord[];
-  schools: Record<number, DbSchool>; // key: school_id
-  oiers: Record<number, DbOIer>; // key: uid
+  schools_map: Record<number, DbSchool>; // key: school_id
+  oiers_map: Record<number, DbOIer>; // key: uid
 }
 
 export interface ListContestsResponse extends ResponseBase, PaginationInfo {
@@ -197,9 +197,11 @@ export interface IAdapter {
   /**
    * 获取比赛信息
    * @param id 比赛 ID
+   * @param page 页码（默认为 1）
+   * @param perPage 每页记录数（默认为 50）
    * @returns 比赛信息及相关记录，若不存在则返回 null
    */
-  getContest(id: number): Promise<GetContestResponse | null>;
+  getContest(id: number, page?: number, perPage?: number): Promise<GetContestResponse | null>;
 
   /**
    * 获取比赛列表
