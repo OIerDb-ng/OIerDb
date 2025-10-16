@@ -1,6 +1,7 @@
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
@@ -28,6 +29,21 @@ async function bootstrap() {
     type: VersioningType.URI,
     prefix: 'v',
     defaultVersion: '1',
+  });
+
+  // Setup Swagger/OpenAPI
+  const config = new DocumentBuilder()
+    .setTitle('OIerDb API')
+    .setDescription('OIerDb API 文档')
+    .setVersion('1.0')
+    .addServer('/api/v1', 'API v1')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    customSiteTitle: 'OIerDb API 文档',
+    customCss: '.swagger-ui .topbar { display: none }',
+    jsonDocumentUrl: 'swagger/json',
   });
 
   await app.listen(PORT);
