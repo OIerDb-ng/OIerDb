@@ -6,6 +6,17 @@
 
 [🚧 **正在进行中**] 此仓库是 OIerDb 的新一代 Monorepo 仓库，包含前端、后端和数据生成器等多个子项目。
 
+## 项目结构
+
+- `apps` - 包含前端和后端应用
+  - `frontend-legacy` - 旧版前端（正在迁移中）
+  - `frontend` - 新版前端（正在开发中）
+  - `backend` - 后端 API 服务
+- `packages` - 共享的工具库和类型定义
+- `scripts` - 各种脚本和工具
+- `data` - 数据文件
+- `generator` - 数据生成器
+
 ## 开源许可
 
 本项目基于 [AGPL-3.0](./LICENSE) 许可协议开源。
