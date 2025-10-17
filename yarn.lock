@@ -3114,10 +3114,6 @@ __metadata:
     rxjs: "npm:^7.8.2"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.45.0"
-  peerDependencies:
-    "@oierdb/adapter-idb": "workspace:*"
-    "@oierdb/core": "workspace:*"
-    "@oierdb/parser": "workspace:*"
   languageName: unknown
   linkType: soft
 

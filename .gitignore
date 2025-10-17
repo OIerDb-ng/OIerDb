@@ -4,6 +4,7 @@ node_modules/
 dist/
 tmp/
 coverage/
+/out/
 
 # Turborepo
 .turbo/
