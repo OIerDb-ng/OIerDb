@@ -31,6 +31,15 @@ COPY --from=deps /app/out/full/ .
 
 RUN yarn build:backend
 
+# Install only production dependencies in a clean directory
+FROM base AS production-deps
+WORKDIR /app
+
+RUN corepack enable
+
+COPY --from=deps /app/out/json/ .
+RUN yarn workspaces focus @oierdb/backend --production
+
 # Production image, copy all the files and run
 FROM base AS runner
 WORKDIR /app
@@ -47,8 +56,8 @@ USER nestjs
 COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/dist ./apps/backend/dist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/package.json ./apps/backend/package.json
 COPY --from=installer --chown=nestjs:nodejs /app/packages ./packages
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=installer --chown=nestjs:nodejs /app/package.json ./package.json
+COPY --from=production-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=production-deps --chown=nestjs:nodejs /app/package.json ./package.json
 
 # Expose the application port
 EXPOSE 3000
