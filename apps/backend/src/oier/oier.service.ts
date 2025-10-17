@@ -9,7 +9,7 @@ import {
 import { OIERDB_CLIENT } from '../common/oierdb';
 
 @Injectable()
-export class OierService {
+export class OIerService {
   constructor(@Inject(OIERDB_CLIENT) private readonly oierDbClient: OIerDbClient) {}
 
   /**

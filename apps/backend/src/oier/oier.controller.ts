@@ -3,12 +3,12 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { GetOIerResponse, ListOIersResponse } from '@oierdb/core';
 
 import { ListOIersQueryDto } from './dto';
-import { OierService } from './oier.service';
+import { OIerService } from './oier.service';
 
 @ApiTags('选手')
 @Controller('oier')
-export class OierController {
-  constructor(private readonly oierService: OierService) {}
+export class OIerController {
+  constructor(private readonly oierService: OIerService) {}
 
   /**
    * 获取选手详细信息

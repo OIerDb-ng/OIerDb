@@ -3,7 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { OIerDbModule } from './common/oierdb/oierdb.module';
 import { ContestModule } from './contest/contest.module';
-import { OierModule } from './oier/oier.module';
+import { OIerModule } from './oier/oier.module';
 import { SchoolModule } from './school/school.module';
 
 @Module({
@@ -15,7 +15,7 @@ import { SchoolModule } from './school/school.module';
       },
     }),
     OIerDbModule,
-    OierModule,
+    OIerModule,
     ContestModule,
     SchoolModule,
   ],
