@@ -18,6 +18,8 @@ jobs:
         with:
           node-version: 22.x
           cache: yarn
+      - name: Enable Corepack
+        run: corepack enable
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
       - name: Lint
