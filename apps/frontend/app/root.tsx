@@ -11,6 +11,7 @@ import {
 } from 'react-router';
 
 import type { Route } from './+types/root';
+import { theme } from './theme';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider theme={theme}>{children}</MantineProvider>
 
         <ScrollRestoration />
         <Scripts />
