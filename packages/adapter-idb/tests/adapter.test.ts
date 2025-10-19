@@ -111,9 +111,7 @@ const mockParseResult: DbParseResult = {
       province: '上海',
     },
   ],
-  meta: {
-    data_version: 'mock-version',
-  },
+  data_version: 'mock-version',
 };
 
 describe('IDBAdapter', () => {

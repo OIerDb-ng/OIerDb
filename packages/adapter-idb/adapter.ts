@@ -85,7 +85,7 @@ export class IDBAdapter implements IAdapterWithLoader {
           bulkAddInChunks(tx.schools, data.schools, CHUNK_SIZE),
           bulkAddInChunks(tx.records, data.records, CHUNK_SIZE),
           tx.contests.bulkAdd(data.contests),
-          tx.meta.bulkAdd(Object.entries(data.meta).map(([key, value]) => ({ key, value }))),
+          tx.meta.bulkAdd([{ key: META_KEY_DATA_VERSION, value: data.data_version }]),
         ]);
       },
     );

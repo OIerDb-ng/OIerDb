@@ -107,7 +107,10 @@ export function parseResultText(text: string): ParsedOIerData[] {
   return data;
 }
 
-export function processData(parsedOiers: ParsedOIerData[], staticData: any): DbParseResult {
+export function processData(
+  parsedOiers: ParsedOIerData[],
+  staticData: any,
+): Omit<DbParseResult, 'data_version'> {
   // 创建比赛对象
   const contests: DbContest[] = staticData.contests.map((contestData: any, id: number) => ({
     id,
@@ -263,9 +266,6 @@ export function processData(parsedOiers: ParsedOIerData[], staticData: any): DbP
     schools,
     contests,
     records,
-    meta: {
-      enroll_middle_years: JSON.stringify([...new Set(dbOiers.map((oier) => oier.enroll_middle))]),
-    },
   };
 }
 
@@ -275,7 +275,8 @@ export function parseOIerDbData(resultText: string, staticJsonText: string): DbP
 
   const parsed = processData(parsedOiers, staticData);
 
-  parsed.meta['data_version'] = md5(resultText + staticJsonText);
-
-  return parsed;
+  return {
+    ...parsed,
+    data_version: md5(resultText + staticJsonText),
+  };
 }

@@ -81,7 +81,7 @@ export interface DbParseResult {
   schools: DbSchool[];
   contests: DbContest[];
   records: DbRecord[];
-  meta: Record<string, string>;
+  data_version: string;
 }
 
 // ==============================
