@@ -1,0 +1,970 @@
+[
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2004",
+    "type": "NOI",
+    "year": 2004
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2005",
+    "type": "NOI",
+    "year": 2005
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2006",
+    "type": "NOI",
+    "year": 2006
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2007",
+    "type": "NOI",
+    "year": 2007
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2008",
+    "type": "NOI",
+    "year": 2008
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2008提高",
+    "type": "NOIP提高",
+    "year": 2008
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2009",
+    "type": "NOI",
+    "year": 2009
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2009提高",
+    "type": "NOIP提高",
+    "year": 2009
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2010",
+    "type": "CTSC",
+    "year": 2010
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2010",
+    "type": "APIO",
+    "year": 2010
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2010",
+    "type": "NOI",
+    "year": 2010
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2010D类",
+    "type": "NOID类",
+    "year": 2010
+  },
+  {
+    "capacity": 297,
+    "fall_semester": false,
+    "full_score": 820,
+    "name": "IOI2010",
+    "type": "IOI",
+    "year": 2010
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2010提高",
+    "type": "NOIP提高",
+    "year": 2010
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2011",
+    "type": "CTSC",
+    "year": 2011
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2011",
+    "type": "APIO",
+    "year": 2011
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2011",
+    "type": "NOI",
+    "year": 2011
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2011D类",
+    "type": "NOID类",
+    "year": 2011
+  },
+  {
+    "capacity": 303,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2011",
+    "type": "IOI",
+    "year": 2011
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2011提高",
+    "type": "NOIP提高",
+    "year": 2011
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2012",
+    "type": "CTSC",
+    "year": 2012
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2012",
+    "type": "APIO",
+    "year": 2012
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2012",
+    "type": "NOI",
+    "year": 2012
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2012D类",
+    "type": "NOID类",
+    "year": 2012
+  },
+  {
+    "capacity": 310,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2012",
+    "type": "IOI",
+    "year": 2012
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2012提高",
+    "type": "NOIP提高",
+    "year": 2012
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2013",
+    "type": "CTSC",
+    "year": 2013
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2013",
+    "type": "APIO",
+    "year": 2013
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2013",
+    "type": "NOI",
+    "year": 2013
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2013D类",
+    "type": "NOID类",
+    "year": 2013
+  },
+  {
+    "capacity": 298,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2013",
+    "type": "IOI",
+    "year": 2013
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2013提高",
+    "type": "NOIP提高",
+    "year": 2013
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2013普及",
+    "type": "NOIP普及",
+    "year": 2013
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2014",
+    "type": "CTSC",
+    "year": 2014
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2014",
+    "type": "APIO",
+    "year": 2014
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2014",
+    "type": "NOI",
+    "year": 2014
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2014D类",
+    "type": "NOID类",
+    "year": 2014
+  },
+  {
+    "capacity": 311,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2014",
+    "type": "IOI",
+    "year": 2014
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2014提高",
+    "type": "NOIP提高",
+    "year": 2014,
+    "capacity": 5861
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2014普及",
+    "type": "NOIP普及",
+    "year": 2014,
+    "capacity": 5224
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2015",
+    "type": "WC",
+    "year": 2015
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2015",
+    "type": "CTSC",
+    "year": 2015
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2015",
+    "type": "APIO",
+    "year": 2015
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2015",
+    "type": "NOI",
+    "year": 2015
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2015D类",
+    "type": "NOID类",
+    "year": 2015
+  },
+  {
+    "capacity": 321,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2015",
+    "type": "IOI",
+    "year": 2015
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2015提高",
+    "type": "NOIP提高",
+    "year": 2015,
+    "capacity": 6458
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2015普及",
+    "type": "NOIP普及",
+    "year": 2015,
+    "capacity": 6178
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2016",
+    "type": "WC",
+    "year": 2016
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2016",
+    "type": "CTSC",
+    "year": 2016
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2016",
+    "type": "APIO",
+    "year": 2016
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2016",
+    "type": "NOI",
+    "year": 2016
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2016D类",
+    "type": "NOID类",
+    "year": 2016
+  },
+  {
+    "capacity": 308,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2016",
+    "type": "IOI",
+    "year": 2016
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2016提高",
+    "type": "NOIP提高",
+    "year": 2016,
+    "capacity": 8332
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2016普及",
+    "type": "NOIP普及",
+    "year": 2016,
+    "capacity": 6749
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2017",
+    "type": "WC",
+    "year": 2017
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2017",
+    "type": "CTSC",
+    "year": 2017
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2017",
+    "type": "APIO",
+    "year": 2017
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2017",
+    "type": "NOI",
+    "year": 2017
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2017D类",
+    "type": "NOID类",
+    "year": 2017
+  },
+  {
+    "capacity": 304,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2017",
+    "type": "IOI",
+    "year": 2017
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2017提高",
+    "type": "NOIP提高",
+    "year": 2017,
+    "capacity": 10301
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2017普及",
+    "type": "NOIP普及",
+    "year": 2017,
+    "capacity": 8263
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2018",
+    "type": "WC",
+    "year": 2018
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTSC2018",
+    "type": "CTSC",
+    "year": 2018
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2018",
+    "type": "APIO",
+    "year": 2018
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2018",
+    "type": "NOI",
+    "year": 2018
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2018D类",
+    "type": "NOID类",
+    "year": 2018
+  },
+  {
+    "capacity": 335,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2018",
+    "type": "IOI",
+    "year": 2018
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "NOIP2018提高",
+    "type": "NOIP提高",
+    "year": 2018,
+    "capacity": 12856
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2018普及",
+    "type": "NOIP普及",
+    "year": 2018,
+    "capacity": 11895
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2019",
+    "type": "WC",
+    "year": 2019
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "CTS2019",
+    "type": "CTSC",
+    "year": 2019
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2019",
+    "type": "APIO",
+    "year": 2019
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2019",
+    "type": "NOI",
+    "year": 2019
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2019夏令营",
+    "type": "NOID类",
+    "year": 2019
+  },
+  {
+    "capacity": 327,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2019",
+    "type": "IOI",
+    "year": 2019
+  },
+  {
+    "fall_semester": true,
+    "full_score": 600,
+    "name": "CSP2019提高",
+    "type": "CSP提高",
+    "year": 2019,
+    "capacity": 13903
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2019入门",
+    "type": "CSP入门",
+    "year": 2019,
+    "capacity": 15324
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2020",
+    "type": "WC",
+    "year": 2020
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2020",
+    "type": "APIO",
+    "year": 2020
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2020",
+    "type": "NOI",
+    "year": 2020
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2020夏令营",
+    "type": "NOID类",
+    "year": 2020
+  },
+  {
+    "capacity": 343,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2020",
+    "type": "IOI",
+    "year": 2020
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2020提高",
+    "type": "CSP提高",
+    "year": 2020,
+    "capacity": 11048
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2020入门",
+    "type": "CSP入门",
+    "year": 2020,
+    "capacity": 14971
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2020",
+    "type": "NOIP",
+    "year": 2020,
+    "capacity": 4693
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2021",
+    "type": "WC",
+    "year": 2021
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2021",
+    "type": "APIO",
+    "year": 2021
+  },
+  {
+    "capacity": 351,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2021",
+    "type": "IOI",
+    "year": 2021
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2021",
+    "type": "NOI",
+    "year": 2021
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2021夏令营",
+    "type": "NOID类",
+    "year": 2021
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2021提高",
+    "type": "CSP提高",
+    "year": 2021,
+    "capacity": 11601
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2021入门",
+    "type": "CSP入门",
+    "year": 2021,
+    "capacity": 14931
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2021",
+    "type": "NOIP",
+    "year": 2021,
+    "capacity": 5261
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2022",
+    "type": "WC",
+    "year": 2022
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "NGOI2022",
+    "type": "NGOI",
+    "year": 2022
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2022",
+    "type": "APIO",
+    "year": 2022
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2022线上",
+    "type": "APIO",
+    "year": 2022
+  },
+  {
+    "capacity": 349,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2022",
+    "type": "IOI",
+    "year": 2022
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2022",
+    "type": "NOI",
+    "year": 2022
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2022夏令营",
+    "type": "NOID类",
+    "year": 2022
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2022提高",
+    "type": "CSP提高",
+    "year": 2022,
+    "capacity": 9216
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2022入门",
+    "type": "CSP入门",
+    "year": 2022,
+    "capacity": 11320
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2022",
+    "type": "NOIP",
+    "year": 2022,
+    "capacity": 4372
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2023",
+    "type": "WC",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 400,
+    "name": "春季测试2023",
+    "type": "NOIST",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "NGOI2023",
+    "type": "NGOI",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2023",
+    "type": "APIO",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2023线上",
+    "type": "APIO",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2023",
+    "type": "NOI",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2023夏令营",
+    "type": "NOID类",
+    "year": 2023
+  },
+  {
+    "capacity": 350,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2023",
+    "type": "IOI",
+    "year": 2023
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2023提高",
+    "type": "CSP提高",
+    "year": 2023,
+    "capacity": 19202
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2023入门",
+    "type": "CSP入门",
+    "year": 2023,
+    "capacity": 28869
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2023",
+    "type": "NOIP",
+    "year": 2023,
+    "capacity": 6670
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NGOI2024",
+    "type": "NGOI",
+    "year": 2023
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2024",
+    "type": "WC",
+    "year": 2024
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2024",
+    "type": "APIO",
+    "year": 2024
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2024",
+    "type": "NOI",
+    "year": 2024
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2024夏令营",
+    "type": "NOID类",
+    "year": 2024
+  },
+  {
+    "capacity": 353,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2024",
+    "type": "IOI",
+    "year": 2024
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2024提高",
+    "type": "CSP提高",
+    "year": 2024,
+    "capacity": 27521
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2024入门",
+    "type": "CSP入门",
+    "year": 2024,
+    "capacity": 40430
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NOIP2024",
+    "type": "NOIP",
+    "year": 2024,
+    "capacity": 7510
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "NGOI2025",
+    "type": "NGOI",
+    "year": 2024
+  },
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "WC2025",
+    "type": "WC",
+    "year": 2025
+  },
+
+  {
+    "fall_semester": false,
+    "full_score": 300,
+    "name": "APIO2025",
+    "type": "APIO",
+    "year": 2025
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2025",
+    "type": "NOI",
+    "year": 2025
+  },
+  {
+    "fall_semester": false,
+    "full_score": 705,
+    "name": "NOI2025夏令营",
+    "type": "NOID类",
+    "year": 2025
+  },
+  {
+    "capacity": 330,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2025",
+    "type": "IOI",
+    "year": 2025
+  }
+]

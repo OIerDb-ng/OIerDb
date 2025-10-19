@@ -1,0 +1,7 @@
+certifi==2025.10.5
+charset-normalizer==3.4.4
+idna==3.11
+pypinyin==0.55.0
+requests==2.32.5
+tqdm==4.67.1
+urllib3==2.5.0
