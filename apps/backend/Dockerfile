@@ -1,5 +1,20 @@
 FROM node:24-alpine AS base
 
+# Generate data using Python
+FROM python:3.13-slim AS data-generator
+WORKDIR /generator
+
+# Copy Python requirements
+COPY generator/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy generator files and data
+COPY generator/ ./
+COPY data/ ../data/
+
+# Generate data
+RUN python main.py
+
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -28,7 +43,6 @@ RUN yarn install --frozen-lockfile
 
 # Build the project
 COPY --from=deps /app/out/full/ .
-
 RUN yarn build:backend
 
 # Install only production dependencies in a clean directory
@@ -58,6 +72,9 @@ COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/package.json ./app
 COPY --from=installer --chown=nestjs:nodejs /app/packages ./packages
 COPY --from=production-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=production-deps --chown=nestjs:nodejs /app/package.json ./package.json
+
+# Copy generated data from Python stage
+COPY --from=data-generator --chown=nestjs:nodejs /generator/dist ./data
 
 # Expose the application port
 EXPOSE 3000

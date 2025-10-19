@@ -3,6 +3,8 @@ import { IDBAdapter } from '@oierdb/adapter-idb';
 import { OIerDbClient } from '@oierdb/core';
 import { parseOIerDbData } from '@oierdb/parser';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constants';
 
@@ -16,8 +18,8 @@ import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constan
 
         console.time('load data');
         const [result, staticJsonText] = await Promise.all([
-          fetch(RESULT_TXT_URL).then((res) => res.text()),
-          fetch(STATIC_JSON_URL).then((res) => res.text()),
+          loadDataFile('data/result.txt', RESULT_TXT_URL),
+          loadDataFile('data/static.json', STATIC_JSON_URL),
         ]);
         console.timeEnd('load data');
 
@@ -49,3 +51,21 @@ import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constan
   exports: [OIERDB_CLIENT],
 })
 export class OIerDbModule {}
+
+async function loadDataFile(localPath: string, fallbackUrl: string): Promise<string> {
+  try {
+    return await readFile(join(process.cwd(), localPath), 'utf-8');
+  } catch (error) {
+    console.warn(`Failed to load local file ${localPath}, falling back to URL: ${fallbackUrl}`);
+    if (error instanceof Error) {
+      console.warn(`  Error: ${error.message}`);
+    }
+
+    const response = await fetch(fallbackUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from ${fallbackUrl}: ${response.statusText}`);
+    }
+
+    return response.text();
+  }
+}
