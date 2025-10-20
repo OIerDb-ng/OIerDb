@@ -13,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - name: Use Node.js 22.x
         uses: actions/setup-node@v5
         with:
           node-version: 22.x
-      - name: Enable Corepack
-        run: corepack enable
+          cache: yarn
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
       - name: Lint
