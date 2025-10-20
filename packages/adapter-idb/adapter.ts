@@ -15,6 +15,7 @@ import type {
   ListOIersResponse,
   ListSchoolsQuery,
   ListSchoolsResponse,
+  VersionResponse,
 } from '@oierdb/core';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
@@ -99,6 +100,14 @@ export class IDBAdapter implements IAdapterWithLoader {
     return await this.db.meta
       .get(META_KEY_DATA_VERSION)
       .then((meta) => meta?.value === targetVersion);
+  }
+
+  async getVersion(): Promise<VersionResponse> {
+    const version = await this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || '');
+
+    return {
+      data_version: version,
+    };
   }
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {

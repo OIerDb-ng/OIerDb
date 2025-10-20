@@ -92,6 +92,8 @@ export interface ResponseBase {
   data_version: string; // 后端数据版本（通常为 SHA256 哈希值）
 }
 
+export interface VersionResponse extends ResponseBase {}
+
 export interface GetOIerResponse extends ResponseBase {
   uid: number;
   oier: DbOIer;
@@ -165,6 +167,12 @@ export interface IAdapter {
    * 检查可用性
    */
   checkAvailability(targetVersion: string): Promise<boolean>;
+
+  /**
+   * 获取数据版本
+   * @returns 数据版本信息
+   */
+  getVersion(): Promise<VersionResponse>;
 
   /**
    * 获取选手信息

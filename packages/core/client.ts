@@ -11,6 +11,7 @@ import type {
   ListOIersResponse,
   ListSchoolsQuery,
   ListSchoolsResponse,
+  VersionResponse,
 } from './interface';
 
 export interface OIerDbClientOptions {
@@ -78,6 +79,14 @@ export class OIerDbClient {
    */
   async checkAvailability(targetVersion: string): Promise<boolean> {
     return this.adapter.checkAvailability(targetVersion);
+  }
+
+  /**
+   * 获取数据版本
+   * @returns 数据版本信息
+   */
+  async getVersion(): Promise<VersionResponse> {
+    return this.adapter.getVersion();
   }
 
   /**

@@ -10,12 +10,19 @@ import type {
   ListOIersResponse,
   ListSchoolsQuery,
   ListSchoolsResponse,
+  VersionResponse,
 } from './interface';
 
 // Mock adapter for testing
 class MockAdapter implements IAdapter {
   async checkAvailability(targetVersion: string): Promise<boolean> {
     return targetVersion === 'test-version';
+  }
+
+  async getVersion(): Promise<VersionResponse> {
+    return {
+      data_version: 'test-version',
+    };
   }
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
