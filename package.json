@@ -7,7 +7,9 @@
     "packages/*"
   ],
   "scripts": {
+    "build:frontend": "turbo run @oierdb/frontend#build",
     "build:backend": "turbo run @oierdb/backend#build",
+    "dev:frontend": "turbo run @oierdb/frontend#dev",
     "dev:backend": "turbo run @oierdb/backend#dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
@@ -26,7 +28,7 @@
   },
   "packageManager": "yarn@4.10.3",
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,css,less}": [
+    "*.{js,jsx,ts,tsx,css,less,scss}": [
       "prettier --write",
       "git add"
     ]
