@@ -20,12 +20,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <ColorSchemeScript />
+        <ColorSchemeScript defaultColorScheme="auto" />
         <Meta />
         <Links />
       </head>
       <body>
-        <MantineProvider theme={theme}>{children}</MantineProvider>
+        <MantineProvider defaultColorScheme="auto" theme={theme}>
+          {children}
+        </MantineProvider>
 
         <ScrollRestoration />
         <Scripts />
