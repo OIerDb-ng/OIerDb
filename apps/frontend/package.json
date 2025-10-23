@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@react-router/dev": "^7.9.4",
-    "@react-router/fs-routes": "^7.9.4",
     "@types/node": "^22",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

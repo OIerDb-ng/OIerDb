@@ -3471,7 +3471,6 @@ __metadata:
     "@mantine/hooks": "npm:^8.3.5"
     "@mantine/vanilla-extract": "npm:^8.3.5"
     "@react-router/dev": "npm:^7.9.4"
-    "@react-router/fs-routes": "npm:^7.9.4"
     "@react-router/node": "npm:^7.9.4"
     "@react-router/serve": "npm:^7.9.4"
     "@types/node": "npm:^22"
@@ -3595,21 +3594,6 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/a9dfe1d65f773024e6ca3dc83c9ba5bf0c44dfdfbecfea6d61ffd50b87b248c10813dc58e0a81ddab11ca254c16d6382e2e63e33c6e30d42dbb347a61cd2dd3d
-  languageName: node
-  linkType: hard
-
-"@react-router/fs-routes@npm:^7.9.4":
-  version: 7.9.4
-  resolution: "@react-router/fs-routes@npm:7.9.4"
-  dependencies:
-    minimatch: "npm:^9.0.0"
-  peerDependencies:
-    "@react-router/dev": ^7.9.4
-    typescript: ^5.1.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/fe950fde77d87458bac734090ba8b41c7af446f6df2c6857500f1937a73320a77a17d6e89770fe167476e244b76739b011d99e0791330fd68064b8060d9a8add
   languageName: node
   linkType: hard
 
@@ -10534,7 +10518,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^9.0.0, minimatch@npm:^9.0.4":
+"minimatch@npm:^9.0.4":
   version: 9.0.5
   resolution: "minimatch@npm:9.0.5"
   dependencies:
