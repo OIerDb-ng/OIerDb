@@ -10,6 +10,7 @@
     "check-types": "react-router typegen && tsc"
   },
   "dependencies": {
+    "@fontsource/saira": "^5.2.10",
     "@mantine/core": "^8.3.5",
     "@mantine/hooks": "^8.3.5",
     "@mantine/vanilla-extract": "^8.3.5",

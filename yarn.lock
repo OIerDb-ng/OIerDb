@@ -2228,6 +2228,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource/saira@npm:^5.2.10":
+  version: 5.2.10
+  resolution: "@fontsource/saira@npm:5.2.10"
+  checksum: 10c0/861cb55a0890f3e58e19e4046acd3aac948c4e50ec15e9c12defc88597052e9d005f3c419da068c9eaf187889dff15e769c4a76e509bac84f25dd1b78847f8d2
+  languageName: node
+  linkType: hard
+
 "@humanfs/core@npm:^0.19.1":
   version: 0.19.1
   resolution: "@humanfs/core@npm:0.19.1"
@@ -3467,6 +3474,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@oierdb/frontend@workspace:apps/frontend"
   dependencies:
+    "@fontsource/saira": "npm:^5.2.10"
     "@mantine/core": "npm:^8.3.5"
     "@mantine/hooks": "npm:^8.3.5"
     "@mantine/vanilla-extract": "npm:^8.3.5"
