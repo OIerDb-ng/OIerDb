@@ -1,9 +1,16 @@
 import { Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { GetContestResponse, ListContestsResponse } from '@oierdb/core';
 
 import { ContestService } from './contest.service';
-import { ListContestsQueryDto } from './dto';
+import { GetContestResponseDto, ListContestsQueryDto, ListContestsResponseDto } from './dto';
 
 @ApiTags('比赛')
 @Controller('contest')
@@ -28,7 +35,7 @@ export class ContestController {
     type: Number,
     example: 20,
   })
-  @ApiResponse({ status: 200, description: '成功返回比赛信息' })
+  @ApiOkResponse({ description: '成功返回比赛信息', type: GetContestResponseDto })
   @ApiResponse({ status: 404, description: '比赛不存在' })
   getContest(
     @Param('id', ParseIntPipe) id: number,
@@ -44,7 +51,7 @@ export class ContestController {
    */
   @Get()
   @ApiOperation({ summary: '获取比赛列表', description: '根据条件查询比赛列表，支持分页' })
-  @ApiResponse({ status: 200, description: '成功返回比赛列表' })
+  @ApiOkResponse({ description: '成功返回比赛列表', type: ListContestsResponseDto })
   listContests(@Query() query: ListContestsQueryDto): Promise<ListContestsResponse> {
     return this.contestService.listContests(query);
   }

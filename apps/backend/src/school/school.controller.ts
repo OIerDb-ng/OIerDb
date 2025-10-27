@@ -1,8 +1,8 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { GetSchoolResponse, ListSchoolsResponse } from '@oierdb/core';
 
-import { ListSchoolsQueryDto } from './dto';
+import { GetSchoolResponseDto, ListSchoolsQueryDto, ListSchoolsResponseDto } from './dto';
 import { SchoolService } from './school.service';
 
 @ApiTags('学校')
@@ -17,7 +17,7 @@ export class SchoolController {
   @Get(':id')
   @ApiOperation({ summary: '获取学校详细信息', description: '根据学校 ID 获取学校的详细信息' })
   @ApiParam({ name: 'id', description: '学校 ID', type: Number, example: 1 })
-  @ApiResponse({ status: 200, description: '成功返回学校信息' })
+  @ApiOkResponse({ description: '成功返回学校信息', type: GetSchoolResponseDto })
   @ApiResponse({ status: 404, description: '学校不存在' })
   getSchool(@Param('id', ParseIntPipe) id: number): Promise<GetSchoolResponse> {
     return this.schoolService.getSchool(id);
@@ -29,7 +29,7 @@ export class SchoolController {
    */
   @Get()
   @ApiOperation({ summary: '获取学校列表', description: '根据条件查询学校列表，支持分页' })
-  @ApiResponse({ status: 200, description: '成功返回学校列表' })
+  @ApiOkResponse({ description: '成功返回学校列表', type: ListSchoolsResponseDto })
   listSchools(@Query() query: ListSchoolsQueryDto): Promise<ListSchoolsResponse> {
     return this.schoolService.listSchools(query);
   }

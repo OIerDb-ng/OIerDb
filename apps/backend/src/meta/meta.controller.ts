@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { VersionResponse } from '@oierdb/core';
 
+import { VersionResponseDto } from './dto';
 import { MetaService } from './meta.service';
 
 @ApiTags('meta')
@@ -19,6 +20,7 @@ export class MetaController {
   })
   @ApiOkResponse({
     description: '数据版本信息',
+    type: VersionResponseDto,
   })
   async getVersion(): Promise<VersionResponse> {
     return await this.metaService.getVersion();
