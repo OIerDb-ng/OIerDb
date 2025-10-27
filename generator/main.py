@@ -65,7 +65,7 @@ def __main__():
         try:
             school = School.by_name_in_province(school_name, province)
         except ValueError as e:
-            if '--disable-school-fallback' in argv:
+            if "--disable-school-fallback" in argv:
                 new_schools.append((province, school_name))
                 raise e
             else:
@@ -203,15 +203,15 @@ def __main__():
         for oier in OIer.get_all():
             for record in oier.records:
                 contest_uid_pairs.append((record.contest.id, oier.uid))
-        
+
         pair_counter = {}
         for pair in contest_uid_pairs:
             pair_counter[pair] = pair_counter.get(pair, 0) + 1
         duplicate_pairs = [pair for pair, count in pair_counter.items() if count > 1]
         if duplicate_pairs:
             errors.append(
-                f"发现重复的【比赛 ID、UID】组合: " + 
-                ', '.join([f"(比赛ID: {cid}, UID: {uid})" for cid, uid in duplicate_pairs])
+                f"发现重复的【比赛 ID、UID】组合: "
+                + ", ".join([f"(比赛ID: {cid}, UID: {uid})" for cid, uid in duplicate_pairs])
             )
 
         # 如果存在错误，输出并退出
@@ -232,7 +232,7 @@ def __main__():
         new_schools = sorted(set(new_schools))
         with open("dist/merge_preview.txt", "w") as f:
             print(
-"""# 用 '#' 号表示注释。
+                """# 用 '#' 号表示注释。
 # 这是由 main.py 自动生成的学校合并确认文件，本文件的格式有如下几种：
 #   b <name> <origin>  表示将新名称 <name> 合并到 <origin>，将名称作为别名。
 #   f <name>,<origin>  表示将新名称 <name> 合并到 <origin>，并将新名称设为正式名称。
@@ -293,8 +293,8 @@ def __main__():
 
     def compute_sha512():
         """
-        计算 dist/result.txt 的 SHA512 值，保存在 sha512/result 中。
-        （注：使用 *.txt 后缀可以利用 gzip 压缩）
+        计算 dist/result.txt 的 SHA512 值,保存在 result.info.json 中,并创建符号链接。
+        (注:使用 *.txt 后缀可以利用 gzip 压缩)
         """
 
         file_size = os.stat("dist/result.txt").st_size
@@ -304,9 +304,24 @@ def __main__():
         with open("dist/result.info.json", "w", newline="\n") as f:
             print('{"sha512":"' + sha512 + '", "size":' + str(file_size) + "}", file=f)
 
+        # 创建符号链接
+        sha512_short = sha512[:7]
+
+        # 创建符号链接 result.{sha512前7位}.txt -> result.txt
+        result_versioned_link = f"dist/result.{sha512_short}.txt"
+        if os.path.exists(result_versioned_link) or os.path.islink(result_versioned_link):
+            os.unlink(result_versioned_link)
+        os.symlink("result.txt", result_versioned_link)
+
+        # 创建符号链接 result.sha512.json -> result.info.json
+        result_sha512_link = "dist/result.sha512.json"
+        if os.path.exists(result_sha512_link) or os.path.islink(result_sha512_link):
+            os.unlink(result_sha512_link)
+        os.symlink("result.info.json", result_sha512_link)
+
     def update_static():
         "调用 update_static.py 以产生静态 JSON 信息。"
-        
+
         subprocess.run([executable, "update_static.py"], check=True)
 
     def report_status(message):

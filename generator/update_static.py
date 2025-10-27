@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 
@@ -40,6 +41,21 @@ def main():
 
     with open(dist_dir / "static.info.json", "w", encoding="utf-8") as f:
         json.dump(info_data, f, ensure_ascii=False, separators=(",", ":"))
+
+    # 创建符号链接
+    sha512_short = sha512_hash[:7]
+    
+    # 创建符号链接 static.{sha512前7位}.json -> static.json
+    static_versioned_link = dist_dir / f"static.{sha512_short}.json"
+    if static_versioned_link.exists() or static_versioned_link.is_symlink():
+        static_versioned_link.unlink()
+    os.symlink("static.json", static_versioned_link)
+    
+    # 创建符号链接 static.sha512.json -> static.info.json
+    static_sha512_link = dist_dir / "static.sha512.json"
+    if static_sha512_link.exists() or static_sha512_link.is_symlink():
+        static_sha512_link.unlink()
+    os.symlink("static.info.json", static_sha512_link)
 
     if school_file.exists():
         school_file.unlink()
