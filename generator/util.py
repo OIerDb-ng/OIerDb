@@ -5,6 +5,7 @@ from collections import Counter
 from decimal import Decimal as D, getcontext
 from itertools import chain
 from sys import stderr
+from config import DATA_DIR
 
 getcontext().prec = 64
 
@@ -68,23 +69,23 @@ def __main__():
 
     global add_contestant, contests, contest_type_coefficient, decay_coefficient, enrollment_middle, get_contest_id, get_grades, get_initials, get_mode, get_weighted_mode, lcs, rank_coefficient
 
-    with open("../data/contests.json") as f:
+    with open(DATA_DIR / "contests.json") as f:
         for contest in json.load(f):
             Contest.create(contest)
 
-    with open("../data/grades.json") as f:
+    with open(DATA_DIR / "grades.json") as f:
         g_ = json.load(f)
     g_initial = g_["initial"]
     g_element = g_["element"]
     g_special = g_["special"]
 
-    with open("../data/surnames.json") as f:
+    with open(DATA_DIR / "surnames.json") as f:
         surnames = json.load(f)
 
-    with open("../data/scoring.json") as f:
+    with open(DATA_DIR / "scoring.json") as f:
         scoring = json.load(f)
 
-    with open("../data/name_exceptions.json") as f:
+    with open(DATA_DIR / "name_exceptions.json") as f:
         name_exceptions = json.load(f)
 
     pypinyin.load_single_dict({ ord(k): v for k, v in name_exceptions.items() })

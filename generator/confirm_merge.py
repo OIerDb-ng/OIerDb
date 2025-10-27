@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
+from config import DATA_DIR, DIST_DIR
 
 
 def main():
@@ -20,10 +21,10 @@ def main():
     schools = []
 
     try:
-        with open("../data/school.txt", "r", encoding="utf-8") as f:
+        with open(DATA_DIR / "school.txt", "r", encoding="utf-8") as f:
             schools = f.read().strip().split("\n")
     except FileNotFoundError:
-        print("错误: 找不到文件 ../data/school.txt", file=sys.stderr)
+        print(f"错误: 找不到文件 {DATA_DIR / 'school.txt'}", file=sys.stderr)
         sys.exit(1)
 
     # 建立学校名称到索引的映射
@@ -39,10 +40,10 @@ def main():
 
     # 读取合并预览数据
     try:
-        with open("dist/merge_preview.txt", "r", encoding="utf-8") as f:
+        with open(DIST_DIR / "merge_preview.txt", "r", encoding="utf-8") as f:
             data = f.read().split("\n")
     except FileNotFoundError:
-        print("错误: 找不到文件 dist/merge_preview.txt", file=sys.stderr)
+        print(f"错误: 找不到文件 {DIST_DIR / 'merge_preview.txt'}", file=sys.stderr)
         sys.exit(1)
 
     # 处理每一行命令
@@ -132,7 +133,7 @@ def main():
 
     # 写入新的学校数据文件
     try:
-        with open("../data/school.txt", "w", encoding="utf-8") as f:
+        with open(DATA_DIR / "school.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(schools) + "\n")
         print("处理完成，结果已保存到 data/school.txt")
     except Exception as e:

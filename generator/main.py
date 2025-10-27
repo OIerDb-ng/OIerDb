@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import util
+from config import GENERATOR_DIR, DATA_DIR, DIST_DIR
 from contest import Contest
 from oier import OIer
 from record import Record
@@ -35,7 +36,7 @@ def __main__():
     def parse_school():
         "解析 school.txt 文件。"
 
-        with open("../data/school.txt") as f:
+        with open(DATA_DIR / "school.txt") as f:
             raw_data = f.readlines()
         for idx, line in tqdm(enumerate(raw_data), total=len(raw_data)):
             try:
@@ -91,7 +92,7 @@ def __main__():
     def parse_raw():
         "解析 raw.txt 文件。"
 
-        with open("../data/raw.txt") as f:
+        with open(DATA_DIR / "raw.txt") as f:
             raw_data = f.readlines()
         for idx, line in tqdm(enumerate(raw_data), total=len(raw_data)):
             try:
@@ -230,7 +231,7 @@ def __main__():
 
         nonlocal new_schools
         new_schools = sorted(set(new_schools))
-        with open("dist/merge_preview.txt", "w") as f:
+        with open(DIST_DIR / "merge_preview.txt", "w") as f:
             print(
                 """# 用 '#' 号表示注释。
 # 这是由 main.py 自动生成的学校合并确认文件，本文件的格式有如下几种：
@@ -280,14 +281,14 @@ def __main__():
         output = []
         for school in tqdm(School.get_all()):
             output.append([school.name, school.province, school.city, float(round(school.score, 2))])
-        with open("dist/school.json", "w", newline="\n") as f:
+        with open(DIST_DIR / "school.json", "w", newline="\n") as f:
             json.dump(output, f, ensure_ascii=False)
 
     def output_compressed():
         "输出压缩的结果，不压缩的结果先咕着。"
 
         OIer.sort_by_score()
-        with open("dist/result.txt", "w", newline="\n") as f:
+        with open(DIST_DIR / "result.txt", "w", newline="\n") as f:
             for oier in tqdm(OIer.get_all()):
                 print(oier.to_compress_format(), file=f, end="\n")
 
@@ -297,32 +298,32 @@ def __main__():
         (注:使用 *.txt 后缀可以利用 gzip 压缩)
         """
 
-        file_size = os.stat("dist/result.txt").st_size
+        file_size = os.stat(DIST_DIR / "result.txt").st_size
 
-        with open("dist/result.txt", "rb") as f:
+        with open(DIST_DIR / "result.txt", "rb") as f:
             sha512 = hashlib.sha512(f.read()).hexdigest()
-        with open("dist/result.info.json", "w", newline="\n") as f:
+        with open(DIST_DIR / "result.info.json", "w", newline="\n") as f:
             print('{"sha512":"' + sha512 + '", "size":' + str(file_size) + "}", file=f)
 
         # 创建符号链接
         sha512_short = sha512[:7]
 
         # 创建符号链接 result.{sha512前7位}.txt -> result.txt
-        result_versioned_link = f"dist/result.{sha512_short}.txt"
-        if os.path.exists(result_versioned_link) or os.path.islink(result_versioned_link):
-            os.unlink(result_versioned_link)
-        os.symlink("result.txt", result_versioned_link)
+        result_versioned_link = DIST_DIR / f"result.{sha512_short}.txt"
+        if result_versioned_link.exists() or result_versioned_link.is_symlink():
+            result_versioned_link.unlink()
+        result_versioned_link.symlink_to("result.txt")
 
         # 创建符号链接 result.sha512.json -> result.info.json
-        result_sha512_link = "dist/result.sha512.json"
-        if os.path.exists(result_sha512_link) or os.path.islink(result_sha512_link):
-            os.unlink(result_sha512_link)
-        os.symlink("result.info.json", result_sha512_link)
+        result_sha512_link = DIST_DIR / "result.sha512.json"
+        if result_sha512_link.exists() or result_sha512_link.is_symlink():
+            result_sha512_link.unlink()
+        result_sha512_link.symlink_to("result.info.json")
 
     def update_static():
         "调用 update_static.py 以产生静态 JSON 信息。"
 
-        subprocess.run([executable, "update_static.py"], check=True)
+        subprocess.run([executable, GENERATOR_DIR / "update_static.py"], check=True)
 
     def report_status(message):
         "向终端报告当前进度。"
