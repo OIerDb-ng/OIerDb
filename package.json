@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "install:generator": "python3 -m venv generator/.venv && generator/.venv/bin/pip install -r generator/requirements.txt",
+    "generate": "generator/.venv/bin/python ./generator/main.py",
     "build:frontend": "turbo run @oierdb/frontend#build",
     "build:backend": "turbo run @oierdb/backend#build",
     "dev:frontend": "turbo run @oierdb/frontend#dev",
