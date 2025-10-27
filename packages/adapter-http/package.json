@@ -1,4 +1,30 @@
 {
   "name": "@oierdb/adapter-http",
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prebuild": "tsx scripts/check-generated.ts",
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "generate": "tsx scripts/generate-client.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "peerDependencies": {
+    "@oierdb/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@oierdb/core": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "openapi-typescript": "^7.10.1",
+    "ts-jest": "^29.4.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
 }
