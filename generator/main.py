@@ -325,6 +325,45 @@ def __main__():
 
         subprocess.run([executable, GENERATOR_DIR / "update_static.py"], check=True)
 
+    def generate_version():
+        """
+        基于 result.txt 和 static.json 生成 data_version (MD5),
+        保存在 version.json 中,并创建版本化符号链接。
+        """
+
+        # 读取 result.txt
+        with open(DIST_DIR / "result.txt", "rb") as f:
+            result_content = f.read()
+
+        # 读取 static.json
+        with open(DIST_DIR / "static.json", "rb") as f:
+            static_content = f.read()
+
+        # 计算 MD5 (与 parser 中的逻辑一致)
+        combined_content = result_content + static_content
+        md5_hash = hashlib.md5(combined_content).hexdigest()
+
+        # 保存到 version.json
+        with open(DIST_DIR / "version.json", "w", newline="\n") as f:
+            json.dump({"data_version": md5_hash}, f, ensure_ascii=False)
+
+        # 使用前7位作为短版本号
+        version_short = md5_hash[:7]
+
+        # 创建版本化符号链接 result.{version前7位}.txt -> result.txt
+        result_versioned_link = DIST_DIR / f"result.{version_short}.txt"
+        if result_versioned_link.exists() or result_versioned_link.is_symlink():
+            result_versioned_link.unlink()
+        result_versioned_link.symlink_to("result.txt")
+
+        # 创建版本化符号链接 static.{version前7位}.json -> static.json
+        static_versioned_link = DIST_DIR / f"static.{version_short}.json"
+        if static_versioned_link.exists() or static_versioned_link.is_symlink():
+            static_versioned_link.unlink()
+        static_versioned_link.symlink_to("static.json")
+
+        print(f"\x1b[32m生成 data_version: {md5_hash} (短版本: {version_short})\x1b[0m", file=stderr)
+
     def report_status(message):
         "向终端报告当前进度。"
 
@@ -360,6 +399,9 @@ def __main__():
 
     report_status("输出静态 JSON 信息中")
     update_static()
+
+    report_status("生成数据版本号中")
+    generate_version()
 
 
 if __name__ == "__main__":
