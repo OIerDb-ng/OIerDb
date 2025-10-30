@@ -58,6 +58,10 @@ export class OIerDbClient {
     return this.adapter;
   }
 
+  getType(): string {
+    return this.adapter.getType();
+  }
+
   clearCache(): void {
     this.cache.clear();
   }

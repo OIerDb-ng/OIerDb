@@ -49,6 +49,10 @@ export class IDBAdapter implements IAdapterWithLoader {
     });
   }
 
+  getType(): string {
+    return 'idb';
+  }
+
   // ==============================
   // IAdapterWithLoader Interface
   // ==============================

@@ -164,6 +164,12 @@ export interface ListContestsQuery {
 
 export interface IAdapter {
   /**
+   * 获取 Adapter 类型
+   * @returns Adapter 类型 (如 'http', 'idb' 等)
+   */
+  getType(): string;
+
+  /**
    * 检查可用性
    */
   checkAvailability(targetVersion: string): Promise<boolean>;

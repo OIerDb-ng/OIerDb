@@ -37,6 +37,10 @@ export class HttpAdapter implements IAdapter {
     });
   }
 
+  getType(): string {
+    return 'http';
+  }
+
   async checkAvailability(targetVersion: string): Promise<boolean> {
     try {
       const version = await this.getVersion();

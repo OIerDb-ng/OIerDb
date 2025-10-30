@@ -19,6 +19,10 @@ class MockAdapter implements IAdapter {
     return targetVersion === 'test-version';
   }
 
+  getType(): string {
+    return 'mock';
+  }
+
   async getVersion(): Promise<VersionResponse> {
     return {
       data_version: 'test-version',
