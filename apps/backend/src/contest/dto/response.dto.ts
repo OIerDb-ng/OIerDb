@@ -1,8 +1,8 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { GetContestResponse, ListContestsResponse } from '@oierdb/core';
 
-import { DbContestDto, DbOIerDto, DbRecordDto, DbSchoolDto } from '../../common/dto';
-import { ResponseBaseDto } from '../../common/dto/response-base.dto';
+import { DbContestDto, DbOIerDto, DbRecordDto, DbSchoolDto } from '~/common/dto';
+import { ResponseBaseDto } from '~/common/dto/response-base.dto';
 
 @ApiExtraModels(DbSchoolDto, DbOIerDto)
 export class GetContestResponseDto extends ResponseBaseDto implements GetContestResponse {

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type OIerDbClient, type VersionResponse } from '@oierdb/core';
 
-import { OIERDB_CLIENT } from '../common/oierdb';
+import { OIERDB_CLIENT } from '~/common/oierdb';
 
 @Injectable()
 export class MetaService {
