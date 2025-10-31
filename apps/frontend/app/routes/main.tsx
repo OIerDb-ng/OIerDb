@@ -1,3 +1,5 @@
+import { useClientStatus } from '~/hooks/use-client';
+
 import type { Route } from './+types/main';
 
 export function meta({}: Route.MetaArgs) {
@@ -8,5 +10,11 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <div>Home</div>;
+  const status = useClientStatus();
+
+  return (
+    <div>
+      {status.type}. {status.text}
+    </div>
+  );
 }

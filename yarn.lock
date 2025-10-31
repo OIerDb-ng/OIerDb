@@ -3396,7 +3396,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oierdb/adapter-http@workspace:packages/adapter-http":
+"@oierdb/adapter-http@workspace:*, @oierdb/adapter-http@workspace:packages/adapter-http":
   version: 0.0.0-use.local
   resolution: "@oierdb/adapter-http@workspace:packages/adapter-http"
   dependencies:
@@ -3489,6 +3489,10 @@ __metadata:
     "@mantine/core": "npm:^8.3.5"
     "@mantine/hooks": "npm:^8.3.5"
     "@mantine/vanilla-extract": "npm:^8.3.5"
+    "@oierdb/adapter-http": "workspace:*"
+    "@oierdb/adapter-idb": "workspace:*"
+    "@oierdb/core": "workspace:*"
+    "@oierdb/parser": "workspace:*"
     "@react-router/dev": "npm:^7.9.4"
     "@react-router/node": "npm:^7.9.4"
     "@react-router/serve": "npm:^7.9.4"
