@@ -13,7 +13,7 @@
     "build:backend": "turbo run @oierdb/backend#build",
     "dev:frontend": "turbo run @oierdb/frontend#dev",
     "dev:backend": "turbo run @oierdb/backend#dev",
-    "dev:static": "serve ./generator/dist -l 32001 --cors",
+    "dev:static": "serve ./generator/dist -l 32001 --cors --symlinks",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "lint:check": "turbo run lint:check",
