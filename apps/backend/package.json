@@ -6,7 +6,7 @@
   "types": "dist/main.d.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "dev": "nest start --watch --max-old-space-size=8192",
+    "dev": "PORT=32002 nest start --watch --max-old-space-size=8192",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "build": "nest build",
