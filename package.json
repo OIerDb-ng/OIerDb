@@ -13,6 +13,7 @@
     "build:backend": "turbo run @oierdb/backend#build",
     "dev:frontend": "turbo run @oierdb/frontend#dev",
     "dev:backend": "turbo run @oierdb/backend#dev",
+    "dev:static": "serve ./generator/dist -l 32001 --cors",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "lint:check": "turbo run lint:check",
@@ -25,6 +26,7 @@
     "lint-staged": "^13.1.0",
     "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "serve": "^14.2.5",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   },
