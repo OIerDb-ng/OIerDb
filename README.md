@@ -17,6 +17,15 @@
 - `data` - 数据文件
 - `generator` - 数据生成器
 
+## 数据生成
+
+需要计算机上已经安装 Python 3.13 和 Node.js 以及 Yarn。
+
+```bash
+yarn install:generator # 初始化 Python Virtual Environment; 安装依赖
+yarn generate # 生成数据，结果保存在 `generator/dist` 目录下
+```
+
 ## 开源许可
 
 本项目基于 [AGPL-3.0](./LICENSE) 许可协议开源。
