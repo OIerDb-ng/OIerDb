@@ -31,6 +31,7 @@ export const getStatus = () => {
 };
 
 export const setStatus = (newStatus: OIerDbClientStatusType) => {
+  console.log('OIerDbClient status changed:', JSON.stringify(newStatus));
   globalThis.OIerDbClientStatus = newStatus;
   notifyStatusChange(newStatus);
 };
