@@ -39,7 +39,7 @@ export const group = style({
 const link = style({
   display: 'block',
   textDecoration: 'none',
-  color: vars.colors.gray[7],
+  color: vars.colors.black,
   padding: '8px 12px',
   lineHeight: 1,
   userSelect: 'none',
