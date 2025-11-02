@@ -9,4 +9,4 @@ declare global {
 }
 
 export { getClient, initClient } from './client';
-export { getStatus, subscribeToStatusChange } from './status';
+export { getStatus, subscribeToStatusChange, waitUntilClientReady } from './status';

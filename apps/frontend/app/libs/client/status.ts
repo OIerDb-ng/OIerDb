@@ -35,3 +35,19 @@ export const setStatus = (newStatus: OIerDbClientStatusType) => {
   globalThis.OIerDbClientStatus = newStatus;
   notifyStatusChange(newStatus);
 };
+
+export const waitUntilClientReady = () =>
+  new Promise<void>((resolve) => {
+    const current = globalThis.OIerDbClientStatus;
+    if (current && current.type > OIerDbClientStatusEnum.Initializing) {
+      resolve();
+      return;
+    }
+
+    const unsubscribe = subscribeToStatusChange((s) => {
+      if (s.type >= OIerDbClientStatusEnum.InitializedPartially) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
