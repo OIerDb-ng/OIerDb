@@ -55,7 +55,7 @@ export interface DbContest {
   contestant_ids: number[]; // 获奖选手 UID 列表
   fall_semester: boolean; // 是否为秋季学期
   full_score: number; // 满分
-  capacity: number; // 参赛总人数（可能与 contestants.length 不同，因为有些选手可能没有成绩记录）
+  capacity?: number; // 参赛总人数（可能与 contestants.length 不同，因为有些选手可能没有成绩记录）
   length: number; // 获奖人数
   level_counts: Record<string, number>; // 奖项统计
 }
