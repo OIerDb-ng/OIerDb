@@ -1,4 +1,4 @@
-import { useClientStatus } from '~/hooks/use-client';
+import { useClientStatus } from '~/hooks/use-client-status';
 
 import type { Route } from './+types/main';
 
@@ -14,7 +14,7 @@ export default function Home() {
 
   return (
     <div>
-      {status.type}. {status.text}
+      {status?.type}. {status?.text}
     </div>
   );
 }

@@ -158,6 +158,7 @@ const fetchAndParseData = async (targetVersion: string) => {
   // Parse data
   console.time('Data parse time');
   const parsedData = parseOIerDbData(resultText, staticText);
+  console.log('Parsed data version:', parsedData.data_version);
   console.timeEnd('Data parse time');
 
   return parsedData;
