@@ -10,7 +10,10 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "build": "nest build",
-    "start": "node --max-old-space-size=8192 ."
+    "start": "node --max-old-space-size=8192 .",
+    "stress-test": "NODE_ENV=development tsx stress/index.ts standard",
+    "stress-test:quick": "NODE_ENV=development tsx stress/index.ts quick",
+    "stress-test:heavy": "NODE_ENV=development tsx stress/index.ts heavy"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
@@ -35,13 +38,16 @@
     "@eslint/js": "^9.37.0",
     "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.8",
+    "@types/autocannon": "^7.12.7",
     "@types/express": "^5.0.3",
     "@types/node": "^24.6.2",
+    "autocannon": "^8.0.0",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.45.0"
   }

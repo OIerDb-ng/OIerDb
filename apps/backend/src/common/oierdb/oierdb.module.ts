@@ -37,9 +37,16 @@ import { OIERDB_CLIENT, RESULT_TXT_URL, STATIC_JSON_URL } from './oierdb.constan
         await adapter.loadData(parseResult);
         console.timeEnd('load data into db');
 
+        const cacheEnabled = process.env.NODE_ENV === 'production';
+        if (cacheEnabled) {
+          console.log('OIerDb client cache is ENABLED');
+        } else {
+          console.log('OIerDb client cache is DISABLED');
+        }
+
         const client = new OIerDbClient(adapter, {
           cache: {
-            enabled: process.env.NODE_ENV === 'production',
+            enabled: cacheEnabled,
             maxSize: 2000,
           },
         });
