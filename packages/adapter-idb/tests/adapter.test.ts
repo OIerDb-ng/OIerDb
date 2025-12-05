@@ -319,4 +319,167 @@ describe('IDBAdapter', () => {
       expect(response!.schools_map[record.school_id]).toBeDefined();
     });
   });
+
+  describe('Resumable Loading', () => {
+    it('should mark data as loaded after successful load', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+      await freshAdapter.loadData(mockParseResult);
+
+      // Check that loading progress is marked as 'loaded'
+      const available = await freshAdapter.checkAvailability('mock-version');
+      expect(available).toBe(true);
+    });
+
+    it('should return false for checkAvailability when data is incomplete', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+
+      // Manually set loading progress to 'loading' to simulate incomplete load
+      await freshAdapter['db'].meta.put({ key: 'data_version', value: 'mock-version' });
+      await freshAdapter['db'].meta.put({ key: 'loading_progress', value: 'loading' });
+
+      const available = await freshAdapter.checkAvailability('mock-version');
+      expect(available).toBe(false);
+    });
+
+    it('should reset and reload data when version changes', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+      await freshAdapter.loadData(mockParseResult);
+
+      // Verify initial data
+      expect(await freshAdapter.checkAvailability('mock-version')).toBe(true);
+      const initialOiers = await freshAdapter.listOIers({ page: 1, perPage: 10 });
+      expect(initialOiers.oiers.length).toBe(2);
+
+      // Load data with new version
+      const newData = {
+        ...mockParseResult,
+        oiers: [mockParseResult.oiers[0]], // Only one oier
+        data_version: 'new-version',
+      };
+      await freshAdapter.loadData(newData);
+
+      // Verify old version is no longer available
+      expect(await freshAdapter.checkAvailability('mock-version')).toBe(false);
+      // Verify new version is available
+      expect(await freshAdapter.checkAvailability('new-version')).toBe(true);
+      // Verify data was replaced
+      const newOiers = await freshAdapter.listOIers({ page: 1, perPage: 10 });
+      expect(newOiers.oiers.length).toBe(1);
+    });
+
+    it('should resume loading from saved offset', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+
+      // Simulate partial load: set metadata indicating partial progress
+      await freshAdapter['db'].transaction('readwrite', [freshAdapter['db'].meta], async (tx) => {
+        await tx.meta.bulkAdd([
+          { key: 'data_version', value: 'mock-version' },
+          { key: 'loading_progress', value: 'loading' },
+          { key: 'loaded_offset_oiers', value: '1' }, // 1 oier loaded
+          { key: 'loaded_offset_schools', value: '0' }, // 0 schools loaded
+          { key: 'loaded_offset_records', value: '0' },
+          { key: 'loaded_offset_contests', value: '0' },
+        ]);
+      });
+
+      // Add partial data (1 oier)
+      await freshAdapter['db'].oiers.add(mockParseResult.oiers[0]);
+
+      // Resume loading
+      await freshAdapter.loadData(mockParseResult);
+
+      // Verify all data is now loaded
+      const oiers = await freshAdapter.listOIers({ page: 1, perPage: 10 });
+      expect(oiers.oiers.length).toBe(2);
+      expect(await freshAdapter.checkAvailability('mock-version')).toBe(true);
+    });
+
+    it('should validate data counts after loading', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+      await freshAdapter.loadData(mockParseResult);
+
+      // Verify counts match
+      const [oiersCount, schoolsCount, recordsCount, contestsCount] = await Promise.all([
+        freshAdapter['db'].oiers.count(),
+        freshAdapter['db'].schools.count(),
+        freshAdapter['db'].records.count(),
+        freshAdapter['db'].contests.count(),
+      ]);
+
+      expect(oiersCount).toBe(mockParseResult.oiers.length);
+      expect(schoolsCount).toBe(mockParseResult.schools.length);
+      expect(recordsCount).toBe(mockParseResult.records.length);
+      expect(contestsCount).toBe(mockParseResult.contests.length);
+    });
+
+    it('should handle corrupted offset by resetting', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+
+      // Set corrupted offset (greater than expected count)
+      await freshAdapter['db'].transaction('readwrite', [freshAdapter['db'].meta], async (tx) => {
+        await tx.meta.bulkAdd([
+          { key: 'data_version', value: 'mock-version' },
+          { key: 'loading_progress', value: 'loading' },
+          { key: 'loaded_offset_oiers', value: '999' }, // Corrupted offset
+          { key: 'loaded_offset_schools', value: '0' },
+          { key: 'loaded_offset_records', value: '0' },
+          { key: 'loaded_offset_contests', value: '0' },
+        ]);
+      });
+
+      // Load data - should detect corruption and reset
+      await freshAdapter.loadData(mockParseResult);
+
+      // Verify data is loaded correctly
+      const oiers = await freshAdapter.listOIers({ page: 1, perPage: 10 });
+      expect(oiers.oiers.length).toBe(2);
+      expect(await freshAdapter.checkAvailability('mock-version')).toBe(true);
+    });
+
+    it('should handle parallel table loading correctly', async () => {
+      const freshAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+
+      // Create larger dataset to test parallel loading
+      const largeDataset = {
+        ...mockParseResult,
+        oiers: Array.from({ length: 100 }, (_, i) => ({
+          ...mockParseResult.oiers[0],
+          uid: i + 1,
+          name: `测试用户${i + 1}`,
+          lowered_name: `测试用户${i + 1}`.toLowerCase(),
+        })),
+        schools: Array.from({ length: 50 }, (_, i) => ({
+          ...mockParseResult.schools[0],
+          id: i + 1,
+          name: `测试学校${i + 1}`,
+        })),
+        records: Array.from({ length: 200 }, (_, i) => ({
+          contest_id: 1,
+          school_id: (i % 50) + 1,
+          uid: (i % 100) + 1,
+          level: 'Au' as const,
+          score: 600,
+          rank: i + 1,
+          province: '北京',
+        })),
+      };
+
+      // Load data
+      await freshAdapter.loadData(largeDataset);
+
+      // Verify all tables are loaded correctly
+      const [oiersCount, schoolsCount, recordsCount, contestsCount] = await Promise.all([
+        freshAdapter['db'].oiers.count(),
+        freshAdapter['db'].schools.count(),
+        freshAdapter['db'].records.count(),
+        freshAdapter['db'].contests.count(),
+      ]);
+
+      expect(oiersCount).toBe(100);
+      expect(schoolsCount).toBe(50);
+      expect(recordsCount).toBe(200);
+      expect(contestsCount).toBe(1);
+      expect(await freshAdapter.checkAvailability('mock-version')).toBe(true);
+    });
+  });
 });

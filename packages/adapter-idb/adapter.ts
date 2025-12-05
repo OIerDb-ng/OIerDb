@@ -19,7 +19,16 @@ import type {
 } from '@oierdb/core';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
-import { DB_NAME, DB_VERSION, META_KEY_DATA_VERSION } from './constants';
+import {
+  DB_NAME,
+  DB_VERSION,
+  META_KEY_DATA_VERSION,
+  META_KEY_LOADED_OFFSET_CONTESTS,
+  META_KEY_LOADED_OFFSET_OIERS,
+  META_KEY_LOADED_OFFSET_RECORDS,
+  META_KEY_LOADED_OFFSET_SCHOOLS,
+  META_KEY_LOADING_PROGRESS,
+} from './constants';
 import { normalizePaginationParams } from './util';
 
 interface OIerDbDexie extends Dexie {
@@ -54,46 +63,163 @@ export class IDBAdapter implements IAdapterWithLoader {
   }
 
   // ==============================
+  // Helper Methods for Progress Tracking
+  // ==============================
+
+  private async getLoadedOffset(key: string): Promise<number> {
+    const meta = await this.db.meta.get(key);
+    return meta ? parseInt(meta.value, 10) : 0;
+  }
+
+  private async setLoadedOffset(key: string, offset: number): Promise<void> {
+    await this.db.meta.put({ key, value: offset.toString() });
+  }
+
+  private async getLoadingProgress(): Promise<'loading' | 'loaded' | null> {
+    const meta = await this.db.meta.get(META_KEY_LOADING_PROGRESS);
+    return (meta?.value as 'loading' | 'loaded') || null;
+  }
+
+  private async setLoadingProgress(status: 'loading' | 'loaded'): Promise<void> {
+    await this.db.meta.put({ key: META_KEY_LOADING_PROGRESS, value: status });
+  }
+
+  // ==============================
   // IAdapterWithLoader Interface
   // ==============================
 
   async loadData(data: DbParseResult): Promise<void> {
-    // TODO: load data incrementally
-
     const CHUNK_SIZE = 5000;
 
-    const bulkAddInChunks = async <T, TKey, TInsertType = T>(
+    // Check if we need to start fresh (version change or corruption)
+    const currentVersion = await this.db.meta
+      .get(META_KEY_DATA_VERSION)
+      .then((meta) => meta?.value || '');
+
+    const needsReset = currentVersion !== data.data_version;
+
+    if (needsReset) {
+      // Version changed: clear data_version first, then initialize metadata
+      await this.db.transaction('readwrite', [this.db.meta], async (tx) => {
+        // Clear data_version to signal invalid state
+        await tx.meta.delete(META_KEY_DATA_VERSION);
+      });
+
+      // Clear all data tables
+      await this.db.transaction(
+        'readwrite',
+        [this.db.oiers, this.db.schools, this.db.contests, this.db.records],
+        async (tx) => {
+          await Promise.all([
+            tx.oiers.clear(),
+            tx.schools.clear(),
+            tx.contests.clear(),
+            tx.records.clear(),
+          ]);
+        },
+      );
+
+      // Initialize metadata for new version
+      await this.db.transaction('readwrite', [this.db.meta], async (tx) => {
+        await Promise.all([
+          tx.meta.put({ key: META_KEY_DATA_VERSION, value: data.data_version }),
+          tx.meta.put({ key: META_KEY_LOADING_PROGRESS, value: 'loading' }),
+          tx.meta.put({ key: META_KEY_LOADED_OFFSET_OIERS, value: '0' }),
+          tx.meta.put({ key: META_KEY_LOADED_OFFSET_SCHOOLS, value: '0' }),
+          tx.meta.put({ key: META_KEY_LOADED_OFFSET_RECORDS, value: '0' }),
+          tx.meta.put({ key: META_KEY_LOADED_OFFSET_CONTESTS, value: '0' }),
+        ]);
+      });
+    }
+
+    // Helper function to load a table incrementally with resume support
+    const loadTableIncrementally = async <T, TKey, TInsertType = T>(
       table: Table<T, TKey, TInsertType>,
       items: readonly TInsertType[],
-      chunkSize: number,
+      offsetKey: string,
+      tableName: string,
     ) => {
-      for (let i = 0; i < items.length; i += chunkSize) {
-        const chunk = items.slice(i, i + chunkSize);
-        await table.bulkAdd(chunk);
+      const totalCount = items.length;
+      let loadedOffset = await this.getLoadedOffset(offsetKey);
+
+      // Validate offset: if corrupted (> total), reset to 0
+      if (loadedOffset > totalCount) {
+        console.warn(
+          `Corrupted offset detected for ${tableName}: ${loadedOffset} > ${totalCount}. Resetting.`,
+        );
+        loadedOffset = 0;
+        await this.setLoadedOffset(offsetKey, 0);
+      }
+
+      // If already complete, skip
+      if (loadedOffset >= totalCount) {
+        return;
+      }
+
+      console.log(`Loading ${tableName}: starting from offset ${loadedOffset} / ${totalCount}`);
+
+      // Load remaining data in chunks
+      for (let i = loadedOffset; i < totalCount; i += CHUNK_SIZE) {
+        console.log(
+          `Loading ${tableName}: processing items ${i} to ${Math.min(i + CHUNK_SIZE, totalCount)} / ${totalCount}`,
+        );
+
+        const chunkEnd = Math.min(i + CHUNK_SIZE, totalCount);
+        const chunk = items.slice(i, chunkEnd);
+
+        // Load chunk and update offset in same transaction for consistency
+        await this.db.transaction('readwrite', [table, this.db.meta], async (tx) => {
+          await tx.table(table.name).bulkAdd(chunk);
+          await tx.meta.put({ key: offsetKey, value: chunkEnd.toString() });
+        });
       }
     };
 
-    await this.db.transaction(
-      'readwrite',
-      [this.db.oiers, this.db.schools, this.db.contests, this.db.records, this.db.meta],
-      async (tx) => {
-        await Promise.all([
-          tx.oiers.clear(),
-          tx.schools.clear(),
-          tx.contests.clear(),
-          tx.records.clear(),
-          tx.meta.clear(),
-        ]);
+    // Load all tables in parallel
+    await Promise.all([
+      loadTableIncrementally(this.db.oiers, data.oiers, META_KEY_LOADED_OFFSET_OIERS, 'oiers'),
+      loadTableIncrementally(
+        this.db.schools,
+        data.schools,
+        META_KEY_LOADED_OFFSET_SCHOOLS,
+        'schools',
+      ),
+      loadTableIncrementally(
+        this.db.records,
+        data.records,
+        META_KEY_LOADED_OFFSET_RECORDS,
+        'records',
+      ),
+      loadTableIncrementally(
+        this.db.contests,
+        data.contests,
+        META_KEY_LOADED_OFFSET_CONTESTS,
+        'contests',
+      ),
+    ]);
 
-        await Promise.all([
-          bulkAddInChunks(tx.oiers, data.oiers, CHUNK_SIZE),
-          bulkAddInChunks(tx.schools, data.schools, CHUNK_SIZE),
-          bulkAddInChunks(tx.records, data.records, CHUNK_SIZE),
-          tx.contests.bulkAdd(data.contests),
-          tx.meta.bulkAdd([{ key: META_KEY_DATA_VERSION, value: data.data_version }]),
-        ]);
-      },
-    );
+    // Final validation: check that actual counts match expected counts
+    const [actualOiersCount, actualSchoolsCount, actualRecordsCount, actualContestsCount] =
+      await Promise.all([
+        this.db.oiers.count(),
+        this.db.schools.count(),
+        this.db.records.count(),
+        this.db.contests.count(),
+      ]);
+
+    if (
+      actualOiersCount !== data.oiers.length ||
+      actualSchoolsCount !== data.schools.length ||
+      actualRecordsCount !== data.records.length ||
+      actualContestsCount !== data.contests.length
+    ) {
+      throw new Error(
+        'Data validation failed: actual counts do not match expected counts. Data may be corrupted.',
+      );
+    }
+
+    // Mark loading as complete
+    await this.setLoadingProgress('loaded');
   }
 
   // ==============================
@@ -101,9 +227,15 @@ export class IDBAdapter implements IAdapterWithLoader {
   // ==============================
 
   async checkAvailability(targetVersion: string): Promise<boolean> {
-    return await this.db.meta
-      .get(META_KEY_DATA_VERSION)
-      .then((meta) => meta?.value === targetVersion);
+    const [versionMeta, progressMeta] = await Promise.all([
+      this.db.meta.get(META_KEY_DATA_VERSION),
+      this.db.meta.get(META_KEY_LOADING_PROGRESS),
+    ]);
+
+    const versionMatches = versionMeta?.value === targetVersion;
+    const loadingComplete = progressMeta?.value === 'loaded';
+
+    return versionMatches && loadingComplete;
   }
 
   async getVersion(): Promise<VersionResponse> {

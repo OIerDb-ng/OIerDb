@@ -61,9 +61,11 @@ const initClientAsync = async () => {
 
   // Get local IndexedDB version
   let localVersion = '';
+  let localVersionAvailable = false;
   try {
     const localVersionResponse = await idbAdapter.getVersion();
     localVersion = localVersionResponse.data_version;
+    localVersionAvailable = await idbAdapter.checkAvailability(localVersion);
   } catch (error) {
     console.warn('Failed to get local version:', error);
   }
@@ -72,7 +74,7 @@ const initClientAsync = async () => {
 
   if (backendAvailable) {
     // Backend is available
-    if (localVersion && localVersion === backendVersion) {
+    if (localVersion && localVersionAvailable && localVersion === backendVersion) {
       // Local version is up-to-date, use IDB adapter directly
       setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '使用本地数据库' });
       globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
@@ -106,7 +108,7 @@ const initClientAsync = async () => {
 
     console.log('Static data version:', staticVersion);
 
-    if (localVersion && localVersion === staticVersion) {
+    if (localVersion && localVersionAvailable && localVersion === staticVersion) {
       // Local version is up-to-date with static data
       setStatus({
         type: OIerDbClientStatusEnum.Initializing,
@@ -114,7 +116,7 @@ const initClientAsync = async () => {
       });
       globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
       setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '' });
-    } else if (localVersion && !staticVersion) {
+    } else if (localVersion && localVersionAvailable && !staticVersion) {
       // Cannot get static version, but have local data - use it anyway
       setStatus({
         type: OIerDbClientStatusEnum.Initializing,
