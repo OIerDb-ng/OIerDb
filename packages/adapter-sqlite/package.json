@@ -1,0 +1,18 @@
+{
+  "name": "@oierdb/adapter-sqlite",
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@oierdb/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@oierdb/core": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

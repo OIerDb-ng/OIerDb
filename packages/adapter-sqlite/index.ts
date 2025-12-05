@@ -1,0 +1,1 @@
+export { SQLiteAdapter } from './adapter';
