@@ -16,25 +16,26 @@ import type {
   ListSchoolsResponse,
   VersionResponse,
 } from '@oierdb/core';
-import { DatabaseSync } from 'node:sqlite';
 
+import { AsyncDatabase } from './async-database';
 import { META_KEY_DATA_VERSION, META_KEY_LOADING_PROGRESS } from './constants';
 import { normalizePaginationParams } from './util';
 
 export class SQLiteAdapter implements IAdapterWithLoader {
-  private db: DatabaseSync;
+  private db: AsyncDatabase;
 
   constructor() {
-    // Initialize :memory: database
-    this.db = new DatabaseSync(':memory:');
-
-    // Create schema
-    this.createSchema();
+    this.db = new AsyncDatabase(':memory:');
   }
 
-  private createSchema(): void {
-    // Create tables
-    this.db.exec(`
+  async initialize(): Promise<void> {
+    // Create schema
+    await this.createSchema();
+  }
+
+  private async createSchema(): Promise<void> {
+    // Create tables and indexes
+    await this.db.exec(`
       CREATE TABLE oiers (
         uid INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
@@ -110,7 +111,7 @@ export class SQLiteAdapter implements IAdapterWithLoader {
         fall_semester INTEGER NOT NULL,
         full_score REAL NOT NULL,
         capacity INTEGER,
-        length INTEGER NOT NULL,
+        length INTEGER,
         level_counts TEXT NOT NULL
       );
 
@@ -157,19 +158,20 @@ export class SQLiteAdapter implements IAdapterWithLoader {
   // Helper Methods for Metadata
   // ==============================
 
-  private getMetadata(key: string): string | null {
-    const stmt = this.db.prepare('SELECT value FROM meta WHERE key = ?');
-    const result = stmt.get(key) as { value: string } | undefined;
+  private async getMetadata(key: string): Promise<string | null> {
+    const result = await this.db.get<{ value: string }>(
+      'SELECT value FROM meta WHERE key = ?',
+      key,
+    );
     return result?.value || null;
   }
 
-  private setMetadata(key: string, value: string): void {
-    const stmt = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
-    stmt.run(key, value);
+  private async setMetadata(key: string, value: string): Promise<void> {
+    await this.db.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', key, value);
   }
 
-  private clearAllData(): void {
-    this.db.exec(`
+  private async clearAllData(): Promise<void> {
+    await this.db.exec(`
       DELETE FROM oier_provinces;
       DELETE FROM oier_schools;
       DELETE FROM oier_contests;
@@ -187,157 +189,152 @@ export class SQLiteAdapter implements IAdapterWithLoader {
 
   async loadData(data: DbParseResult): Promise<void> {
     // Check if we need to start fresh (version change)
-    const currentVersion = this.getMetadata(META_KEY_DATA_VERSION);
+    const currentVersion = await this.getMetadata(META_KEY_DATA_VERSION);
     const needsReset = currentVersion !== data.data_version;
 
     if (needsReset) {
-      this.clearAllData();
+      await this.clearAllData();
     }
 
-    // Load all data in a single transaction
-    this.db.exec('BEGIN TRANSACTION');
+    // Load all data in a single transaction using serialize
+    await this.db.serialize(async () => {
+      await this.db.run('BEGIN TRANSACTION');
 
-    try {
-      // Set metadata
-      this.setMetadata(META_KEY_DATA_VERSION, data.data_version);
-      this.setMetadata(META_KEY_LOADING_PROGRESS, 'loading');
+      try {
+        // Set metadata
+        await this.setMetadata(META_KEY_DATA_VERSION, data.data_version);
+        await this.setMetadata(META_KEY_LOADING_PROGRESS, 'loading');
 
-      // Prepare statements
-      const insertOier = this.db.prepare(`
-        INSERT INTO oiers (uid, name, lowered_name, initials, enroll_middle, gender,
-                           oierdb_score, ccf_level, ccf_score, rank)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      const insertOierProvince = this.db.prepare(
-        'INSERT INTO oier_provinces (uid, province) VALUES (?, ?)',
-      );
-      const insertOierSchool = this.db.prepare(
-        'INSERT INTO oier_schools (uid, school_id) VALUES (?, ?)',
-      );
-      const insertOierContest = this.db.prepare(
-        'INSERT INTO oier_contests (uid, contest_id) VALUES (?, ?)',
-      );
-      const insertSchool = this.db.prepare(`
-        INSERT INTO schools (id, name, province, city, score, rank, award_counts)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-      const insertContest = this.db.prepare(`
-        INSERT INTO contests (id, name, year, type, fall_semester, full_score, capacity, length, level_counts)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      const insertRecord = this.db.prepare(`
-        INSERT INTO records (uid, contest_id, school_id, level, score, rank, province,
-                             enroll_middle_is_stay_down, enroll_middle_value)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+        // Insert oiers and their relationships
+        for (const oier of data.oiers) {
+          await this.db.run(
+            `INSERT INTO oiers (uid, name, lowered_name, initials, enroll_middle, gender,
+                               oierdb_score, ccf_level, ccf_score, rank)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            oier.uid,
+            oier.name,
+            oier.lowered_name,
+            oier.initials,
+            oier.enroll_middle,
+            oier.gender,
+            oier.oierdb_score,
+            oier.ccf_level,
+            oier.ccf_score,
+            oier.rank,
+          );
 
-      // Insert oiers and their relationships
-      for (const oier of data.oiers) {
-        insertOier.run(
-          oier.uid,
-          oier.name,
-          oier.lowered_name,
-          oier.initials,
-          oier.enroll_middle,
-          oier.gender,
-          oier.oierdb_score,
-          oier.ccf_level,
-          oier.ccf_score,
-          oier.rank,
-        );
+          // Insert provinces
+          for (const province of oier.provinces) {
+            await this.db.run(
+              'INSERT INTO oier_provinces (uid, province) VALUES (?, ?)',
+              oier.uid,
+              province,
+            );
+          }
 
-        // Insert provinces
-        for (const province of oier.provinces) {
-          insertOierProvince.run(oier.uid, province);
+          // Insert schools
+          for (const schoolId of oier.school_ids) {
+            await this.db.run(
+              'INSERT INTO oier_schools (uid, school_id) VALUES (?, ?)',
+              oier.uid,
+              schoolId,
+            );
+          }
+
+          // Insert contests
+          for (const contestId of oier.contest_ids) {
+            await this.db.run(
+              'INSERT INTO oier_contests (uid, contest_id) VALUES (?, ?)',
+              oier.uid,
+              contestId,
+            );
+          }
         }
 
         // Insert schools
-        for (const schoolId of oier.school_ids) {
-          insertOierSchool.run(oier.uid, schoolId);
+        for (const school of data.schools) {
+          await this.db.run(
+            `INSERT INTO schools (id, name, province, city, score, rank, award_counts)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            school.id,
+            school.name,
+            school.province,
+            school.city,
+            school.score,
+            school.rank,
+            JSON.stringify(school.award_counts),
+          );
         }
 
         // Insert contests
-        for (const contestId of oier.contest_ids) {
-          insertOierContest.run(oier.uid, contestId);
+        for (const contest of data.contests) {
+          await this.db.run(
+            `INSERT INTO contests (id, name, year, type, fall_semester, full_score, capacity, length, level_counts)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            contest.id,
+            contest.name,
+            contest.year,
+            contest.type,
+            contest.fall_semester ? 1 : 0,
+            contest.full_score,
+            contest.capacity ?? null,
+            contest.length ?? null,
+            JSON.stringify(contest.level_counts),
+          );
         }
+
+        // Insert records
+        for (const record of data.records) {
+          await this.db.run(
+            `INSERT INTO records (uid, contest_id, school_id, level, score, rank, province,
+                                 enroll_middle_is_stay_down, enroll_middle_value)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            record.uid,
+            record.contest_id,
+            record.school_id,
+            record.level,
+            record.score,
+            record.rank,
+            record.province,
+            record.enroll_middle ? (record.enroll_middle.is_stay_down ? 1 : 0) : null,
+            record.enroll_middle?.value ?? null,
+          );
+        }
+
+        // Validate counts
+        const oiersCount = (await this.db.get<{ count: number }>(
+          'SELECT COUNT(*) as count FROM oiers',
+        ))!.count;
+        const schoolsCount = (await this.db.get<{ count: number }>(
+          'SELECT COUNT(*) as count FROM schools',
+        ))!.count;
+        const contestsCount = (await this.db.get<{ count: number }>(
+          'SELECT COUNT(*) as count FROM contests',
+        ))!.count;
+        const recordsCount = (await this.db.get<{ count: number }>(
+          'SELECT COUNT(*) as count FROM records',
+        ))!.count;
+
+        if (
+          oiersCount !== data.oiers.length ||
+          schoolsCount !== data.schools.length ||
+          contestsCount !== data.contests.length ||
+          recordsCount !== data.records.length
+        ) {
+          throw new Error(
+            'Data validation failed: actual counts do not match expected counts. Data may be corrupted.',
+          );
+        }
+
+        // Mark loading as complete
+        await this.setMetadata(META_KEY_LOADING_PROGRESS, 'loaded');
+
+        await this.db.run('COMMIT');
+      } catch (error) {
+        await this.db.run('ROLLBACK');
+        throw error;
       }
-
-      // Insert schools
-      for (const school of data.schools) {
-        insertSchool.run(
-          school.id,
-          school.name,
-          school.province,
-          school.city,
-          school.score,
-          school.rank,
-          JSON.stringify(school.award_counts),
-        );
-      }
-
-      // Insert contests
-      for (const contest of data.contests) {
-        insertContest.run(
-          contest.id,
-          contest.name,
-          contest.year,
-          contest.type,
-          contest.fall_semester ? 1 : 0,
-          contest.full_score,
-          contest.capacity ?? null,
-          contest.length,
-          JSON.stringify(contest.level_counts),
-        );
-      }
-
-      // Insert records
-      for (const record of data.records) {
-        insertRecord.run(
-          record.uid,
-          record.contest_id,
-          record.school_id,
-          record.level,
-          record.score,
-          record.rank,
-          record.province,
-          record.enroll_middle ? (record.enroll_middle.is_stay_down ? 1 : 0) : null,
-          record.enroll_middle?.value ?? null,
-        );
-      }
-
-      // Validate counts
-      const oiersCount = (
-        this.db.prepare('SELECT COUNT(*) as count FROM oiers').get() as { count: number }
-      ).count;
-      const schoolsCount = (
-        this.db.prepare('SELECT COUNT(*) as count FROM schools').get() as { count: number }
-      ).count;
-      const contestsCount = (
-        this.db.prepare('SELECT COUNT(*) as count FROM contests').get() as { count: number }
-      ).count;
-      const recordsCount = (
-        this.db.prepare('SELECT COUNT(*) as count FROM records').get() as { count: number }
-      ).count;
-
-      if (
-        oiersCount !== data.oiers.length ||
-        schoolsCount !== data.schools.length ||
-        contestsCount !== data.contests.length ||
-        recordsCount !== data.records.length
-      ) {
-        throw new Error(
-          'Data validation failed: actual counts do not match expected counts. Data may be corrupted.',
-        );
-      }
-
-      // Mark loading as complete
-      this.setMetadata(META_KEY_LOADING_PROGRESS, 'loaded');
-
-      this.db.exec('COMMIT');
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
-    }
+    });
   }
 
   // ==============================
@@ -345,14 +342,14 @@ export class SQLiteAdapter implements IAdapterWithLoader {
   // ==============================
 
   async checkAvailability(targetVersion: string): Promise<boolean> {
-    const version = this.getMetadata(META_KEY_DATA_VERSION);
-    const progress = this.getMetadata(META_KEY_LOADING_PROGRESS);
+    const version = await this.getMetadata(META_KEY_DATA_VERSION);
+    const progress = await this.getMetadata(META_KEY_LOADING_PROGRESS);
 
     return version === targetVersion && progress === 'loaded';
   }
 
   async getVersion(): Promise<VersionResponse> {
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       data_version: version,
@@ -360,33 +357,34 @@ export class SQLiteAdapter implements IAdapterWithLoader {
   }
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
-    const oier = this.db.prepare('SELECT * FROM oiers WHERE uid = ?').get(uid) as
-      | DbOIer
-      | undefined;
+    const oier = await this.db.get<any>('SELECT * FROM oiers WHERE uid = ?', uid);
 
     if (!oier) {
       return null;
     }
 
     // Reconstruct arrays from junction tables
-    const provinces = this.db
-      .prepare('SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province')
-      .all(uid) as { province: string }[];
+    const provinces = await this.db.all<{ province: string }>(
+      'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
+      uid,
+    );
 
-    const schoolIds = this.db
-      .prepare('SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id')
-      .all(uid) as { school_id: number }[];
+    const schoolIds = await this.db.all<{ school_id: number }>(
+      'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
+      uid,
+    );
 
-    const contestIds = this.db
-      .prepare('SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id')
-      .all(uid) as { contest_id: number }[];
+    const contestIds = await this.db.all<{ contest_id: number }>(
+      'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
+      uid,
+    );
 
     oier.provinces = provinces.map((p) => p.province);
     oier.school_ids = schoolIds.map((s) => s.school_id);
     oier.contest_ids = contestIds.map((c) => c.contest_id);
 
     // Get records
-    const records = this.db.prepare('SELECT * FROM records WHERE uid = ?').all(uid) as any[];
+    const records = await this.db.all<any>('SELECT * FROM records WHERE uid = ?', uid);
 
     // Reconstruct enroll_middle objects
     const reconstructedRecords: DbRecord[] = records.map((r) => ({
@@ -407,15 +405,20 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     }));
 
     // Get schools
-    const schools = this.db
-      .prepare(`SELECT * FROM schools WHERE id IN (${oier.school_ids.map(() => '?').join(',')})`)
-      .all(...oier.school_ids) as any[];
+    const schools =
+      oier.school_ids.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM schools WHERE id IN (${oier.school_ids.map(() => '?').join(',')})`,
+            ...oier.school_ids,
+          )
+        : [];
 
     const schoolsMap: Record<number, DbSchool> = {};
     for (const school of schools) {
-      const memberIds = this.db
-        .prepare('SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid')
-        .all(school.id) as { uid: number }[];
+      const memberIds = await this.db.all<{ uid: number }>(
+        'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
+        school.id,
+      );
 
       schoolsMap[school.id] = {
         ...school,
@@ -425,15 +428,20 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     }
 
     // Get contests
-    const contests = this.db
-      .prepare(`SELECT * FROM contests WHERE id IN (${oier.contest_ids.map(() => '?').join(',')})`)
-      .all(...oier.contest_ids) as any[];
+    const contests =
+      oier.contest_ids.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM contests WHERE id IN (${oier.contest_ids.map(() => '?').join(',')})`,
+            ...oier.contest_ids,
+          )
+        : [];
 
     const contestsMap: Record<number, DbContest> = {};
     for (const contest of contests) {
-      const contestantIds = this.db
-        .prepare('SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid')
-        .all(contest.id) as { uid: number }[];
+      const contestantIds = await this.db.all<{ uid: number }>(
+        'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
+        contest.id,
+      );
 
       contestsMap[contest.id] = {
         ...contest,
@@ -443,7 +451,7 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       };
     }
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       uid,
@@ -502,39 +510,44 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     sql += ' ORDER BY o.rank LIMIT ? OFFSET ?';
     params.push(perPage, (page - 1) * perPage);
 
-    const oiers = this.db.prepare(sql).all(...params) as any[];
+    const oiers = await this.db.all<any>(sql, ...params);
 
     // Count total (remove LIMIT/OFFSET for count)
     let countSql = sql
       .replace(/SELECT o\.\*/, 'SELECT COUNT(DISTINCT o.uid) as count')
       .replace(/ ORDER BY.*$/, '');
     const countParams = params.slice(0, -2); // Remove LIMIT and OFFSET params
-    const totalResult = this.db.prepare(countSql).get(...countParams) as { count: number };
-    const total = totalResult.count;
+    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
+    const total = totalResult!.count;
 
     // Reconstruct arrays for each oier
-    const reconstructedOiers: DbOIer[] = oiers.map((oier) => {
-      const provinces = this.db
-        .prepare('SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province')
-        .all(oier.uid) as { province: string }[];
+    const reconstructedOiers: DbOIer[] = await Promise.all(
+      oiers.map(async (oier) => {
+        const provinces = await this.db.all<{ province: string }>(
+          'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
+          oier.uid,
+        );
 
-      const schoolIds = this.db
-        .prepare('SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id')
-        .all(oier.uid) as { school_id: number }[];
+        const schoolIds = await this.db.all<{ school_id: number }>(
+          'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
+          oier.uid,
+        );
 
-      const contestIds = this.db
-        .prepare('SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id')
-        .all(oier.uid) as { contest_id: number }[];
+        const contestIds = await this.db.all<{ contest_id: number }>(
+          'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
+          oier.uid,
+        );
 
-      return {
-        ...oier,
-        provinces: provinces.map((p) => p.province),
-        school_ids: schoolIds.map((s) => s.school_id),
-        contest_ids: contestIds.map((c) => c.contest_id),
-      };
-    });
+        return {
+          ...oier,
+          provinces: provinces.map((p) => p.province),
+          school_ids: schoolIds.map((s) => s.school_id),
+          contest_ids: contestIds.map((c) => c.contest_id),
+        };
+      }),
+    );
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       oiers: reconstructedOiers,
@@ -547,16 +560,17 @@ export class SQLiteAdapter implements IAdapterWithLoader {
   }
 
   async getSchool(id: number): Promise<GetSchoolResponse | null> {
-    const school = this.db.prepare('SELECT * FROM schools WHERE id = ?').get(id) as any;
+    const school = await this.db.get<any>('SELECT * FROM schools WHERE id = ?', id);
 
     if (!school) {
       return null;
     }
 
     // Reconstruct member_ids from junction table
-    const memberIds = this.db
-      .prepare('SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid')
-      .all(id) as { uid: number }[];
+    const memberIds = await this.db.all<{ uid: number }>(
+      'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
+      id,
+    );
 
     const reconstructedSchool: DbSchool = {
       ...school,
@@ -565,28 +579,33 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     };
 
     // Get all records for this school
-    const records = this.db.prepare('SELECT * FROM records WHERE school_id = ?').all(id) as any[];
+    const records = await this.db.all<any>('SELECT * FROM records WHERE school_id = ?', id);
 
     // Get members
-    const members = this.db
-      .prepare(
-        `SELECT * FROM oiers WHERE uid IN (${reconstructedSchool.member_ids.map(() => '?').join(',')})`,
-      )
-      .all(...reconstructedSchool.member_ids) as any[];
+    const members =
+      reconstructedSchool.member_ids.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM oiers WHERE uid IN (${reconstructedSchool.member_ids.map(() => '?').join(',')})`,
+            ...reconstructedSchool.member_ids,
+          )
+        : [];
 
     const membersMap: Record<number, DbOIer> = {};
     for (const member of members) {
-      const provinces = this.db
-        .prepare('SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province')
-        .all(member.uid) as { province: string }[];
+      const provinces = await this.db.all<{ province: string }>(
+        'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
+        member.uid,
+      );
 
-      const schoolIds = this.db
-        .prepare('SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id')
-        .all(member.uid) as { school_id: number }[];
+      const schoolIds = await this.db.all<{ school_id: number }>(
+        'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
+        member.uid,
+      );
 
-      const contestIds = this.db
-        .prepare('SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id')
-        .all(member.uid) as { contest_id: number }[];
+      const contestIds = await this.db.all<{ contest_id: number }>(
+        'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
+        member.uid,
+      );
 
       membersMap[member.uid] = {
         ...member,
@@ -600,15 +619,20 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     const contestIds = Array.from(new Set(records.map((r) => r.contest_id)));
 
     // Get contests
-    const contests = this.db
-      .prepare(`SELECT * FROM contests WHERE id IN (${contestIds.map(() => '?').join(',')})`)
-      .all(...contestIds) as any[];
+    const contests =
+      contestIds.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM contests WHERE id IN (${contestIds.map(() => '?').join(',')})`,
+            ...contestIds,
+          )
+        : [];
 
     const contestsMap: Record<number, DbContest> = {};
     for (const contest of contests) {
-      const contestantIds = this.db
-        .prepare('SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid')
-        .all(contest.id) as { uid: number }[];
+      const contestantIds = await this.db.all<{ uid: number }>(
+        'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
+        contest.id,
+      );
 
       contestsMap[contest.id] = {
         ...contest,
@@ -618,7 +642,7 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       };
     }
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       id,
@@ -657,28 +681,31 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     sql += ' ORDER BY rank LIMIT ? OFFSET ?';
     params.push(perPage, (page - 1) * perPage);
 
-    const schools = this.db.prepare(sql).all(...params) as any[];
+    const schools = await this.db.all<any>(sql, ...params);
 
     // Count total
     let countSql = sql.replace(/SELECT \*/, 'SELECT COUNT(*) as count').replace(/ ORDER BY.*$/, '');
     const countParams = params.slice(0, -2);
-    const totalResult = this.db.prepare(countSql).get(...countParams) as { count: number };
-    const total = totalResult.count;
+    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
+    const total = totalResult!.count;
 
     // Reconstruct member_ids for each school
-    const reconstructedSchools: DbSchool[] = schools.map((school) => {
-      const memberIds = this.db
-        .prepare('SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid')
-        .all(school.id) as { uid: number }[];
+    const reconstructedSchools: DbSchool[] = await Promise.all(
+      schools.map(async (school) => {
+        const memberIds = await this.db.all<{ uid: number }>(
+          'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
+          school.id,
+        );
 
-      return {
-        ...school,
-        award_counts: JSON.parse(school.award_counts),
-        member_ids: memberIds.map((m) => m.uid),
-      };
-    });
+        return {
+          ...school,
+          award_counts: JSON.parse(school.award_counts),
+          member_ids: memberIds.map((m) => m.uid),
+        };
+      }),
+    );
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       schools: reconstructedSchools,
@@ -695,16 +722,17 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     _page?: number,
     _perPage?: number,
   ): Promise<GetContestResponse | null> {
-    const contest = this.db.prepare('SELECT * FROM contests WHERE id = ?').get(id) as any;
+    const contest = await this.db.get<any>('SELECT * FROM contests WHERE id = ?', id);
 
     if (!contest) {
       return null;
     }
 
     // Reconstruct contestant_ids from junction table
-    const contestantIds = this.db
-      .prepare('SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid')
-      .all(id) as { uid: number }[];
+    const contestantIds = await this.db.all<{ uid: number }>(
+      'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
+      id,
+    );
 
     const reconstructedContest: DbContest = {
       ...contest,
@@ -716,16 +744,18 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     const { page, perPage } = normalizePaginationParams(_page, _perPage);
 
     // Get records with pagination
-    const records = this.db
-      .prepare('SELECT * FROM records WHERE contest_id = ? ORDER BY rank LIMIT ? OFFSET ?')
-      .all(id, perPage, (page - 1) * perPage) as any[];
+    const records = await this.db.all<any>(
+      'SELECT * FROM records WHERE contest_id = ? ORDER BY rank LIMIT ? OFFSET ?',
+      id,
+      perPage,
+      (page - 1) * perPage,
+    );
 
-    const totalResult = this.db
-      .prepare('SELECT COUNT(*) as count FROM records WHERE contest_id = ?')
-      .get(id) as {
-      count: number;
-    };
-    const total = totalResult.count;
+    const totalResult = await this.db.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM records WHERE contest_id = ?',
+      id,
+    );
+    const total = totalResult!.count;
 
     // Reconstruct enroll_middle objects
     const reconstructedRecords: DbRecord[] = records.map((r) => ({
@@ -750,15 +780,20 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     const uids = Array.from(new Set(records.map((r) => r.uid)));
 
     // Get schools
-    const schools = this.db
-      .prepare(`SELECT * FROM schools WHERE id IN (${schoolIds.map(() => '?').join(',')})`)
-      .all(...schoolIds) as any[];
+    const schools =
+      schoolIds.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM schools WHERE id IN (${schoolIds.map(() => '?').join(',')})`,
+            ...schoolIds,
+          )
+        : [];
 
     const schoolsMap: Record<number, DbSchool> = {};
     for (const school of schools) {
-      const memberIds = this.db
-        .prepare('SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid')
-        .all(school.id) as { uid: number }[];
+      const memberIds = await this.db.all<{ uid: number }>(
+        'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
+        school.id,
+      );
 
       schoolsMap[school.id] = {
         ...school,
@@ -768,23 +803,30 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     }
 
     // Get oiers
-    const oiers = this.db
-      .prepare(`SELECT * FROM oiers WHERE uid IN (${uids.map(() => '?').join(',')})`)
-      .all(...uids) as any[];
+    const oiers =
+      uids.length > 0
+        ? await this.db.all<any>(
+            `SELECT * FROM oiers WHERE uid IN (${uids.map(() => '?').join(',')})`,
+            ...uids,
+          )
+        : [];
 
     const oiersMap: Record<number, DbOIer> = {};
     for (const oier of oiers) {
-      const provinces = this.db
-        .prepare('SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province')
-        .all(oier.uid) as { province: string }[];
+      const provinces = await this.db.all<{ province: string }>(
+        'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
+        oier.uid,
+      );
 
-      const schoolIds = this.db
-        .prepare('SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id')
-        .all(oier.uid) as { school_id: number }[];
+      const schoolIds = await this.db.all<{ school_id: number }>(
+        'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
+        oier.uid,
+      );
 
-      const contestIds = this.db
-        .prepare('SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id')
-        .all(oier.uid) as { contest_id: number }[];
+      const contestIds = await this.db.all<{ contest_id: number }>(
+        'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
+        oier.uid,
+      );
 
       oiersMap[oier.uid] = {
         ...oier,
@@ -794,7 +836,7 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       };
     }
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       id,
@@ -834,29 +876,32 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
     params.push(perPage, (page - 1) * perPage);
 
-    const contests = this.db.prepare(sql).all(...params) as any[];
+    const contests = await this.db.all<any>(sql, ...params);
 
     // Count total
     let countSql = sql.replace(/SELECT \*/, 'SELECT COUNT(*) as count').replace(/ ORDER BY.*$/, '');
     const countParams = params.slice(0, -2);
-    const totalResult = this.db.prepare(countSql).get(...countParams) as { count: number };
-    const total = totalResult.count;
+    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
+    const total = totalResult!.count;
 
     // Reconstruct contestant_ids for each contest
-    const reconstructedContests: DbContest[] = contests.map((contest) => {
-      const contestantIds = this.db
-        .prepare('SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid')
-        .all(contest.id) as { uid: number }[];
+    const reconstructedContests: DbContest[] = await Promise.all(
+      contests.map(async (contest) => {
+        const contestantIds = await this.db.all<{ uid: number }>(
+          'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
+          contest.id,
+        );
 
-      return {
-        ...contest,
-        fall_semester: contest.fall_semester === 1,
-        level_counts: JSON.parse(contest.level_counts),
-        contestant_ids: contestantIds.map((c) => c.uid),
-      };
-    });
+        return {
+          ...contest,
+          fall_semester: contest.fall_semester === 1,
+          level_counts: JSON.parse(contest.level_counts),
+          contestant_ids: contestantIds.map((c) => c.uid),
+        };
+      }),
+    );
 
-    const version = this.getMetadata(META_KEY_DATA_VERSION) || '';
+    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
 
     return {
       contests: reconstructedContests,
