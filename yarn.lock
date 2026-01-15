@@ -3473,6 +3473,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@oierdb/adapter-memory@workspace:packages/adapter-memory":
+  version: 0.0.0-use.local
+  resolution: "@oierdb/adapter-memory@workspace:packages/adapter-memory"
+  dependencies:
+    "@oierdb/core": "workspace:*"
+    "@types/jest": "npm:^30.0.0"
+    jest: "npm:^30.2.0"
+    ts-jest: "npm:^29.4.4"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    "@oierdb/core": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@oierdb/adapter-sqlite@workspace:packages/adapter-sqlite":
   version: 0.0.0-use.local
   resolution: "@oierdb/adapter-sqlite@workspace:packages/adapter-sqlite"
