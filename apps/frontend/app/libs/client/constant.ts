@@ -16,5 +16,3 @@ export const staticEndpoint = !import.meta.env.DEV
 
 // Static data URLs
 export const staticDataVersionUrl = `${staticEndpoint}/version.json`;
-export const resultDataUrl = `${staticEndpoint}/result.txt`;
-export const staticDataUrl = `${staticEndpoint}/static.json`;

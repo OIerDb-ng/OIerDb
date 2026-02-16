@@ -1,215 +1,152 @@
 import { HttpAdapter } from '@oierdb/adapter-http';
-import { IDBAdapter } from '@oierdb/adapter-idb';
 import { OIerDbClient } from '@oierdb/core';
-import { parseOIerDbData } from '@oierdb/parser';
 
-import { backendEndpoint, staticDataVersionUrl } from './constant';
-import { OIerDbClientStatusEnum, setStatus } from './status';
-import { getResultUrl, getStaticUrl } from './util';
+import { backendEndpoint } from './constant';
+import { OIerDbClientStatusEnum, setStatus, setupSwStatusListener, SwStatusEnum } from './status';
 
 /**
- * Initialize the OIerDbClient with both HTTP and IndexedDB adapters.
- * This function sets up the global OIerDbClientInstance.
+ * Initialize the OIerDbClient with HttpAdapter.
+ * The endpoint is determined by SW availability:
+ * - If SW is ready: use current origin (SW will intercept /api/v1/* requests)
+ * - If SW is not ready: use backendEndpoint directly
  *
  * Steps:
- * - (Before calling this function) Set status to Initializing.
- * - Create an instance of HttpAdapter pointing to the remote OIer API.
- * - Create an instance of IDBAdapter using the browser's IndexedDB.
- * - Check the backend availability. (health check can be done via getVersion API, use error handling to determine unavailability)
- *   If backend is available:
- *   - Get the latest version from the backend.
- *     If the local IndexedDB version is outdated:
- *     - Set status to InitializedPartially, and use HttpAdapter to create OIerDbClient first.
- *     - Load data in the background to update IndexedDB.
- *     - Once data is loaded, switch client's adapter to IDBAdapter and set status to Initialized.
- *     If the local IndexedDB version is up-to-date:
- *     - Set status to Initialized and use IDBAdapter directly to create OIerDbClient.
- *   If backend is not available:
- *   - Get the latest version from static data source.
- *     If the local IndexedDB version is outdated:
- *     - Load data from static source into IndexedDB.
- *     - Set status to Initialized once done. (No InitializedPartially state here since no backend is available.)
- *     - Use IDBAdapter to create OIerDbClient.
- *     If the local IndexedDB version is up-to-date:
- *     - Set status to Initialized and use IDBAdapter directly to create OIerDbClient.
- *     If cannot load data from static source:
- *     - Set status to Uninitialized and throw an error.
+ * - Check if SW is registered and ready
+ * - Create HttpAdapter with appropriate baseUrl
+ * - Set up OIerDbClient with the adapter
+ * - Set up Service Worker status listener for status updates
+ * - When SW becomes ready, switch to origin-based endpoint
  */
 const initClientAsync = async () => {
-  const httpAdapter = new HttpAdapter({
-    baseUrl: backendEndpoint,
-  });
-  const idbAdapter = new IDBAdapter(indexedDB, IDBKeyRange);
+  setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据查询模块' });
 
-  setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据库适配器' });
+  // Check if SW is registered and controlling the page
+  const swReady = navigator.serviceWorker?.controller != null;
+  console.log('[Client] SW ready:', swReady);
 
-  let backendAvailable = false;
-  let backendVersion = '';
+  // Use backendEndpoint directly if SW is not ready
+  // Otherwise use origin so SW can intercept requests
+  const baseUrl = swReady ? window.location.origin : backendEndpoint;
+  console.log('[Client] Using baseUrl:', baseUrl);
 
-  // Check backend availability
+  const httpAdapter = new HttpAdapter({ baseUrl });
+
+  setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '检查服务可用性' });
+
   try {
-    setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '检查后端服务可用性' });
-    const versionResponse = await httpAdapter.getVersion();
-    backendVersion = versionResponse.data_version;
-    backendAvailable = true;
-  } catch (error) {
-    console.warn('Backend is not available:', error);
-    backendAvailable = false;
-  }
+    // Test connectivity by getting version
+    const version = await httpAdapter.getVersion();
+    console.log('[Client] API version:', version.data_version);
 
-  console.log('BackendAvailable:', backendAvailable, 'Version:', backendVersion);
+    // Create client with HTTP adapter
+    globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
 
-  // Get local IndexedDB version
-  let localVersion = '';
-  let localVersionAvailable = false;
-  try {
-    const localVersionResponse = await idbAdapter.getVersion();
-    localVersion = localVersionResponse.data_version;
-    localVersionAvailable = await idbAdapter.checkAvailability(localVersion);
-  } catch (error) {
-    console.warn('Failed to get local version:', error);
-  }
+    // Set up SW status listener to update UI based on SW state
+    setupSwStatusListener();
 
-  console.log('Local IndexedDB version:', localVersion);
-
-  if (backendAvailable) {
-    // Backend is available
-    if (localVersion && localVersionAvailable && localVersion === backendVersion) {
-      // Local version is up-to-date, use IDB adapter directly
-      setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '使用本地数据库' });
-      globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
-      setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '' });
-    } else {
-      // Local version is outdated, use HTTP adapter first
-      setStatus({
-        type: OIerDbClientStatusEnum.InitializedPartially,
-        text: '使用在线数据服务 [后台: 更新本地数据库]',
-      });
-      globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
-
-      // Load data in background
-      loadDataInBackground(idbAdapter, backendVersion);
-    }
-  } else {
-    // Backend is not available, use static data source
-    // Get the latest version from static data source
-    let staticVersion = '';
-    try {
-      setStatus({
-        type: OIerDbClientStatusEnum.Initializing,
-        text: '检查静态数据版本 [后端: 不可用]',
-      });
-      const versionResponse = await fetch(staticDataVersionUrl);
-      const versionData = await versionResponse.json();
-      staticVersion = versionData.data_version;
-    } catch (error) {
-      console.warn('Failed to get static data version:', error);
+    // If SW wasn't ready, listen for it to become ready and switch endpoint
+    if (!swReady) {
+      waitForSwAndSwitchEndpoint();
     }
 
-    console.log('Static data version:', staticVersion);
+    setStatus({
+      type: OIerDbClientStatusEnum.InitializedPartially,
+      text: swReady ? '等待 Service Worker 就绪' : '使用在线服务',
+    });
+  } catch (error) {
+    console.error('[Client] Failed to initialize:', error);
+    setStatus({
+      type: OIerDbClientStatusEnum.Uninitialized,
+      text: '初始化失败',
+    });
+    throw error;
+  }
+};
 
-    if (localVersion && localVersionAvailable && localVersion === staticVersion) {
-      // Local version is up-to-date with static data
-      setStatus({
-        type: OIerDbClientStatusEnum.Initializing,
-        text: '使用本地数据库',
-      });
-      globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
-      setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '' });
-    } else if (localVersion && localVersionAvailable && !staticVersion) {
-      // Cannot get static version, but have local data - use it anyway
-      setStatus({
-        type: OIerDbClientStatusEnum.Initializing,
-        text: '使用本地数据库',
-      });
-      globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
-      setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '离线模式' });
-    } else {
-      // Local version is outdated or doesn't exist, need to load from static source
-      try {
-        setStatus({
-          type: OIerDbClientStatusEnum.Initializing,
-          text: '加载数据',
-        });
-        await loadDataFromStaticSource(idbAdapter, staticVersion);
-      } catch (error) {
-        console.error('Failed to load data from static source:', error);
-        setStatus({ type: OIerDbClientStatusEnum.Uninitialized, text: '加载失败' });
-        throw new Error('Cannot initialize OIerDbClient: backend unavailable and no local data');
+const waitForSwAndSwitchEndpoint = () => {
+  if (!navigator.serviceWorker) return;
+
+  // Listen for SW to become activated first
+  navigator.serviceWorker.ready.then((registration) => {
+    console.log('[Client] SW activated, querying availability via postMessage');
+
+    let switched = false;
+    let attempts = 0;
+    const maxAttempts = 40;
+    const timeoutMs = 20000;
+    let timeoutId: number | null = null;
+
+    const cleanup = () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+      if (timeoutId != null) {
+        clearTimeout(timeoutId);
       }
-    }
-  }
-};
+    };
 
-const fetchAndParseData = async (targetVersion: string) => {
-  // Fetch static.json and result.txt
-  console.time('Data fetch time');
-  const [staticResponse, resultResponse] = await Promise.all([
-    fetch(getStaticUrl(targetVersion)),
-    fetch(getResultUrl(targetVersion)),
-  ]);
-  if (!staticResponse.ok || !resultResponse.ok) {
-    throw new Error('Failed to fetch data');
-  }
-  const [staticText, resultText] = await Promise.all([
-    staticResponse.text(),
-    resultResponse.text(),
-  ]);
-  console.timeEnd('Data fetch time');
+    // Handler for SW status response
+    const handleMessage = (event: MessageEvent) => {
+      const { type, payload } = event.data || {};
 
-  // Parse data
-  console.time('Data parse time');
-  const parsedData = parseOIerDbData(resultText, staticText);
-  console.log('Parsed data version:', parsedData.data_version);
-  console.timeEnd('Data parse time');
+      if (type === 'statusResponse' && !switched) {
+        console.log('[Client] SW status response:', payload);
 
-  return parsedData;
-};
+        // Check if SW is ready (at least UsingHttp status means it can handle requests)
+        if (payload.status >= SwStatusEnum.UsingHttp) {
+          switched = true;
+          cleanup();
 
-const loadDataToIndexedDB = async (
-  idbAdapter: IDBAdapter,
-  targetVersion: string,
-  isBackground: boolean,
-) => {
-  const statusType = isBackground
-    ? OIerDbClientStatusEnum.InitializedPartially
-    : OIerDbClientStatusEnum.Initializing;
+          console.log('[Client] SW is ready, switching to origin-based endpoint');
 
-  // Fetch and parse data
-  setStatus({
-    type: statusType,
-    text: isBackground ? '使用在线数据服务 [后台: 拉取并解析数据]' : '拉取并解析数据',
+          // Create new adapter with origin baseUrl
+          const newAdapter = new HttpAdapter({ baseUrl: window.location.origin });
+
+          // Switch the client's adapter
+          if (globalThis.OIerDbClientInstance) {
+            globalThis.OIerDbClientInstance.setAdapter(newAdapter);
+          }
+
+          // Re-setup SW status listener
+          setupSwStatusListener();
+        } else {
+          // SW is still initializing, retry after a delay
+          console.log('[Client] SW still initializing, retrying...');
+          attempts += 1;
+          if (attempts >= maxAttempts) {
+            console.warn('[Client] SW status polling reached max attempts');
+            cleanup();
+            return;
+          }
+          setTimeout(queryStatus, 500);
+        }
+      }
+    };
+
+    // Query SW status
+    const queryStatus = () => {
+      const controller = registration.active;
+      if (!controller) {
+        console.log('[Client] SW not yet active, retrying...');
+        attempts += 1;
+        if (attempts >= maxAttempts) {
+          console.warn('[Client] SW activation polling reached max attempts');
+          cleanup();
+          return;
+        }
+        setTimeout(queryStatus, 100);
+        return;
+      }
+      controller.postMessage({ type: 'getStatus' });
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    timeoutId = window.setTimeout(() => {
+      if (!switched) {
+        console.warn('[Client] SW readiness polling timed out');
+        cleanup();
+      }
+    }, timeoutMs);
+    queryStatus();
   });
-  const parsedData = await fetchAndParseData(targetVersion);
-
-  // Save to IndexedDB
-  setStatus({
-    type: statusType,
-    text: isBackground ? '使用在线数据服务 [后台: 保存到本地数据库]' : '保存到本地数据库',
-  });
-  console.time('Data save time');
-  await idbAdapter.loadData(parsedData);
-  console.timeEnd('Data save time');
-};
-
-const loadDataInBackground = async (idbAdapter: IDBAdapter, targetVersion: string) => {
-  try {
-    await loadDataToIndexedDB(idbAdapter, targetVersion, true);
-
-    // Switch to IDB adapter
-    globalThis.OIerDbClientInstance!.setAdapter(idbAdapter);
-    setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '' });
-  } catch (error) {
-    console.error('Failed to load data in background:', error);
-    // Keep using HTTP adapter
-  }
-};
-
-const loadDataFromStaticSource = async (idbAdapter: IDBAdapter, targetVersion: string) => {
-  await loadDataToIndexedDB(idbAdapter, targetVersion, false);
-
-  globalThis.OIerDbClientInstance = new OIerDbClient(idbAdapter);
-  setStatus({ type: OIerDbClientStatusEnum.Initialized, text: '' });
 };
 
 export const initClient = () => {
@@ -217,7 +154,9 @@ export const initClient = () => {
   setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据查询模块' });
 
   // Then start async initialization, but don't wait for it
-  initClientAsync();
+  void initClientAsync().catch((error) => {
+    console.error('[Client] initClientAsync rejected:', error);
+  });
 };
 
 export const getClient = () => {

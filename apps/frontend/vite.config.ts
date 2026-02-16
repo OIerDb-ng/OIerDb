@@ -3,16 +3,35 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [reactRouter(), tsconfigPaths(), vanillaExtractPlugin()],
+  plugins: [
+    reactRouter(),
+    tsconfigPaths(),
+    vanillaExtractPlugin(),
+    VitePWA({
+      srcDir: 'app',
+      filename: 'sw.ts',
+      strategies: 'injectManifest',
+      injectRegister: false,
+      manifest: false,
+      injectManifest: {
+        injectionPoint: undefined,
+      },
+      devOptions: {
+        enabled: true,
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@oierdb/adapter-http': path.resolve(__dirname, '../../packages/adapter-http/index.ts'),
       '@oierdb/adapter-idb': path.resolve(__dirname, '../../packages/adapter-idb/index.ts'),
+      '@oierdb/adapter-memory': path.resolve(__dirname, '../../packages/adapter-memory/index.ts'),
       '@oierdb/core': path.resolve(__dirname, '../../packages/core/index.ts'),
       '@oierdb/parser': path.resolve(__dirname, '../../packages/parser/index.ts'),
     },

@@ -9,4 +9,12 @@ declare global {
 }
 
 export { getClient, initClient } from './client';
-export { getStatus, subscribeToStatusChange, waitUntilClientReady } from './status';
+export {
+  getStatus,
+  getSwStatus,
+  querySwStatus,
+  subscribeToStatusChange,
+  SwStatusEnum,
+  waitUntilClientReady,
+} from './status';
+export type { SwStatus } from './status';
