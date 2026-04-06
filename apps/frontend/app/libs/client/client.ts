@@ -8,14 +8,10 @@ import { OIerDbClientStatusEnum, setStatus, setupSwStatusListener, SwStatusEnum 
  * Initialize the OIerDbClient with HttpAdapter.
  * The endpoint is determined by SW availability:
  * - If SW is ready: use current origin (SW will intercept /api/v1/* requests)
- * - If SW is not ready: use backendEndpoint directly
+ * - If SW is not ready: use backendEndpoint directly, then switch to SW when ready
  *
- * Steps:
- * - Check if SW is registered and ready
- * - Create HttpAdapter with appropriate baseUrl
- * - Set up OIerDbClient with the adapter
- * - Set up Service Worker status listener for status updates
- * - When SW becomes ready, switch to origin-based endpoint
+ * The client instance is always created so getClient() never throws.
+ * Status transitions drive waitUntilClientReady() resolution.
  */
 const initClientAsync = async () => {
   setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据查询模块' });
@@ -24,42 +20,42 @@ const initClientAsync = async () => {
   const swReady = navigator.serviceWorker?.controller != null;
   console.log('[Client] SW ready:', swReady);
 
-  // Use backendEndpoint directly if SW is not ready
-  // Otherwise use origin so SW can intercept requests
-  const baseUrl = swReady ? window.location.origin : backendEndpoint;
-  console.log('[Client] Using baseUrl:', baseUrl);
+  if (swReady) {
+    // SW is already controlling the page — use it directly.
+    // The SW may still be initializing its adapter (race with clients.claim()),
+    // so don't test connectivity here. Just listen for SW status broadcasts.
+    const httpAdapter = new HttpAdapter({ baseUrl: window.location.origin });
+    globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
+    setupSwStatusListener();
+    setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '等待 Service Worker 就绪' });
+    // Status will be updated when the SW broadcasts its ready state.
+    return;
+  }
 
-  const httpAdapter = new HttpAdapter({ baseUrl });
-
+  // SW is not yet controlling the page — try connecting to the backend directly.
   setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '检查服务可用性' });
 
+  const httpAdapter = new HttpAdapter({ baseUrl: backendEndpoint });
+  // Always create the instance so getClient() is safe to call after waitUntilClientReady.
+  globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
+
   try {
-    // Test connectivity by getting version
     const version = await httpAdapter.getVersion();
     console.log('[Client] API version:', version.data_version);
 
-    // Create client with HTTP adapter
-    globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
-
-    // Set up SW status listener to update UI based on SW state
+    // Backend is reachable — use it as a temporary source while waiting for SW.
     setupSwStatusListener();
-
-    // If SW wasn't ready, listen for it to become ready and switch endpoint
-    if (!swReady) {
-      waitForSwAndSwitchEndpoint();
-    }
-
-    setStatus({
-      type: OIerDbClientStatusEnum.InitializedPartially,
-      text: swReady ? '等待 Service Worker 就绪' : '使用在线服务',
-    });
-  } catch (error) {
-    console.error('[Client] Failed to initialize:', error);
-    setStatus({
-      type: OIerDbClientStatusEnum.Uninitialized,
-      text: '初始化失败',
-    });
-    throw error;
+    waitForSwAndSwitchEndpoint();
+    setStatus({ type: OIerDbClientStatusEnum.InitializedPartially, text: '使用在线服务' });
+  } catch {
+    // Backend unreachable (e.g. first load in dev, or offline).
+    // Switch the client to use the origin so it routes through the SW once active.
+    console.warn('[Client] Backend unreachable, waiting for Service Worker');
+    globalThis.OIerDbClientInstance.setAdapter(
+      new HttpAdapter({ baseUrl: window.location.origin }),
+    );
+    setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '等待 Service Worker 就绪' });
+    waitForSwAndSwitchEndpoint();
   }
 };
 
@@ -150,12 +146,8 @@ const waitForSwAndSwitchEndpoint = () => {
 };
 
 export const initClient = () => {
-  // First set status to Initializing
-  setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据查询模块' });
-
-  // Then start async initialization, but don't wait for it
   void initClientAsync().catch((error) => {
-    console.error('[Client] initClientAsync rejected:', error);
+    console.error('[Client] initClientAsync rejected unexpectedly:', error);
   });
 };
 

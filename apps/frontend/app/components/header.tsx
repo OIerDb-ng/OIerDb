@@ -4,14 +4,19 @@ import { Link } from 'react-router';
 
 import * as styles from './header.css';
 
-import '@fontsource/saira/latin-500';
+import '@fontsource/saira/latin-500.css';
 
 interface NavItem {
   label: string;
   to: string;
 }
 
-const navItems: NavItem[] = [{ label: '首页', to: '/' }];
+const navItems: NavItem[] = [
+  { label: '首页', to: '/' },
+  { label: '选手', to: '/oier' },
+  { label: '学校', to: '/school' },
+  { label: '比赛', to: '/contest' },
+];
 
 export const Header: React.FC = () => {
   const [opened, { toggle, close }] = useDisclosure(false);

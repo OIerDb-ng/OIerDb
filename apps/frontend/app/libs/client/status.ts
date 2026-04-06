@@ -1,4 +1,9 @@
-import { isSwStatusMessage, type SwRuntimeStatus as SwStatus, SwStatusEnum } from '~/sw/protocol';
+import {
+  InitFailureReason,
+  isSwStatusMessage,
+  type SwRuntimeStatus as SwStatus,
+  SwStatusEnum,
+} from '~/sw/protocol';
 
 export enum OIerDbClientStatusEnum {
   Uninitialized = 0,
@@ -86,6 +91,12 @@ let latestSwStatusSeq = -1;
 const mapSwStatusToClientStatus = (swStatus: SwStatus): OIerDbClientStatusType => {
   switch (swStatus.status) {
     case SwStatusEnum.Uninitialized:
+      // Distinguish the SW's initial blank state (seq=0, failureReason=None — it simply
+      // hasn't started initializeAdapters yet) from an actual initialization failure.
+      // The former should keep waitUntilClientReady waiting; the latter is terminal.
+      if (swStatus.failureReason === InitFailureReason.None) {
+        return { type: OIerDbClientStatusEnum.Initializing, text: '等待 Service Worker 就绪' };
+      }
       return { type: OIerDbClientStatusEnum.Uninitialized, text: swStatus.text };
     case SwStatusEnum.Initializing:
       return { type: OIerDbClientStatusEnum.Initializing, text: swStatus.text };
