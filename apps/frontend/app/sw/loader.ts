@@ -6,14 +6,12 @@ import { parseOIerDbData } from '@oierdb/parser';
 import { staticDataVersionUrl } from '../libs/client/constant';
 import { getResultUrl, getStaticUrl } from '../libs/client/util';
 import { getIdbAdapter, getMemoryAdapter, setCurrentAdapter, useAdapter } from './adapters';
+import { BackgroundTaskType, SwAdapterType, SwStatusEnum as SwStatus } from './protocol';
 import {
-  BackgroundTaskType,
   completeBackgroundTask,
   failBackgroundTask,
   setStatus,
   startBackgroundTask,
-  SwAdapterType,
-  SwStatus,
 } from './status';
 
 // ==============================
@@ -49,7 +47,10 @@ export async function fetchAndParseData(targetVersion: string) {
 // Data Loading Strategies
 // ==============================
 
-export async function loadDataInBackground(targetVersion: string) {
+async function loadParsedDataToAdapters(
+  parsedData: ReturnType<typeof parseOIerDbData>,
+  targetVersion: string,
+) {
   const memoryAdapter = getMemoryAdapter();
   const idbAdapter = getIdbAdapter();
 
@@ -57,62 +58,14 @@ export async function loadDataInBackground(targetVersion: string) {
     throw new Error('Adapters not initialized');
   }
 
-  try {
-    // 拉取数据
-    startBackgroundTask(BackgroundTaskType.FetchingData);
-    const parsedData = await fetchAndParseData(targetVersion);
-    completeBackgroundTask();
-
-    // 加载到内存适配器
-    startBackgroundTask(BackgroundTaskType.LoadingToMemory);
-    await memoryAdapter.loadData(parsedData);
-
-    // 切换到内存适配器
-    setCurrentAdapter(memoryAdapter);
-    setStatus({
-      status: SwStatus.UsingMemory,
-      adapterType: SwAdapterType.Memory,
-      dataVersion: targetVersion,
-    });
-    completeBackgroundTask();
-
-    // 保存到 IndexedDB
-    startBackgroundTask(BackgroundTaskType.SavingToIdb);
-    console.time('[SW] IDB save time');
-    await idbAdapter.loadData(parsedData);
-    console.timeEnd('[SW] IDB save time');
-
-    // 切换到 IDB 适配器
-    setCurrentAdapter(idbAdapter);
-    setStatus({
-      status: SwStatus.UsingIdb,
-      adapterType: SwAdapterType.IDB,
-      dataVersion: targetVersion,
-    });
-    completeBackgroundTask();
-  } catch (error) {
-    console.error('[SW] Failed to load data in background:', error);
-    failBackgroundTask(BackgroundTaskType.FetchingData);
-    // 保持使用当前适配器
-  }
-}
-
-export async function loadDataFromStaticSource(targetVersion: string) {
-  const memoryAdapter = getMemoryAdapter();
-  const idbAdapter = getIdbAdapter();
-
-  if (!memoryAdapter || !idbAdapter) {
-    throw new Error('Adapters not initialized');
-  }
-
-  // 拉取数据
-  startBackgroundTask(BackgroundTaskType.LoadingFromStatic);
-  const parsedData = await fetchAndParseData(targetVersion);
-  completeBackgroundTask();
-
-  // 加载到内存
+  // 加载到内存适配器
   startBackgroundTask(BackgroundTaskType.LoadingToMemory);
-  await memoryAdapter.loadData(parsedData);
+  try {
+    await memoryAdapter.loadData(parsedData);
+  } catch (error) {
+    failBackgroundTask(BackgroundTaskType.LoadingToMemory);
+    throw error;
+  }
   setCurrentAdapter(memoryAdapter);
   setStatus({
     status: SwStatus.UsingMemory,
@@ -123,9 +76,15 @@ export async function loadDataFromStaticSource(targetVersion: string) {
 
   // 保存到 IndexedDB
   startBackgroundTask(BackgroundTaskType.SavingToIdb);
-  await idbAdapter.loadData(parsedData);
-
-  // 切换到 IDB
+  console.time('[SW] IDB save time');
+  try {
+    await idbAdapter.loadData(parsedData);
+  } catch (error) {
+    console.timeEnd('[SW] IDB save time');
+    failBackgroundTask(BackgroundTaskType.SavingToIdb);
+    throw error;
+  }
+  console.timeEnd('[SW] IDB save time');
   setCurrentAdapter(idbAdapter);
   setStatus({
     status: SwStatus.UsingIdb,
@@ -133,6 +92,38 @@ export async function loadDataFromStaticSource(targetVersion: string) {
     dataVersion: targetVersion,
   });
   completeBackgroundTask();
+}
+
+export async function loadDataInBackground(targetVersion: string) {
+  try {
+    startBackgroundTask(BackgroundTaskType.FetchingData);
+    const parsedData = await fetchAndParseData(targetVersion);
+    completeBackgroundTask();
+
+    await loadParsedDataToAdapters(parsedData, targetVersion);
+  } catch (error) {
+    console.error('[SW] Failed to load data in background:', error);
+    // failBackgroundTask 已由失败的具体步骤调用，保持使用当前适配器
+  }
+}
+
+export async function loadDataFromStaticSource(targetVersion: string) {
+  let fetchPhaseComplete = false;
+  try {
+    startBackgroundTask(BackgroundTaskType.LoadingFromStatic);
+    const parsedData = await fetchAndParseData(targetVersion);
+    completeBackgroundTask();
+    fetchPhaseComplete = true;
+
+    await loadParsedDataToAdapters(parsedData, targetVersion);
+  } catch (error) {
+    console.error('[SW] Failed to load data from static source:', error);
+    if (!fetchPhaseComplete) {
+      failBackgroundTask(BackgroundTaskType.LoadingFromStatic);
+    }
+    // 重新抛出，由 sw.ts 的外层 catch 设置 Uninitialized 状态
+    throw error;
+  }
 }
 
 export async function fetchStaticDataVersion() {

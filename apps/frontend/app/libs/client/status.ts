@@ -1,3 +1,5 @@
+import { isSwStatusMessage, type SwRuntimeStatus as SwStatus, SwStatusEnum } from '~/sw/protocol';
+
 export enum OIerDbClientStatusEnum {
   Uninitialized = 0,
   Initializing,
@@ -10,21 +12,8 @@ export interface OIerDbClientStatusType {
   text: string;
 }
 
-// SW Status types (mirrored from sw.ts)
-export enum SwStatusEnum {
-  Uninitialized = 0,
-  Initializing,
-  UsingHttp,
-  UsingMemory,
-  UsingIdb,
-}
-
-export interface SwStatus {
-  status: SwStatusEnum;
-  adapterType: string;
-  text: string;
-  dataVersion: string;
-}
+export { SwStatusEnum };
+export type { SwStatus };
 
 type StatusChangeListener = (status: OIerDbClientStatusType) => void;
 
@@ -92,6 +81,7 @@ export const waitUntilClientReady = (timeoutMs = 15000) =>
 // ==============================
 
 let swStatusListenerSetup = false;
+let latestSwStatusSeq = -1;
 
 const mapSwStatusToClientStatus = (swStatus: SwStatus): OIerDbClientStatusType => {
   switch (swStatus.status) {
@@ -110,15 +100,22 @@ const mapSwStatusToClientStatus = (swStatus: SwStatus): OIerDbClientStatusType =
 };
 
 const handleSwMessage = (event: MessageEvent) => {
-  const { type, payload } = event.data || {};
-
-  if (type === 'statusChange' || type === 'statusResponse') {
-    const swStatus = payload as SwStatus;
-    console.log('[Client] Received SW status:', swStatus);
-
-    const clientStatus = mapSwStatusToClientStatus(swStatus);
-    setStatus(clientStatus);
+  if (!isSwStatusMessage(event.data)) {
+    return;
   }
+
+  const { payload } = event.data;
+
+  if (payload.seq <= latestSwStatusSeq) {
+    return;
+  }
+
+  latestSwStatusSeq = payload.seq;
+
+  console.log('[Client] Received SW status:', payload);
+
+  const clientStatus = mapSwStatusToClientStatus(payload);
+  setStatus(clientStatus);
 };
 
 export const setupSwStatusListener = () => {
@@ -146,11 +143,14 @@ export const getSwStatus = (): Promise<SwStatus | null> => {
     }
 
     const handler = (event: MessageEvent) => {
-      const { type, payload } = event.data || {};
-      if (type === 'statusResponse') {
-        navigator.serviceWorker?.removeEventListener('message', handler);
-        resolve(payload as SwStatus);
+      if (!isSwStatusMessage(event.data) || event.data.type !== 'statusResponse') {
+        return;
       }
+
+      const { payload } = event.data;
+
+      navigator.serviceWorker?.removeEventListener('message', handler);
+      resolve(payload);
     };
 
     navigator.serviceWorker.addEventListener('message', handler);

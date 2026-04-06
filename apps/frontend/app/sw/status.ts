@@ -1,72 +1,23 @@
 /// <reference lib="webworker" />
 declare const self: ServiceWorkerGlobalScope;
 
-// ==============================
-// Status Types
-// ==============================
-
-export enum SwAdapterType {
-  None = 0,
-  Http,
-  Memory,
-  IDB,
-}
-
-export enum SwStatus {
-  Uninitialized = 0,
-  Initializing,
-  UsingHttp, // Using HttpAdapter (Requesting backend directly)
-  UsingMemory, // Using MemoryAdapter (Data parsed, not yet saved to IndexedDB)
-  UsingIdb, // Using IDBAdapter (Fully cached)
-}
-
-export enum BackgroundTaskType {
-  None = 0,
-  CheckingBackend, // 检查后端服务可用性
-  FetchingData, // 拉取数据
-  ParsingData, // 解析数据
-  LoadingToMemory, // 加载到内存
-  SavingToIdb, // 保存到 IndexedDB
-  LoadingFromStatic, // 从静态源加载
-}
-
-export enum BackgroundTaskStatus {
-  Idle = 0,
-  Running,
-  Completed,
-  Failed,
-}
-
-export interface BackgroundTask {
-  type: BackgroundTaskType;
-  status: BackgroundTaskStatus;
-}
-
-export enum InitFailureReason {
-  None = 0,
-  BackendUnavailable,
-  StaticFetchFailed,
-  DataParseFailed,
-  IdbSaveFailed,
-  Unknown,
-}
-
-interface Status {
-  status: SwStatus;
-  adapterType: SwAdapterType;
-  dataVersion: string;
-  backgroundTask: BackgroundTask;
-  isOffline: boolean;
-  failureReason: InitFailureReason;
-}
+import {
+  BackgroundTaskStatus,
+  BackgroundTaskType,
+  InitFailureReason,
+  SwAdapterType,
+  SwStatusEnum,
+  type SwRuntimeStatus,
+} from './protocol';
 
 // ==============================
 // State
 // ==============================
 
-let currentStatus: Status = {
-  status: SwStatus.Uninitialized,
+let currentStatus: SwRuntimeStatus = {
+  status: SwStatusEnum.Uninitialized,
   adapterType: SwAdapterType.None,
+  text: '未初始化',
   dataVersion: '',
   backgroundTask: {
     type: BackgroundTaskType.None,
@@ -74,6 +25,25 @@ let currentStatus: Status = {
   },
   isOffline: false,
   failureReason: InitFailureReason.None,
+  seq: 0,
+};
+
+const copyStatus = (status: SwRuntimeStatus): SwRuntimeStatus => ({
+  ...status,
+  backgroundTask: { ...status.backgroundTask },
+});
+
+const isSameStatus = (a: SwRuntimeStatus, b: SwRuntimeStatus): boolean => {
+  return (
+    a.status === b.status &&
+    a.adapterType === b.adapterType &&
+    a.text === b.text &&
+    a.dataVersion === b.dataVersion &&
+    a.backgroundTask.type === b.backgroundTask.type &&
+    a.backgroundTask.status === b.backgroundTask.status &&
+    a.isOffline === b.isOffline &&
+    a.failureReason === b.failureReason
+  );
 };
 
 // ==============================
@@ -81,11 +51,21 @@ let currentStatus: Status = {
 // ==============================
 
 export function getStatus() {
-  return currentStatus;
+  return copyStatus(currentStatus);
 }
 
-export function setStatus(status: Partial<Status>) {
-  currentStatus = { ...currentStatus, ...status };
+export function setStatus(status: Partial<SwRuntimeStatus>) {
+  const nextStatus = { ...currentStatus, ...status } as SwRuntimeStatus;
+
+  if (isSameStatus(nextStatus, currentStatus)) {
+    return;
+  }
+
+  currentStatus = {
+    ...nextStatus,
+    seq: currentStatus.seq + 1,
+  };
+
   console.log('[SW] Status changed:', currentStatus);
   broadcastStatus();
 }
@@ -107,18 +87,20 @@ export function failBackgroundTask(type: BackgroundTaskType) {
 }
 
 export async function broadcastStatus() {
+  const payload = copyStatus(currentStatus);
   const clients = await self.clients.matchAll({ type: 'window' });
   clients.forEach((client) => {
     client.postMessage({
       type: 'statusChange',
-      payload: currentStatus,
+      payload,
     });
   });
 }
 
 export function handleStatusRequest(event: ExtendableMessageEvent) {
+  const payload = copyStatus(currentStatus);
   event.source?.postMessage({
     type: 'statusResponse',
-    payload: currentStatus,
+    payload,
   });
 }

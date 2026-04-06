@@ -10,16 +10,19 @@ import {
   loadDataInBackground,
   tryUseIdbCache,
 } from './sw/loader';
-import { Router, type RouteContext } from './sw/router';
 import {
   BackgroundTaskType,
+  InitFailureReason,
+  isGetStatusMessage,
+  SwAdapterType,
+  SwStatusEnum as SwStatus,
+} from './sw/protocol';
+import { Router, type RouteContext } from './sw/router';
+import {
   completeBackgroundTask,
   handleStatusRequest,
-  InitFailureReason,
   setStatus,
   startBackgroundTask,
-  SwAdapterType,
-  SwStatus,
 } from './sw/status';
 
 // ==============================
@@ -147,9 +150,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  const { type } = event.data || {};
-
-  if (type === 'getStatus') {
+  if (isGetStatusMessage(event.data)) {
     handleStatusRequest(event);
   }
 

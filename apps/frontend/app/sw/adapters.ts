@@ -6,7 +6,7 @@ import { IDBAdapter } from '@oierdb/adapter-idb';
 import { MemoryAdapter } from '@oierdb/adapter-memory';
 import type { IAdapter } from '@oierdb/core';
 
-import { SwAdapterType } from '~/sw/status';
+import { SwAdapterType } from '~/sw/protocol';
 import { backendEndpoint } from '../libs/client/constant';
 
 // ==============================
