@@ -6,11 +6,11 @@
   "types": "dist/main.d.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "dev": "PORT=32002 nest start --watch --max-old-space-size=8192",
+    "dev": "PORT=32002 NODE_OPTIONS='--require tsx/cjs' nest start --watch --max-old-space-size=8192",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "build": "nest build",
-    "start": "node --max-old-space-size=8192 .",
+    "start": "node --require tsx/cjs --max-old-space-size=8192 .",
     "stress-test": "NODE_ENV=development tsx stress/index.ts standard",
     "stress-test:quick": "NODE_ENV=development tsx stress/index.ts quick",
     "stress-test:heavy": "NODE_ENV=development tsx stress/index.ts heavy"

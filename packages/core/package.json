@@ -2,8 +2,11 @@
   "name": "@oierdb/core",
   "version": "0.0.0",
   "description": "OIerDb core types and interfaces",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",
