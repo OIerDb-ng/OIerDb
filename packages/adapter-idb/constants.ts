@@ -2,14 +2,8 @@ export const DB_NAME = 'oierdb-ng';
 export const DB_VERSION = 1;
 
 // =====
-// Metadata Keys
+// Loaded offset tracking for each table (IDB-specific)
 // =====
-export const META_KEY_DATA_VERSION = 'data_version';
-
-// Loading progress tracking
-export const META_KEY_LOADING_PROGRESS = 'loading_progress';
-
-// Loaded offset tracking for each table
 export const META_KEY_LOADED_OFFSET_OIERS = 'loaded_offset_oiers';
 export const META_KEY_LOADED_OFFSET_SCHOOLS = 'loaded_offset_schools';
 export const META_KEY_LOADED_OFFSET_RECORDS = 'loaded_offset_records';

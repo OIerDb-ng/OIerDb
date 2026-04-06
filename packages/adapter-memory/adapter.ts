@@ -17,8 +17,11 @@ import type {
   VersionResponse,
 } from '@oierdb/core';
 
-import { META_KEY_DATA_VERSION, META_KEY_LOADING_PROGRESS } from './constants';
-import { normalizePaginationParams } from './util';
+import {
+  META_KEY_DATA_VERSION,
+  META_KEY_LOADING_PROGRESS,
+  normalizePaginationParams,
+} from '@oierdb/core';
 
 export class MemoryAdapter implements IAdapterWithLoader {
   // Primary storage - Maps for O(1) lookups

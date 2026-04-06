@@ -17,19 +17,21 @@ import type {
   ListSchoolsResponse,
   VersionResponse,
 } from '@oierdb/core';
+import {
+  META_KEY_DATA_VERSION,
+  META_KEY_LOADING_PROGRESS,
+  normalizePaginationParams,
+} from '@oierdb/core';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
 import {
   DB_NAME,
   DB_VERSION,
-  META_KEY_DATA_VERSION,
   META_KEY_LOADED_OFFSET_CONTESTS,
   META_KEY_LOADED_OFFSET_OIERS,
   META_KEY_LOADED_OFFSET_RECORDS,
   META_KEY_LOADED_OFFSET_SCHOOLS,
-  META_KEY_LOADING_PROGRESS,
 } from './constants';
-import { normalizePaginationParams } from './util';
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;

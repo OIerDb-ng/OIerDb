@@ -17,9 +17,12 @@ import type {
   VersionResponse,
 } from '@oierdb/core';
 
+import {
+  META_KEY_DATA_VERSION,
+  META_KEY_LOADING_PROGRESS,
+  normalizePaginationParams,
+} from '@oierdb/core';
 import { AsyncDatabase } from './async-database';
-import { META_KEY_DATA_VERSION, META_KEY_LOADING_PROGRESS } from './constants';
-import { normalizePaginationParams } from './util';
 
 export class SQLiteAdapter implements IAdapterWithLoader {
   private db: AsyncDatabase;
