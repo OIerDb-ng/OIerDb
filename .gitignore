@@ -6,9 +6,6 @@ tmp/
 coverage/
 /out/
 
-# Turborepo
-.turbo/
-
 # Yarn
 .pnp.*
 .yarn/*

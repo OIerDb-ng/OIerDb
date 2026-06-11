@@ -9,15 +9,11 @@
   "scripts": {
     "install:generator": "python3 -m venv generator/.venv && generator/.venv/bin/pip install -r generator/requirements.txt",
     "generate": "generator/.venv/bin/python ./generator/main.py",
-    "build:frontend": "turbo run @oierdb/frontend#build",
-    "build:backend": "turbo run @oierdb/backend#build",
-    "dev:frontend": "turbo run @oierdb/frontend#dev",
-    "dev:backend": "turbo run @oierdb/backend#dev",
+    "build:frontend": "yarn workspace @oierdb/frontend build",
+    "build:backend": "yarn workspace @oierdb/backend build",
+    "dev:frontend": "yarn workspace @oierdb/frontend dev",
+    "dev:backend": "yarn workspace @oierdb/backend dev",
     "dev:static": "serve ./generator/dist -l 32001 --cors --symlinks",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "lint:check": "turbo run lint:check",
-    "check-types": "turbo run check-types",
     "postinstall": "husky install",
     "fmt": "prettier --write ."
   },
@@ -27,7 +23,6 @@
     "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.3.0",
     "serve": "^14.2.5",
-    "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   },
   "packageManager": "yarn@4.10.3",
