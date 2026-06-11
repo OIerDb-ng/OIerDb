@@ -9,6 +9,7 @@ export default [
     route('school/:id', './routes/school_detail.tsx'),
     route('contest', './routes/contests.tsx'),
     route('contest/:id', './routes/contest_detail.tsx'),
+    route('about', './routes/about.tsx'),
   ]),
   route('oiers', './routes/redirects/oiers.ts'),
   route('schools', './routes/redirects/schools.ts'),

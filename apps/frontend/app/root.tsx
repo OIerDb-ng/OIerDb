@@ -1,6 +1,7 @@
 import { ColorSchemeScript, mantineHtmlProps, MantineProvider } from '@mantine/core';
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -83,22 +84,70 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? '404' : 'Error';
-    details =
-      error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
+    details = error.status === 404 ? '未找到请求的页面。' : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }
 
+  const is404 = isRouteErrorResponse(error) && error.status === 404;
+
   return (
-    <main>
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre>
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div style={{ maxWidth: 480, width: '100%' }}>
+        <div
+          style={{
+            border: '1px solid #e9ecef',
+            borderRadius: 8,
+            padding: '2rem',
+            backgroundColor: '#fff',
+          }}
+        >
+          <h1
+            style={{
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              margin: '0 0 0.5rem',
+              color: '#dc2626',
+            }}
+          >
+            {message}
+          </h1>
+          <p style={{ fontSize: '1rem', lineHeight: 1.6, margin: '0 0 1.5rem', color: '#495057' }}>
+            {details}
+          </p>
+          {is404 && (
+            <Link
+              to="/"
+              style={{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                backgroundColor: '#228be6',
+                color: '#fff',
+                textDecoration: 'none',
+                borderRadius: 4,
+                fontSize: '0.875rem',
+                fontWeight: 500,
+              }}
+            >
+              返回首页
+            </Link>
+          )}
+        </div>
+        {stack && (
+          <pre style={{ marginTop: '1rem', overflow: 'auto', fontSize: '0.75rem' }}>
+            <code>{stack}</code>
+          </pre>
+        )}
+      </div>
+    </div>
   );
 }

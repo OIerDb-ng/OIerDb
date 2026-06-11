@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { label: '选手', to: '/oier' },
   { label: '学校', to: '/school' },
   { label: '比赛', to: '/contest' },
+  { label: '关于', to: '/about' },
 ];
 
 export const Header: React.FC = () => {
@@ -27,14 +28,7 @@ export const Header: React.FC = () => {
         <Container size="md" className={styles.container}>
           <div className={styles.inner}>
             <Link to="/" className={styles.logo}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  backgroundColor: '#000',
-                  width: 28,
-                  height: 28,
-                }}
-              />
+              <img src="/logo.png" alt="OIerDb" width={28} height={28} />
               <span>OIerDb</span>
             </Link>
 
@@ -69,14 +63,7 @@ export const Header: React.FC = () => {
       >
         <Stack gap={0}>
           <Link to="/" className={styles.mobileLogo} onClick={close}>
-            <span
-              style={{
-                display: 'inline-block',
-                backgroundColor: '#000',
-                width: 28,
-                height: 28,
-              }}
-            />
+            <img src="/logo.png" alt="OIerDb" width={28} height={28} />
             <span>OIerDb</span>
           </Link>
 

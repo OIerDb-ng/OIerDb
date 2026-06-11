@@ -1,5 +1,6 @@
 import { reactRouter } from '@react-router/dev/vite';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
@@ -8,7 +9,16 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const buildHash =
+  process.env.COMMIT_REF ||
+  process.env.BUILD_SHA ||
+  process.env.GITHUB_SHA ||
+  crypto.createHash('sha256').update(new Date().toISOString()).digest('hex');
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(buildHash),
+  },
   plugins: [
     reactRouter(),
     tsconfigPaths(),
