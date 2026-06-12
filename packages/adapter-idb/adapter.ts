@@ -24,14 +24,9 @@ import {
 } from '@oierdb/core';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
-import {
-  DB_NAME,
-  DB_VERSION,
-  META_KEY_LOADED_OFFSET_CONTESTS,
-  META_KEY_LOADED_OFFSET_OIERS,
-  META_KEY_LOADED_OFFSET_RECORDS,
-  META_KEY_LOADED_OFFSET_SCHOOLS,
-} from './constants';
+import { DB_NAME, DB_VERSION } from './constants';
+
+const CHUNK_SIZE = 5000;
 
 interface OIerDbDexie extends Dexie {
   oiers: EntityTable<DbOIer, 'uid'>;
@@ -43,6 +38,7 @@ interface OIerDbDexie extends Dexie {
 
 export class IDBAdapter implements IAdapterWithLoader {
   private db: OIerDbDexie;
+  private cachedVersion: string | null = null;
 
   constructor(factory: IDBFactory, keyRange: typeof IDBKeyRange) {
     this.db = new Dexie(DB_NAME, {
@@ -65,8 +61,59 @@ export class IDBAdapter implements IAdapterWithLoader {
   }
 
   // ==============================
-  // Helper Methods for Progress Tracking
+  // Shared Helpers
   // ==============================
+
+  private async getDataVersion(): Promise<string> {
+    if (this.cachedVersion !== null) return this.cachedVersion;
+    const meta = await this.db.meta.get(META_KEY_DATA_VERSION);
+    return (this.cachedVersion = meta?.value || '');
+  }
+
+  private async bulkGetDefined<T>(
+    table: { bulkGet(keys: readonly number[]): Promise<(T | undefined)[]> },
+    keys: readonly number[],
+  ): Promise<T[]> {
+    const items = await table.bulkGet(keys);
+    return items.filter((item): item is T => item !== undefined);
+  }
+
+  private async paginatedQuery<T, TKey, TInsertType>(
+    table: Table<T, TKey, TInsertType>,
+    where: Record<string, any>,
+    sortField: string,
+    sortDesc: boolean,
+    page: number,
+    perPage: number,
+  ): Promise<{ items: T[]; total: number; totalPages: number }> {
+    let items: T[];
+    let total: number;
+
+    if (Object.keys(where).length === 0) {
+      const ordered = sortDesc ? table.orderBy(sortField).reverse() : table.orderBy(sortField);
+      [items, total] = await Promise.all([
+        ordered
+          .offset((page - 1) * perPage)
+          .limit(perPage)
+          .toArray(),
+        table.count(),
+      ]);
+    } else {
+      // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
+      [items, total] = await Promise.all([
+        table
+          .where(where)
+          .sortBy(sortField)
+          .then((arr) => {
+            if (sortDesc) arr.reverse();
+            return arr.slice((page - 1) * perPage, page * perPage);
+          }),
+        table.where(where).count(),
+      ]);
+    }
+
+    return { items, total, totalPages: Math.ceil(total / perPage) };
+  }
 
   private async getLoadedOffset(key: string): Promise<number> {
     const meta = await this.db.meta.get(key);
@@ -77,13 +124,40 @@ export class IDBAdapter implements IAdapterWithLoader {
     await this.db.meta.put({ key, value: offset.toString() });
   }
 
-  private async getLoadingProgress(): Promise<'loading' | 'loaded' | null> {
-    const meta = await this.db.meta.get(META_KEY_LOADING_PROGRESS);
-    return (meta?.value as 'loading' | 'loaded') || null;
-  }
+  private async loadTableIncrementally<T, TKey, TInsertType = T>(
+    table: Table<T, TKey, TInsertType>,
+    items: readonly TInsertType[],
+    offsetKey: string,
+    tableName: string,
+  ): Promise<void> {
+    const totalCount = items.length;
+    let loadedOffset = await this.getLoadedOffset(offsetKey);
 
-  private async setLoadingProgress(status: 'loading' | 'loaded'): Promise<void> {
-    await this.db.meta.put({ key: META_KEY_LOADING_PROGRESS, value: status });
+    // Validate offset: if corrupted (> total), reset to 0
+    if (loadedOffset > totalCount) {
+      console.warn(
+        `Corrupted offset detected for ${tableName}: ${loadedOffset} > ${totalCount}. Resetting.`,
+      );
+      loadedOffset = 0;
+      await this.setLoadedOffset(offsetKey, 0);
+    }
+
+    // If already complete, skip
+    if (loadedOffset >= totalCount) {
+      return;
+    }
+
+    // Load remaining data in chunks
+    for (let i = loadedOffset; i < totalCount; i += CHUNK_SIZE) {
+      const chunkEnd = Math.min(i + CHUNK_SIZE, totalCount);
+      const chunk = items.slice(i, chunkEnd);
+
+      // Load chunk and update offset in same transaction for consistency
+      await this.db.transaction('readwrite', [table, this.db.meta], async (tx) => {
+        await tx.table(table.name).bulkAdd(chunk);
+        await tx.meta.put({ key: offsetKey, value: chunkEnd.toString() });
+      });
+    }
   }
 
   // ==============================
@@ -91,26 +165,14 @@ export class IDBAdapter implements IAdapterWithLoader {
   // ==============================
 
   async loadData(data: DbParseResult): Promise<void> {
-    const CHUNK_SIZE = 5000;
-
-    // Check if we need to start fresh (version change or corruption)
-    const currentVersion = await this.db.meta
-      .get(META_KEY_DATA_VERSION)
-      .then((meta) => meta?.value || '');
-
+    const currentVersion = await this.getDataVersion();
     const needsReset = currentVersion !== data.data_version;
 
     if (needsReset) {
-      // Version changed: clear data_version first, then initialize metadata
-      await this.db.transaction('readwrite', [this.db.meta], async (tx) => {
-        // Clear data_version to signal invalid state
-        await tx.meta.delete(META_KEY_DATA_VERSION);
-      });
-
-      // Clear all data tables
+      // Single atomic transaction: clear data + initialize metadata
       await this.db.transaction(
         'readwrite',
-        [this.db.oiers, this.db.schools, this.db.contests, this.db.records],
+        [this.db.oiers, this.db.schools, this.db.contests, this.db.records, this.db.meta],
         async (tx) => {
           await Promise.all([
             tx.oiers.clear(),
@@ -118,115 +180,61 @@ export class IDBAdapter implements IAdapterWithLoader {
             tx.contests.clear(),
             tx.records.clear(),
           ]);
+          await Promise.all([
+            tx.meta.put({ key: META_KEY_DATA_VERSION, value: data.data_version }),
+            tx.meta.put({ key: META_KEY_LOADING_PROGRESS, value: 'loading' }),
+            tx.meta.put({ key: 'loaded_offset_oiers', value: '0' }),
+            tx.meta.put({ key: 'loaded_offset_schools', value: '0' }),
+            tx.meta.put({ key: 'loaded_offset_records', value: '0' }),
+            tx.meta.put({ key: 'loaded_offset_contests', value: '0' }),
+          ]);
         },
       );
-
-      // Initialize metadata for new version
-      await this.db.transaction('readwrite', [this.db.meta], async (tx) => {
-        await Promise.all([
-          tx.meta.put({ key: META_KEY_DATA_VERSION, value: data.data_version }),
-          tx.meta.put({ key: META_KEY_LOADING_PROGRESS, value: 'loading' }),
-          tx.meta.put({ key: META_KEY_LOADED_OFFSET_OIERS, value: '0' }),
-          tx.meta.put({ key: META_KEY_LOADED_OFFSET_SCHOOLS, value: '0' }),
-          tx.meta.put({ key: META_KEY_LOADED_OFFSET_RECORDS, value: '0' }),
-          tx.meta.put({ key: META_KEY_LOADED_OFFSET_CONTESTS, value: '0' }),
-        ]);
-      });
     }
-
-    // Helper function to load a table incrementally with resume support
-    const loadTableIncrementally = async <T, TKey, TInsertType = T>(
-      table: Table<T, TKey, TInsertType>,
-      items: readonly TInsertType[],
-      offsetKey: string,
-      tableName: string,
-    ) => {
-      const totalCount = items.length;
-      let loadedOffset = await this.getLoadedOffset(offsetKey);
-
-      // Validate offset: if corrupted (> total), reset to 0
-      if (loadedOffset > totalCount) {
-        console.warn(
-          `Corrupted offset detected for ${tableName}: ${loadedOffset} > ${totalCount}. Resetting.`,
-        );
-        loadedOffset = 0;
-        await this.setLoadedOffset(offsetKey, 0);
-      }
-
-      // If already complete, skip
-      if (loadedOffset >= totalCount) {
-        return;
-      }
-
-      console.log(`Loading ${tableName}: starting from offset ${loadedOffset} / ${totalCount}`);
-
-      // Load remaining data in chunks
-      for (let i = loadedOffset; i < totalCount; i += CHUNK_SIZE) {
-        console.log(
-          `Loading ${tableName}: processing items ${i} to ${Math.min(i + CHUNK_SIZE, totalCount)} / ${totalCount}`,
-        );
-
-        const chunkEnd = Math.min(i + CHUNK_SIZE, totalCount);
-        const chunk = items.slice(i, chunkEnd);
-
-        // Load chunk and update offset in same transaction for consistency
-        await this.db.transaction('readwrite', [table, this.db.meta], async (tx) => {
-          await tx.table(table.name).bulkAdd(chunk);
-          await tx.meta.put({ key: offsetKey, value: chunkEnd.toString() });
-        });
-      }
-    };
 
     // Load all tables in parallel
     await Promise.all([
-      loadTableIncrementally(this.db.oiers, data.oiers, META_KEY_LOADED_OFFSET_OIERS, 'oiers'),
-      loadTableIncrementally(
+      this.loadTableIncrementally(this.db.oiers, data.oiers, 'loaded_offset_oiers', 'oiers'),
+      this.loadTableIncrementally(
         this.db.schools,
         data.schools,
-        META_KEY_LOADED_OFFSET_SCHOOLS,
+        'loaded_offset_schools',
         'schools',
       ),
-      loadTableIncrementally(
+      this.loadTableIncrementally(
         this.db.records,
         data.records,
-        META_KEY_LOADED_OFFSET_RECORDS,
+        'loaded_offset_records',
         'records',
       ),
-      loadTableIncrementally(
+      this.loadTableIncrementally(
         this.db.contests,
         data.contests,
-        META_KEY_LOADED_OFFSET_CONTESTS,
+        'loaded_offset_contests',
         'contests',
       ),
     ]);
 
-    // Final validation: check that actual counts match expected counts
-    const [actualOiersCount, actualSchoolsCount, actualRecordsCount, actualContestsCount] =
-      await Promise.all([
-        this.db.oiers.count(),
-        this.db.schools.count(),
-        this.db.records.count(),
-        this.db.contests.count(),
-      ]);
-
-    if (
-      actualOiersCount !== data.oiers.length ||
-      actualSchoolsCount !== data.schools.length ||
-      actualRecordsCount !== data.records.length ||
-      actualContestsCount !== data.contests.length
-    ) {
-      throw new Error(
-        'Data validation failed: actual counts do not match expected counts. Data may be corrupted.',
-      );
+    // Validate that actual counts match expected counts
+    const expected: [{ count(): Promise<number> }, number, string][] = [
+      [this.db.oiers, data.oiers.length, 'oiers'],
+      [this.db.schools, data.schools.length, 'schools'],
+      [this.db.records, data.records.length, 'records'],
+      [this.db.contests, data.contests.length, 'contests'],
+    ];
+    const counts = await Promise.all(expected.map(([table]) => table.count()));
+    for (let i = 0; i < expected.length; i++) {
+      if (counts[i] !== expected[i][1]) {
+        throw new Error(
+          `Data validation failed for ${expected[i][2]}: expected ${expected[i][1]}, got ${counts[i]}.`,
+        );
+      }
     }
 
     // Mark loading as complete
-    await this.setLoadingProgress('loaded');
+    await this.db.meta.put({ key: META_KEY_LOADING_PROGRESS, value: 'loaded' });
+    this.cachedVersion = data.data_version;
   }
-
-  // ==============================
-  // IAdapter Interface
-  // ==============================
 
   async checkAvailability(targetVersion: string): Promise<boolean> {
     const [versionMeta, progressMeta] = await Promise.all([
@@ -237,16 +245,20 @@ export class IDBAdapter implements IAdapterWithLoader {
     const versionMatches = versionMeta?.value === targetVersion;
     const loadingComplete = progressMeta?.value === 'loaded';
 
+    if (versionMatches && loadingComplete) {
+      this.cachedVersion = targetVersion;
+    }
+
     return versionMatches && loadingComplete;
   }
 
   async getVersion(): Promise<VersionResponse> {
-    const version = await this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || '');
-
-    return {
-      data_version: version,
-    };
+    return { data_version: await this.getDataVersion() };
   }
+
+  // ==============================
+  // IAdapter Interface
+  // ==============================
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
     const oier = await this.db.oiers.get(uid);
@@ -256,14 +268,13 @@ export class IDBAdapter implements IAdapterWithLoader {
 
     const [records, schools, version] = await Promise.all([
       this.db.records.where('uid').equals(uid).toArray(),
-      this.db.schools
-        .bulkGet(oier.school_ids)
-        .then((items) => items.filter((s): s is DbSchool => s !== undefined)),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+      this.bulkGetDefined(this.db.schools, oier.school_ids),
+      this.getDataVersion(),
     ]);
-    const contests = await this.db.contests
-      .bulkGet(records.map((r) => r.contest_id))
-      .then((items) => items.filter((c): c is DbContest => c !== undefined));
+    const contests = await this.bulkGetDefined(
+      this.db.contests,
+      Array.from(new Set(records.map((r) => r.contest_id))),
+    );
 
     return {
       uid,
@@ -290,56 +301,14 @@ export class IDBAdapter implements IAdapterWithLoader {
     if (initials) where.initials = initials.toLowerCase();
     if (enroll_middle) where.enroll_middle = enroll_middle;
     if (province) where.provinces = province;
-    if (gender) where.gender = gender;
+    if (gender != null) where.gender = gender;
 
-    if (Object.keys(where).length === 0) {
-      const [oiers, total, version] = await Promise.all([
-        this.db.oiers
-          .orderBy('rank')
-          .offset((page - 1) * perPage)
-          .limit(perPage)
-          .toArray(),
-        this.db.oiers.count(),
-        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
-      ]);
-
-      return {
-        oiers,
-        total,
-        totalPages: Math.ceil(total / perPage),
-        page,
-        perPage,
-        data_version: version,
-      };
-    }
-
-    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
-    // const [oiers, total] = await Promise.all([
-    //   this.db.oiers
-    //     .where(where)
-    //     .orderBy('rank')
-    //     .offset((page - 1) * perPage)
-    //     .limit(perPage)
-    //     .toArray(),
-    //   this.db.oiers.where(where).orderBy('rank').count(),
-    // ]);
-    const [oiers, total, version] = await Promise.all([
-      this.db.oiers
-        .where(where)
-        .sortBy('rank')
-        .then((arr) => arr.slice((page - 1) * perPage, page * perPage)),
-      this.db.oiers.where(where).count(),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+    const [version, { items: oiers, total, totalPages }] = await Promise.all([
+      this.getDataVersion(),
+      this.paginatedQuery(this.db.oiers, where, 'rank', false, page, perPage),
     ]);
 
-    return {
-      oiers,
-      total,
-      totalPages: Math.ceil(total / perPage),
-      page,
-      perPage,
-      data_version: version,
-    };
+    return { oiers, total, totalPages, page, perPage, data_version: version };
   }
 
   async getSchool(id: number): Promise<GetSchoolResponse | null> {
@@ -348,16 +317,16 @@ export class IDBAdapter implements IAdapterWithLoader {
       return null;
     }
 
-    const records = await this.db.records.where('school_id').equals(id).toArray();
-    const [members, contests, version] = await Promise.all([
-      this.db.oiers
-        .bulkGet(school.member_ids)
-        .then((items) => items.filter((m): m is DbOIer => m !== undefined)),
-      this.db.contests
-        .bulkGet(Array.from(new Set(records.map((r) => r.contest_id))))
-        .then((items) => items.filter((c): c is DbContest => c !== undefined)),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+    // records, members, and version have no inter-dependencies — fetch in parallel
+    const [records, members, version] = await Promise.all([
+      this.db.records.where('school_id').equals(id).toArray(),
+      this.bulkGetDefined(this.db.oiers, school.member_ids),
+      this.getDataVersion(),
     ]);
+    const contests = await this.bulkGetDefined(
+      this.db.contests,
+      Array.from(new Set(records.map((r) => r.contest_id))),
+    );
 
     return {
       id,
@@ -377,54 +346,12 @@ export class IDBAdapter implements IAdapterWithLoader {
     if (province) where.province = province;
     if (province && city) where.city = city;
 
-    if (Object.keys(where).length === 0) {
-      const [schools, total, version] = await Promise.all([
-        this.db.schools
-          .orderBy('rank')
-          .offset((page - 1) * perPage)
-          .limit(perPage)
-          .toArray(),
-        this.db.schools.count(),
-        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
-      ]);
-
-      return {
-        schools,
-        total,
-        totalPages: Math.ceil(total / perPage),
-        page,
-        perPage,
-        data_version: version,
-      };
-    }
-
-    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
-    // const [schools, total] = await Promise.all([
-    //   this.db.schools
-    //     .where(where)
-    //     .orderBy('rank')
-    //     .offset((page - 1) * perPage)
-    //     .limit(perPage)
-    //     .toArray(),
-    //   this.db.schools.where(where).orderBy('rank').count(),
-    // ]);
-    const [schools, total, version] = await Promise.all([
-      this.db.schools
-        .where(where)
-        .sortBy('rank')
-        .then((arr) => arr.slice((page - 1) * perPage, page * perPage)),
-      this.db.schools.where(where).count(),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+    const [version, { items: schools, total, totalPages }] = await Promise.all([
+      this.getDataVersion(),
+      this.paginatedQuery(this.db.schools, where, 'rank', false, page, perPage),
     ]);
 
-    return {
-      schools,
-      total,
-      totalPages: Math.ceil(total / perPage),
-      page,
-      perPage,
-      data_version: version,
-    };
+    return { schools, total, totalPages, page, perPage, data_version: version };
   }
 
   async getContest(
@@ -432,7 +359,8 @@ export class IDBAdapter implements IAdapterWithLoader {
     _page?: number,
     _perPage?: number,
   ): Promise<GetContestResponse | null> {
-    const contest = await this.db.contests.get(id);
+    // Fetch contest and version in parallel — version doesn't depend on contest data
+    const [contest, version] = await Promise.all([this.db.contests.get(id), this.getDataVersion()]);
     if (!contest) {
       return null;
     }
@@ -451,14 +379,9 @@ export class IDBAdapter implements IAdapterWithLoader {
 
     const school_ids = Array.from(new Set(records.map((r) => r.school_id)));
     const uids = Array.from(new Set(records.map((r) => r.uid)));
-    const [schools, oiers, version] = await Promise.all([
-      this.db.schools
-        .bulkGet(school_ids)
-        .then((items) => items.filter((s): s is DbSchool => s !== undefined)),
-      this.db.oiers
-        .bulkGet(uids)
-        .then((items) => items.filter((o): o is DbOIer => o !== undefined)),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+    const [schools, oiers] = await Promise.all([
+      this.bulkGetDefined(this.db.schools, school_ids),
+      this.bulkGetDefined(this.db.oiers, uids),
     ]);
 
     return {
@@ -483,55 +406,11 @@ export class IDBAdapter implements IAdapterWithLoader {
     if (type) where.type = type;
     if (year) where.year = year;
 
-    if (Object.keys(where).length === 0) {
-      const [contests, total, version] = await Promise.all([
-        this.db.contests
-          .orderBy('id')
-          .reverse()
-          .offset((page - 1) * perPage)
-          .limit(perPage)
-          .toArray(),
-        this.db.contests.count(),
-        this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
-      ]);
-
-      return {
-        contests,
-        total,
-        totalPages: Math.ceil(total / perPage),
-        page,
-        perPage,
-        data_version: version,
-      };
-    }
-
-    // FIXME: Dexie 在 5.0 前尚不支持复合 orderBy 和 where 条件
-    // const [contests, total] = await Promise.all([
-    //   this.db.contests
-    //     .where(where)
-    //     .orderBy('id')
-    //     .reverse()
-    //     .offset((page - 1) * perPage)
-    //     .limit(perPage)
-    //     .toArray(),
-    //   this.db.contests.where(where).orderBy('id').reverse().count(),
-    // ]);
-    const [contests, total, version] = await Promise.all([
-      this.db.contests
-        .where(where)
-        .sortBy('id')
-        .then((arr) => arr.reverse().slice((page - 1) * perPage, page * perPage)),
-      this.db.contests.where(where).count(),
-      this.db.meta.get(META_KEY_DATA_VERSION).then((meta) => meta?.value || ''),
+    const [version, { items: contests, total, totalPages }] = await Promise.all([
+      this.getDataVersion(),
+      this.paginatedQuery(this.db.contests, where, 'id', true, page, perPage),
     ]);
 
-    return {
-      contests,
-      total,
-      totalPages: Math.ceil(total / perPage),
-      page,
-      perPage,
-      data_version: version,
-    };
+    return { contests, total, totalPages, page, perPage, data_version: version };
   }
 }
