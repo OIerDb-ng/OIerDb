@@ -26,18 +26,17 @@ import { AsyncDatabase } from './async-database';
 
 export class SQLiteAdapter implements IAdapterWithLoader {
   private db: AsyncDatabase;
+  private cachedVersion: string | null = null;
 
   constructor() {
     this.db = new AsyncDatabase(':memory:');
   }
 
   async initialize(): Promise<void> {
-    // Create schema
     await this.createSchema();
   }
 
   private async createSchema(): Promise<void> {
-    // Create tables and indexes
     await this.db.exec(`
       CREATE TABLE oiers (
         uid INTEGER PRIMARY KEY,
@@ -157,20 +156,25 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     return 'sqlite';
   }
 
-  // ==============================
-  // Helper Methods for Metadata
-  // ==============================
+  // ── Metadata Helpers ──────────────────────────────────────────
 
   private async getMetadata(key: string): Promise<string | null> {
     const result = await this.db.get<{ value: string }>(
       'SELECT value FROM meta WHERE key = ?',
       key,
     );
-    return result?.value || null;
+    return result?.value ?? null;
   }
 
   private async setMetadata(key: string, value: string): Promise<void> {
     await this.db.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', key, value);
+  }
+
+  private async getDataVersion(): Promise<string> {
+    if (this.cachedVersion === null) {
+      this.cachedVersion = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
+    }
+    return this.cachedVersion;
   }
 
   private async clearAllData(): Promise<void> {
@@ -186,29 +190,198 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     `);
   }
 
-  // ==============================
-  // IAdapterWithLoader Interface
-  // ==============================
+  // ── SQL Helpers ───────────────────────────────────────────────
+
+  /** Builds a `column IN (?, ?, ...)` clause, returning [sql, params]. */
+  private whereIn(column: string, ids: number[]): [string, number[]] {
+    if (ids.length === 0) return ['1=0', []];
+    return [`${column} IN (${ids.map(() => '?').join(',')})`, ids];
+  }
+
+  /** Fetches all rows from `table` where `column` matches one of `ids`. */
+  private async fetchRows<T = any>(table: string, column: string, ids: number[]): Promise<T[]> {
+    if (ids.length === 0) return [];
+    const [clause, params] = this.whereIn(column, ids);
+    return this.db.all<T>(`SELECT * FROM ${table} WHERE ${clause}`, ...params);
+  }
+
+  /** Groups rows by `keyField`, collecting `valueField` into arrays. */
+  private groupBy<K, V>(
+    rows: Record<string, any>[],
+    keyField: string,
+    valueField: string,
+  ): Map<K, V[]> {
+    const map = new Map<K, V[]>();
+    for (const row of rows) {
+      const key = row[keyField] as K;
+      const value = row[valueField] as V;
+      const arr = map.get(key) ?? [];
+      arr.push(value);
+      map.set(key, arr);
+    }
+    return map;
+  }
+
+  // ── Entity Reconstruction ─────────────────────────────────────
+
+  private reconstructRecord(row: any): DbRecord {
+    return {
+      uid: row.uid,
+      contest_id: row.contest_id,
+      school_id: row.school_id,
+      level: row.level,
+      score: row.score,
+      rank: row.rank,
+      province: row.province,
+      enroll_middle:
+        row.enroll_middle_is_stay_down !== null && row.enroll_middle_value !== null
+          ? {
+              is_stay_down: row.enroll_middle_is_stay_down === 1,
+              value: row.enroll_middle_value,
+            }
+          : undefined,
+    };
+  }
+
+  /** Batch-reconstructs OIers from flat rows, fetching junction data in bulk. */
+  private async reconstructOIers(rows: any[]): Promise<DbOIer[]> {
+    if (rows.length === 0) return [];
+    const uids = rows.map((r) => r.uid);
+
+    const [pClause, pParams] = this.whereIn('uid', uids);
+    const [sClause, sParams] = this.whereIn('uid', uids);
+    const [cClause, cParams] = this.whereIn('uid', uids);
+
+    const [provinces, schoolIds, contestIds] = await Promise.all([
+      this.db.all<{ uid: number; province: string }>(
+        `SELECT uid, province FROM oier_provinces WHERE ${pClause} ORDER BY uid, province`,
+        ...pParams,
+      ),
+      this.db.all<{ uid: number; school_id: number }>(
+        `SELECT uid, school_id FROM oier_schools WHERE ${sClause} ORDER BY uid, school_id`,
+        ...sParams,
+      ),
+      this.db.all<{ uid: number; contest_id: number }>(
+        `SELECT uid, contest_id FROM oier_contests WHERE ${cClause} ORDER BY uid, contest_id`,
+        ...cParams,
+      ),
+    ]);
+
+    const provincesByUid = this.groupBy<number, string>(provinces, 'uid', 'province');
+    const schoolIdsByUid = this.groupBy<number, number>(schoolIds, 'uid', 'school_id');
+    const contestIdsByUid = this.groupBy<number, number>(contestIds, 'uid', 'contest_id');
+
+    return rows.map((row) => ({
+      ...row,
+      provinces: provincesByUid.get(row.uid) ?? [],
+      school_ids: schoolIdsByUid.get(row.uid) ?? [],
+      contest_ids: contestIdsByUid.get(row.uid) ?? [],
+    }));
+  }
+
+  /** Batch-reconstructs Schools from flat rows, fetching member_ids in bulk. */
+  private async reconstructSchools(rows: any[]): Promise<DbSchool[]> {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+
+    const [clause, params] = this.whereIn('school_id', ids);
+    const memberRows = await this.db.all<{ school_id: number; uid: number }>(
+      `SELECT school_id, uid FROM oier_schools WHERE ${clause} ORDER BY school_id, uid`,
+      ...params,
+    );
+
+    const membersById = this.groupBy<number, number>(memberRows, 'school_id', 'uid');
+
+    return rows.map((row) => ({
+      ...row,
+      award_counts: JSON.parse(row.award_counts),
+      member_ids: membersById.get(row.id) ?? [],
+    }));
+  }
+
+  /** Batch-reconstructs Contests from flat rows, fetching contestant_ids in bulk. */
+  private async reconstructContests(rows: any[]): Promise<DbContest[]> {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+
+    const [clause, params] = this.whereIn('contest_id', ids);
+    const contestantRows = await this.db.all<{ contest_id: number; uid: number }>(
+      `SELECT contest_id, uid FROM oier_contests WHERE ${clause} ORDER BY contest_id, uid`,
+      ...params,
+    );
+
+    const contestantsById = this.groupBy<number, number>(contestantRows, 'contest_id', 'uid');
+
+    return rows.map((row) => ({
+      ...row,
+      fall_semester: row.fall_semester === 1,
+      level_counts: JSON.parse(row.level_counts),
+      contestant_ids: contestantsById.get(row.id) ?? [],
+    }));
+  }
+
+  // ── Pagination Helper ─────────────────────────────────────────
+
+  /**
+   * Executes a paginated SELECT and its count query in parallel,
+   * then reconstructs the result rows.
+   */
+  private async paginatedQuery<T>(opts: {
+    selectExpr: string;
+    fromClause: string;
+    whereClauses: string[];
+    params: any[];
+    orderBy: string;
+    page: number;
+    perPage: number;
+    countExpr?: string;
+    reconstruct: (rows: any[]) => Promise<T[]>;
+  }): Promise<{ items: T[]; total: number; totalPages: number }> {
+    const {
+      selectExpr,
+      fromClause,
+      whereClauses,
+      params,
+      orderBy,
+      page,
+      perPage,
+      countExpr = 'COUNT(*) as count',
+      reconstruct,
+    } = opts;
+    const where = whereClauses.length > 0 ? ' WHERE ' + whereClauses.join(' AND ') : '';
+    const offset = (page - 1) * perPage;
+
+    const [rows, countResult] = await Promise.all([
+      this.db.all(
+        `${selectExpr} ${fromClause}${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+        ...params,
+        perPage,
+        offset,
+      ),
+      this.db.get<{ count: number }>(`SELECT ${countExpr} ${fromClause}${where}`, ...params),
+    ]);
+
+    const total = countResult!.count;
+    return { items: await reconstruct(rows), total, totalPages: Math.ceil(total / perPage) };
+  }
+
+  // ── IAdapterWithLoader Interface ──────────────────────────────
 
   async loadData(data: DbParseResult): Promise<void> {
-    // Check if we need to start fresh (version change)
-    const currentVersion = await this.getMetadata(META_KEY_DATA_VERSION);
-    const needsReset = currentVersion !== data.data_version;
+    this.cachedVersion = null;
 
-    if (needsReset) {
+    const currentVersion = await this.getMetadata(META_KEY_DATA_VERSION);
+    if (currentVersion !== data.data_version) {
       await this.clearAllData();
     }
 
-    // Load all data in a single transaction using serialize
     await this.db.serialize(async () => {
       await this.db.run('BEGIN TRANSACTION');
 
       try {
-        // Set metadata
         await this.setMetadata(META_KEY_DATA_VERSION, data.data_version);
         await this.setMetadata(META_KEY_LOADING_PROGRESS, 'loading');
 
-        // Insert oiers and their relationships
         for (const oier of data.oiers) {
           await this.db.run(
             `INSERT INTO oiers (uid, name, lowered_name, initials, enroll_middle, gender,
@@ -226,7 +399,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
             oier.rank,
           );
 
-          // Insert provinces
           for (const province of oier.provinces) {
             await this.db.run(
               'INSERT INTO oier_provinces (uid, province) VALUES (?, ?)',
@@ -235,7 +407,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
             );
           }
 
-          // Insert schools
           for (const schoolId of oier.school_ids) {
             await this.db.run(
               'INSERT INTO oier_schools (uid, school_id) VALUES (?, ?)',
@@ -244,7 +415,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
             );
           }
 
-          // Insert contests
           for (const contestId of oier.contest_ids) {
             await this.db.run(
               'INSERT INTO oier_contests (uid, contest_id) VALUES (?, ?)',
@@ -254,7 +424,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
           }
         }
 
-        // Insert schools
         for (const school of data.schools) {
           await this.db.run(
             `INSERT INTO schools (id, name, province, city, score, rank, award_counts)
@@ -269,7 +438,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
           );
         }
 
-        // Insert contests
         for (const contest of data.contests) {
           await this.db.run(
             `INSERT INTO contests (id, name, year, type, fall_semester, full_score, capacity, length, level_counts)
@@ -286,7 +454,6 @@ export class SQLiteAdapter implements IAdapterWithLoader {
           );
         }
 
-        // Insert records
         for (const record of data.records) {
           await this.db.run(
             `INSERT INTO records (uid, contest_id, school_id, level, score, rank, province,
@@ -305,163 +472,69 @@ export class SQLiteAdapter implements IAdapterWithLoader {
         }
 
         // Validate counts
-        const oiersCount = (await this.db.get<{ count: number }>(
-          'SELECT COUNT(*) as count FROM oiers',
-        ))!.count;
-        const schoolsCount = (await this.db.get<{ count: number }>(
-          'SELECT COUNT(*) as count FROM schools',
-        ))!.count;
-        const contestsCount = (await this.db.get<{ count: number }>(
-          'SELECT COUNT(*) as count FROM contests',
-        ))!.count;
-        const recordsCount = (await this.db.get<{ count: number }>(
-          'SELECT COUNT(*) as count FROM records',
-        ))!.count;
+        const [oiersCount, schoolsCount, contestsCount, recordsCount] = await Promise.all([
+          this.db.get<{ count: number }>('SELECT COUNT(*) as count FROM oiers'),
+          this.db.get<{ count: number }>('SELECT COUNT(*) as count FROM schools'),
+          this.db.get<{ count: number }>('SELECT COUNT(*) as count FROM contests'),
+          this.db.get<{ count: number }>('SELECT COUNT(*) as count FROM records'),
+        ]);
 
         if (
-          oiersCount !== data.oiers.length ||
-          schoolsCount !== data.schools.length ||
-          contestsCount !== data.contests.length ||
-          recordsCount !== data.records.length
+          oiersCount!.count !== data.oiers.length ||
+          schoolsCount!.count !== data.schools.length ||
+          contestsCount!.count !== data.contests.length ||
+          recordsCount!.count !== data.records.length
         ) {
           throw new Error(
             'Data validation failed: actual counts do not match expected counts. Data may be corrupted.',
           );
         }
 
-        // Mark loading as complete
         await this.setMetadata(META_KEY_LOADING_PROGRESS, 'loaded');
-
         await this.db.run('COMMIT');
       } catch (error) {
         await this.db.run('ROLLBACK');
         throw error;
       }
     });
+
+    this.cachedVersion = data.data_version;
   }
 
-  // ==============================
-  // IAdapter Interface
-  // ==============================
+  // ── IAdapter Interface ────────────────────────────────────────
 
   async checkAvailability(targetVersion: string): Promise<boolean> {
     const version = await this.getMetadata(META_KEY_DATA_VERSION);
     const progress = await this.getMetadata(META_KEY_LOADING_PROGRESS);
-
     return version === targetVersion && progress === 'loaded';
   }
 
   async getVersion(): Promise<VersionResponse> {
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
-
-    return {
-      data_version: version,
-    };
+    return { data_version: await this.getDataVersion() };
   }
 
   async getOIer(uid: number): Promise<GetOIerResponse | null> {
-    const oier = await this.db.get<any>('SELECT * FROM oiers WHERE uid = ?', uid);
+    const oierRow = await this.db.get<any>('SELECT * FROM oiers WHERE uid = ?', uid);
+    if (!oierRow) return null;
 
-    if (!oier) {
-      return null;
-    }
+    const [oiers, records, version] = await Promise.all([
+      this.reconstructOIers([oierRow]),
+      this.db.all<any>('SELECT * FROM records WHERE uid = ?', uid),
+      this.getDataVersion(),
+    ]);
+    const oier = oiers[0];
 
-    // Reconstruct arrays from junction tables
-    const provinces = await this.db.all<{ province: string }>(
-      'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
-      uid,
-    );
-
-    const schoolIds = await this.db.all<{ school_id: number }>(
-      'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
-      uid,
-    );
-
-    const contestIds = await this.db.all<{ contest_id: number }>(
-      'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
-      uid,
-    );
-
-    oier.provinces = provinces.map((p) => p.province);
-    oier.school_ids = schoolIds.map((s) => s.school_id);
-    oier.contest_ids = contestIds.map((c) => c.contest_id);
-
-    // Get records
-    const records = await this.db.all<any>('SELECT * FROM records WHERE uid = ?', uid);
-
-    // Reconstruct enroll_middle objects
-    const reconstructedRecords: DbRecord[] = records.map((r) => ({
-      uid: r.uid,
-      contest_id: r.contest_id,
-      school_id: r.school_id,
-      level: r.level,
-      score: r.score,
-      rank: r.rank,
-      province: r.province,
-      enroll_middle:
-        r.enroll_middle_is_stay_down !== null && r.enroll_middle_value !== null
-          ? {
-              is_stay_down: r.enroll_middle_is_stay_down === 1,
-              value: r.enroll_middle_value,
-            }
-          : undefined,
-    }));
-
-    // Get schools
-    const schools =
-      oier.school_ids.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM schools WHERE id IN (${oier.school_ids.map(() => '?').join(',')})`,
-            ...oier.school_ids,
-          )
-        : [];
-
-    const schoolsMap: Record<number, DbSchool> = {};
-    for (const school of schools) {
-      const memberIds = await this.db.all<{ uid: number }>(
-        'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
-        school.id,
-      );
-
-      schoolsMap[school.id] = {
-        ...school,
-        award_counts: JSON.parse(school.award_counts),
-        member_ids: memberIds.map((m) => m.uid),
-      };
-    }
-
-    // Get contests
-    const contests =
-      oier.contest_ids.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM contests WHERE id IN (${oier.contest_ids.map(() => '?').join(',')})`,
-            ...oier.contest_ids,
-          )
-        : [];
-
-    const contestsMap: Record<number, DbContest> = {};
-    for (const contest of contests) {
-      const contestantIds = await this.db.all<{ uid: number }>(
-        'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
-        contest.id,
-      );
-
-      contestsMap[contest.id] = {
-        ...contest,
-        fall_semester: contest.fall_semester === 1,
-        level_counts: JSON.parse(contest.level_counts),
-        contestant_ids: contestantIds.map((c) => c.uid),
-      };
-    }
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
+    const [schools, contests] = await Promise.all([
+      this.fetchRows('schools', 'id', oier.school_ids).then((r) => this.reconstructSchools(r)),
+      this.fetchRows('contests', 'id', oier.contest_ids).then((r) => this.reconstructContests(r)),
+    ]);
 
     return {
       uid,
       oier,
-      records: reconstructedRecords,
-      schools_map: schoolsMap,
-      contests_map: contestsMap,
+      records: records.map((r) => this.reconstructRecord(r)),
+      schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
+      contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
       data_version: version,
     };
   }
@@ -476,18 +549,15 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     } = query;
     const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
 
-    let sql = 'SELECT o.* FROM oiers o';
-    const params: any[] = [];
     const whereClauses: string[] = [];
+    const params: any[] = [];
+    let fromClause = 'FROM oiers o';
 
-    // Handle province filter (requires JOIN)
     if (province) {
-      sql += ' INNER JOIN oier_provinces op ON o.uid = op.uid';
+      fromClause += ' INNER JOIN oier_provinces op ON o.uid = op.uid';
       whereClauses.push('op.province = ?');
       params.push(province);
     }
-
-    // Add other filters
     if (name) {
       whereClauses.push('o.name = ?');
       params.push(name);
@@ -500,158 +570,60 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       whereClauses.push('o.enroll_middle = ?');
       params.push(enroll_middle);
     }
-    if (gender !== null && gender !== undefined) {
+    if (gender != null) {
       whereClauses.push('o.gender = ?');
       params.push(gender);
     }
 
-    if (whereClauses.length > 0) {
-      sql += ' WHERE ' + whereClauses.join(' AND ');
-    }
-
-    // Add ordering and pagination
-    sql += ' ORDER BY o.rank LIMIT ? OFFSET ?';
-    params.push(perPage, (page - 1) * perPage);
-
-    const oiers = await this.db.all<any>(sql, ...params);
-
-    // Count total (remove LIMIT/OFFSET for count)
-    let countSql = sql
-      .replace(/SELECT o\.\*/, 'SELECT COUNT(DISTINCT o.uid) as count')
-      .replace(/ ORDER BY.*$/, '');
-    const countParams = params.slice(0, -2); // Remove LIMIT and OFFSET params
-    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
-    const total = totalResult!.count;
-
-    // Reconstruct arrays for each oier
-    const reconstructedOiers: DbOIer[] = await Promise.all(
-      oiers.map(async (oier) => {
-        const provinces = await this.db.all<{ province: string }>(
-          'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
-          oier.uid,
-        );
-
-        const schoolIds = await this.db.all<{ school_id: number }>(
-          'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
-          oier.uid,
-        );
-
-        const contestIds = await this.db.all<{ contest_id: number }>(
-          'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
-          oier.uid,
-        );
-
-        return {
-          ...oier,
-          provinces: provinces.map((p) => p.province),
-          school_ids: schoolIds.map((s) => s.school_id),
-          contest_ids: contestIds.map((c) => c.contest_id),
-        };
-      }),
-    );
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
-
-    return {
-      oiers: reconstructedOiers,
-      total,
-      totalPages: Math.ceil(total / perPage),
+    const { items, total, totalPages } = await this.paginatedQuery<DbOIer>({
+      selectExpr: 'SELECT o.*',
+      fromClause,
+      whereClauses,
+      params,
+      orderBy: 'o.rank',
       page,
       perPage,
-      data_version: version,
+      countExpr: 'COUNT(DISTINCT o.uid) as count',
+      reconstruct: (rows) => this.reconstructOIers(rows),
+    });
+
+    return {
+      oiers: items,
+      total,
+      totalPages,
+      page,
+      perPage,
+      data_version: await this.getDataVersion(),
     };
   }
 
   async getSchool(id: number): Promise<GetSchoolResponse | null> {
-    const school = await this.db.get<any>('SELECT * FROM schools WHERE id = ?', id);
+    const schoolRow = await this.db.get<any>('SELECT * FROM schools WHERE id = ?', id);
+    if (!schoolRow) return null;
 
-    if (!school) {
-      return null;
-    }
+    const [schools, version] = await Promise.all([
+      this.reconstructSchools([schoolRow]),
+      this.getDataVersion(),
+    ]);
+    const school = schools[0];
 
-    // Reconstruct member_ids from junction table
-    const memberIds = await this.db.all<{ uid: number }>(
-      'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
-      id,
-    );
+    const [records, memberRows] = await Promise.all([
+      this.db.all<any>('SELECT * FROM records WHERE school_id = ?', id),
+      this.fetchRows('oiers', 'uid', school.member_ids),
+    ]);
 
-    const reconstructedSchool: DbSchool = {
-      ...school,
-      award_counts: JSON.parse(school.award_counts),
-      member_ids: memberIds.map((m) => m.uid),
-    };
-
-    // Get all records for this school
-    const records = await this.db.all<any>('SELECT * FROM records WHERE school_id = ?', id);
-
-    // Get members
-    const members =
-      reconstructedSchool.member_ids.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM oiers WHERE uid IN (${reconstructedSchool.member_ids.map(() => '?').join(',')})`,
-            ...reconstructedSchool.member_ids,
-          )
-        : [];
-
-    const membersMap: Record<number, DbOIer> = {};
-    for (const member of members) {
-      const provinces = await this.db.all<{ province: string }>(
-        'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
-        member.uid,
-      );
-
-      const schoolIds = await this.db.all<{ school_id: number }>(
-        'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
-        member.uid,
-      );
-
-      const contestIds = await this.db.all<{ contest_id: number }>(
-        'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
-        member.uid,
-      );
-
-      membersMap[member.uid] = {
-        ...member,
-        provinces: provinces.map((p) => p.province),
-        school_ids: schoolIds.map((s) => s.school_id),
-        contest_ids: contestIds.map((c) => c.contest_id),
-      };
-    }
-
-    // Get unique contest IDs from records
     const contestIds = Array.from(new Set(records.map((r) => r.contest_id)));
 
-    // Get contests
-    const contests =
-      contestIds.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM contests WHERE id IN (${contestIds.map(() => '?').join(',')})`,
-            ...contestIds,
-          )
-        : [];
-
-    const contestsMap: Record<number, DbContest> = {};
-    for (const contest of contests) {
-      const contestantIds = await this.db.all<{ uid: number }>(
-        'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
-        contest.id,
-      );
-
-      contestsMap[contest.id] = {
-        ...contest,
-        fall_semester: contest.fall_semester === 1,
-        level_counts: JSON.parse(contest.level_counts),
-        contestant_ids: contestantIds.map((c) => c.uid),
-      };
-    }
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
+    const [members, contests] = await Promise.all([
+      this.reconstructOIers(memberRows),
+      this.fetchRows('contests', 'id', contestIds).then((r) => this.reconstructContests(r)),
+    ]);
 
     return {
       id,
-      school: reconstructedSchool,
-      members_map: membersMap,
-      contests_map: contestsMap,
+      school,
+      members_map: Object.fromEntries(members.map((m) => [m.uid, m])),
+      contests_map: Object.fromEntries(contests.map((c) => [c.id, c])),
       data_version: version,
     };
   }
@@ -660,13 +632,12 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     const { name = null, province = null, city = null } = query;
     const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
 
-    let sql = 'SELECT * FROM schools';
-    const params: any[] = [];
     const whereClauses: string[] = [];
+    const params: any[] = [];
 
     if (name) {
-      whereClauses.push('name LIKE ?');
-      params.push(`%${name}%`);
+      whereClauses.push('name = ?');
+      params.push(name);
     }
     if (province) {
       whereClauses.push('province = ?');
@@ -677,46 +648,24 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       params.push(city);
     }
 
-    if (whereClauses.length > 0) {
-      sql += ' WHERE ' + whereClauses.join(' AND ');
-    }
-
-    sql += ' ORDER BY rank LIMIT ? OFFSET ?';
-    params.push(perPage, (page - 1) * perPage);
-
-    const schools = await this.db.all<any>(sql, ...params);
-
-    // Count total
-    let countSql = sql.replace(/SELECT \*/, 'SELECT COUNT(*) as count').replace(/ ORDER BY.*$/, '');
-    const countParams = params.slice(0, -2);
-    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
-    const total = totalResult!.count;
-
-    // Reconstruct member_ids for each school
-    const reconstructedSchools: DbSchool[] = await Promise.all(
-      schools.map(async (school) => {
-        const memberIds = await this.db.all<{ uid: number }>(
-          'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
-          school.id,
-        );
-
-        return {
-          ...school,
-          award_counts: JSON.parse(school.award_counts),
-          member_ids: memberIds.map((m) => m.uid),
-        };
-      }),
-    );
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
-
-    return {
-      schools: reconstructedSchools,
-      total,
-      totalPages: Math.ceil(total / perPage),
+    const { items, total, totalPages } = await this.paginatedQuery<DbSchool>({
+      selectExpr: 'SELECT *',
+      fromClause: 'FROM schools',
+      whereClauses,
+      params,
+      orderBy: 'rank',
       page,
       perPage,
-      data_version: version,
+      reconstruct: (rows) => this.reconstructSchools(rows),
+    });
+
+    return {
+      schools: items,
+      total,
+      totalPages,
+      page,
+      perPage,
+      data_version: await this.getDataVersion(),
     };
   }
 
@@ -725,128 +674,43 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     _page?: number,
     _perPage?: number,
   ): Promise<GetContestResponse | null> {
-    const contest = await this.db.get<any>('SELECT * FROM contests WHERE id = ?', id);
-
-    if (!contest) {
-      return null;
-    }
-
-    // Reconstruct contestant_ids from junction table
-    const contestantIds = await this.db.all<{ uid: number }>(
-      'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
-      id,
-    );
-
-    const reconstructedContest: DbContest = {
-      ...contest,
-      fall_semester: contest.fall_semester === 1,
-      level_counts: JSON.parse(contest.level_counts),
-      contestant_ids: contestantIds.map((c) => c.uid),
-    };
+    const contestRow = await this.db.get<any>('SELECT * FROM contests WHERE id = ?', id);
+    if (!contestRow) return null;
 
     const { page, perPage } = normalizePaginationParams(_page, _perPage);
+    const offset = (page - 1) * perPage;
 
-    // Get records with pagination
-    const records = await this.db.all<any>(
-      'SELECT * FROM records WHERE contest_id = ? ORDER BY rank LIMIT ? OFFSET ?',
-      id,
-      perPage,
-      (page - 1) * perPage,
-    );
+    const [contests, records, totalResult, version] = await Promise.all([
+      this.reconstructContests([contestRow]),
+      this.db.all<any>(
+        'SELECT * FROM records WHERE contest_id = ? ORDER BY rank LIMIT ? OFFSET ?',
+        id,
+        perPage,
+        offset,
+      ),
+      this.db.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM records WHERE contest_id = ?',
+        id,
+      ),
+      this.getDataVersion(),
+    ]);
 
-    const totalResult = await this.db.get<{ count: number }>(
-      'SELECT COUNT(*) as count FROM records WHERE contest_id = ?',
-      id,
-    );
+    const contest = contests[0];
     const total = totalResult!.count;
-
-    // Reconstruct enroll_middle objects
-    const reconstructedRecords: DbRecord[] = records.map((r) => ({
-      uid: r.uid,
-      contest_id: r.contest_id,
-      school_id: r.school_id,
-      level: r.level,
-      score: r.score,
-      rank: r.rank,
-      province: r.province,
-      enroll_middle:
-        r.enroll_middle_is_stay_down !== null && r.enroll_middle_value !== null
-          ? {
-              is_stay_down: r.enroll_middle_is_stay_down === 1,
-              value: r.enroll_middle_value,
-            }
-          : undefined,
-    }));
-
-    // Get unique school and oier IDs from records
     const schoolIds = Array.from(new Set(records.map((r) => r.school_id)));
     const uids = Array.from(new Set(records.map((r) => r.uid)));
 
-    // Get schools
-    const schools =
-      schoolIds.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM schools WHERE id IN (${schoolIds.map(() => '?').join(',')})`,
-            ...schoolIds,
-          )
-        : [];
-
-    const schoolsMap: Record<number, DbSchool> = {};
-    for (const school of schools) {
-      const memberIds = await this.db.all<{ uid: number }>(
-        'SELECT uid FROM oier_schools WHERE school_id = ? ORDER BY uid',
-        school.id,
-      );
-
-      schoolsMap[school.id] = {
-        ...school,
-        award_counts: JSON.parse(school.award_counts),
-        member_ids: memberIds.map((m) => m.uid),
-      };
-    }
-
-    // Get oiers
-    const oiers =
-      uids.length > 0
-        ? await this.db.all<any>(
-            `SELECT * FROM oiers WHERE uid IN (${uids.map(() => '?').join(',')})`,
-            ...uids,
-          )
-        : [];
-
-    const oiersMap: Record<number, DbOIer> = {};
-    for (const oier of oiers) {
-      const provinces = await this.db.all<{ province: string }>(
-        'SELECT province FROM oier_provinces WHERE uid = ? ORDER BY province',
-        oier.uid,
-      );
-
-      const schoolIds = await this.db.all<{ school_id: number }>(
-        'SELECT school_id FROM oier_schools WHERE uid = ? ORDER BY school_id',
-        oier.uid,
-      );
-
-      const contestIds = await this.db.all<{ contest_id: number }>(
-        'SELECT contest_id FROM oier_contests WHERE uid = ? ORDER BY contest_id',
-        oier.uid,
-      );
-
-      oiersMap[oier.uid] = {
-        ...oier,
-        provinces: provinces.map((p) => p.province),
-        school_ids: schoolIds.map((s) => s.school_id),
-        contest_ids: contestIds.map((c) => c.contest_id),
-      };
-    }
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
+    const [schools, oiers] = await Promise.all([
+      this.fetchRows('schools', 'id', schoolIds).then((r) => this.reconstructSchools(r)),
+      this.fetchRows('oiers', 'uid', uids).then((r) => this.reconstructOIers(r)),
+    ]);
 
     return {
       id,
-      contest: reconstructedContest,
-      records: reconstructedRecords,
-      schools_map: schoolsMap,
-      oiers_map: oiersMap,
+      contest,
+      records: records.map((r) => this.reconstructRecord(r)),
+      schools_map: Object.fromEntries(schools.map((s) => [s.id, s])),
+      oiers_map: Object.fromEntries(oiers.map((o) => [o.uid, o])),
       page,
       perPage,
       total,
@@ -859,9 +723,8 @@ export class SQLiteAdapter implements IAdapterWithLoader {
     const { type = null, year = null } = query;
     const { page, perPage } = normalizePaginationParams(query.page, query.perPage);
 
-    let sql = 'SELECT * FROM contests';
-    const params: any[] = [];
     const whereClauses: string[] = [];
+    const params: any[] = [];
 
     if (type) {
       whereClauses.push('type = ?');
@@ -872,47 +735,24 @@ export class SQLiteAdapter implements IAdapterWithLoader {
       params.push(year);
     }
 
-    if (whereClauses.length > 0) {
-      sql += ' WHERE ' + whereClauses.join(' AND ');
-    }
-
-    sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
-    params.push(perPage, (page - 1) * perPage);
-
-    const contests = await this.db.all<any>(sql, ...params);
-
-    // Count total
-    let countSql = sql.replace(/SELECT \*/, 'SELECT COUNT(*) as count').replace(/ ORDER BY.*$/, '');
-    const countParams = params.slice(0, -2);
-    const totalResult = await this.db.get<{ count: number }>(countSql, ...countParams);
-    const total = totalResult!.count;
-
-    // Reconstruct contestant_ids for each contest
-    const reconstructedContests: DbContest[] = await Promise.all(
-      contests.map(async (contest) => {
-        const contestantIds = await this.db.all<{ uid: number }>(
-          'SELECT uid FROM oier_contests WHERE contest_id = ? ORDER BY uid',
-          contest.id,
-        );
-
-        return {
-          ...contest,
-          fall_semester: contest.fall_semester === 1,
-          level_counts: JSON.parse(contest.level_counts),
-          contestant_ids: contestantIds.map((c) => c.uid),
-        };
-      }),
-    );
-
-    const version = (await this.getMetadata(META_KEY_DATA_VERSION)) || '';
-
-    return {
-      contests: reconstructedContests,
-      total,
-      totalPages: Math.ceil(total / perPage),
+    const { items, total, totalPages } = await this.paginatedQuery<DbContest>({
+      selectExpr: 'SELECT *',
+      fromClause: 'FROM contests',
+      whereClauses,
+      params,
+      orderBy: 'id DESC',
       page,
       perPage,
-      data_version: version,
+      reconstruct: (rows) => this.reconstructContests(rows),
+    });
+
+    return {
+      contests: items,
+      total,
+      totalPages,
+      page,
+      perPage,
+      data_version: await this.getDataVersion(),
     };
   }
 }
