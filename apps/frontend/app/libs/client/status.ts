@@ -17,7 +17,7 @@ export interface OIerDbClientStatusType {
   text: string;
 }
 
-export { SwStatusEnum };
+export { InitFailureReason, SwStatusEnum };
 export type { SwStatus };
 
 type StatusChangeListener = (status: OIerDbClientStatusType) => void;

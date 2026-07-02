@@ -8,6 +8,7 @@ import {
   fetchStaticDataVersion,
   loadDataFromStaticSource,
   loadDataInBackground,
+  tryUseAnyIdbCache,
   tryUseIdbCache,
 } from './sw/loader';
 import {
@@ -20,6 +21,7 @@ import {
 import { Router, type RouteContext } from './sw/router';
 import {
   completeBackgroundTask,
+  failBackgroundTask,
   handleStatusRequest,
   setStatus,
   startBackgroundTask,
@@ -51,7 +53,13 @@ const router = new Router()
 // ==============================
 
 const initializeAdapters = async () => {
-  setStatus({ status: SwStatus.Initializing });
+  setStatus({
+    status: SwStatus.Initializing,
+    adapterType: SwAdapterType.None,
+    text: '正在初始化数据源',
+    failureReason: InitFailureReason.None,
+    isOffline: false,
+  });
 
   createAdapters();
 
@@ -70,7 +78,10 @@ const initializeAdapters = async () => {
     setStatus({
       status: SwStatus.UsingIdb,
       adapterType: SwAdapterType.IDB,
+      text: '使用本地缓存',
       dataVersion: backendVersion,
+      failureReason: InitFailureReason.None,
+      isOffline: false,
     });
     completeBackgroundTask();
     return;
@@ -82,13 +93,18 @@ const initializeAdapters = async () => {
     setStatus({
       status: SwStatus.UsingHttp,
       adapterType: SwAdapterType.Http,
+      text: '使用在线服务',
       dataVersion: backendVersion,
+      failureReason: InitFailureReason.None,
+      isOffline: false,
     });
 
     // 后台加载数据
     loadDataInBackground(backendVersion);
   } else {
     // 后端不可用，尝试从静态源加载
+    let delegatedStaticLoad = false;
+    startBackgroundTask(BackgroundTaskType.LoadingFromStatic);
     try {
       const staticVersion = await fetchStaticDataVersion();
 
@@ -98,11 +114,25 @@ const initializeAdapters = async () => {
       }
 
       // 从静态源加载
+      delegatedStaticLoad = true;
       await loadDataFromStaticSource(staticVersion);
     } catch (error) {
       console.error('[SW] Failed to initialize:', error);
+
+      if (await tryUseAnyIdbCache()) {
+        return;
+      }
+
+      if (!delegatedStaticLoad) {
+        failBackgroundTask(BackgroundTaskType.LoadingFromStatic);
+      }
+
       setStatus({
         status: SwStatus.Uninitialized,
+        adapterType: SwAdapterType.None,
+        text: '无法加载数据，请检查网络连接后重试',
+        dataVersion: '',
+        isOffline: true,
         failureReason: InitFailureReason.StaticFetchFailed,
       });
     }

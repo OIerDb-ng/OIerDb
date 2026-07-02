@@ -70,6 +70,7 @@ async function loadParsedDataToAdapters(
   setStatus({
     status: SwStatus.UsingMemory,
     adapterType: SwAdapterType.Memory,
+    text: '使用内存数据',
     dataVersion: targetVersion,
   });
   completeBackgroundTask();
@@ -82,28 +83,35 @@ async function loadParsedDataToAdapters(
   } catch (error) {
     console.timeEnd('[SW] IDB save time');
     failBackgroundTask(BackgroundTaskType.SavingToIdb);
-    throw error;
+    console.warn('[SW] IDB save failed; continuing with memory adapter:', error);
+    return;
   }
   console.timeEnd('[SW] IDB save time');
   setCurrentAdapter(idbAdapter);
   setStatus({
     status: SwStatus.UsingIdb,
     adapterType: SwAdapterType.IDB,
+    text: '使用本地缓存',
     dataVersion: targetVersion,
   });
   completeBackgroundTask();
 }
 
 export async function loadDataInBackground(targetVersion: string) {
+  let fetchPhaseComplete = false;
   try {
     startBackgroundTask(BackgroundTaskType.FetchingData);
     const parsedData = await fetchAndParseData(targetVersion);
     completeBackgroundTask();
+    fetchPhaseComplete = true;
 
     await loadParsedDataToAdapters(parsedData, targetVersion);
   } catch (error) {
     console.error('[SW] Failed to load data in background:', error);
-    // failBackgroundTask 已由失败的具体步骤调用，保持使用当前适配器
+    if (!fetchPhaseComplete) {
+      failBackgroundTask(BackgroundTaskType.FetchingData);
+    }
+    // 保持使用当前适配器
   }
 }
 
@@ -148,6 +156,7 @@ export async function tryUseIdbCache(version: string): Promise<boolean> {
       setStatus({
         status: SwStatus.UsingIdb,
         adapterType: SwAdapterType.IDB,
+        text: '使用离线缓存',
         dataVersion: version,
         isOffline: true,
       });
@@ -159,4 +168,28 @@ export async function tryUseIdbCache(version: string): Promise<boolean> {
   }
 
   return false;
+}
+
+export async function tryUseAnyIdbCache(): Promise<boolean> {
+  const idbAdapter = getIdbAdapter();
+  if (!idbAdapter) return false;
+
+  try {
+    const version = await idbAdapter.getAvailableVersion();
+    if (!version) return false;
+
+    useAdapter(SwAdapterType.IDB);
+    setStatus({
+      status: SwStatus.UsingIdb,
+      adapterType: SwAdapterType.IDB,
+      text: '使用离线缓存',
+      dataVersion: version,
+      isOffline: true,
+    });
+    completeBackgroundTask();
+    return true;
+  } catch (error) {
+    console.warn('[SW] IDB fallback failed:', error);
+    return false;
+  }
 }

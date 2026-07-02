@@ -77,12 +77,30 @@ export function HydrateFallback(_props: Route.HydrateFallbackProps) {
   );
 }
 
+const isDataSourceUnavailableError = (error: unknown) => {
+  if (isRouteErrorResponse(error)) {
+    return error.status === 503;
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /Service Worker not initialized|Internal server error|Failed to (get|list) |Failed to get version/i.test(
+    error.message,
+  );
+};
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
   let stack: string | undefined;
+  const isDataSourceUnavailable = isDataSourceUnavailableError(error);
 
-  if (isRouteErrorResponse(error)) {
+  if (isDataSourceUnavailable) {
+    message = '数据暂时不可用';
+    details = '当前没有可用的数据源。请检查网络连接后刷新页面，或在关于页清除缓存后重试。';
+  } else if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? '404' : 'Error';
     details = error.status === 404 ? '未找到请求的页面。' : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {

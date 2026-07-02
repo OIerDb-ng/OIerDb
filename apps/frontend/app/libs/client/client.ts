@@ -2,7 +2,13 @@ import { HttpAdapter } from '@oierdb/adapter-http';
 import { OIerDbClient } from '@oierdb/core';
 
 import { backendEndpoint } from './constant';
-import { OIerDbClientStatusEnum, setStatus, setupSwStatusListener, SwStatusEnum } from './status';
+import {
+  InitFailureReason,
+  OIerDbClientStatusEnum,
+  setStatus,
+  setupSwStatusListener,
+  SwStatusEnum,
+} from './status';
 
 /**
  * Initialize the OIerDbClient with HttpAdapter.
@@ -15,6 +21,7 @@ import { OIerDbClientStatusEnum, setStatus, setupSwStatusListener, SwStatusEnum 
  */
 const initClientAsync = async () => {
   setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '初始化数据查询模块' });
+  setupSwStatusListener();
 
   // Check if SW is registered and controlling the page
   const swReady = navigator.serviceWorker?.controller != null;
@@ -26,7 +33,6 @@ const initClientAsync = async () => {
     // so don't test connectivity here. Just listen for SW status broadcasts.
     const httpAdapter = new HttpAdapter({ baseUrl: window.location.origin });
     globalThis.OIerDbClientInstance = new OIerDbClient(httpAdapter);
-    setupSwStatusListener();
     setStatus({ type: OIerDbClientStatusEnum.Initializing, text: '等待 Service Worker 就绪' });
     // Status will be updated when the SW broadcasts its ready state.
     return;
@@ -44,7 +50,6 @@ const initClientAsync = async () => {
     console.log('[Client] API version:', version.data_version);
 
     // Backend is reachable — use it as a temporary source while waiting for SW.
-    setupSwStatusListener();
     waitForSwAndSwitchEndpoint();
     setStatus({ type: OIerDbClientStatusEnum.InitializedPartially, text: '使用在线服务' });
   } catch {
@@ -103,6 +108,12 @@ const waitForSwAndSwitchEndpoint = () => {
 
           // Re-setup SW status listener
           setupSwStatusListener();
+        } else if (
+          payload.status === SwStatusEnum.Uninitialized &&
+          payload.failureReason !== InitFailureReason.None
+        ) {
+          switched = true;
+          cleanup();
         } else {
           // SW is still initializing, retry after a delay
           console.log('[Client] SW still initializing, retrying...');
