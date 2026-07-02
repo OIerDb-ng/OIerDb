@@ -13,26 +13,29 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('patches/**') }}
 
-      - name: Use Node.js 16
-        uses: actions/setup-node@v4
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
         with:
-          node-version: 16
+          node-version: 22
           cache: yarn
 
       - name: Install Dependencies
         run: yarn install
 
       - name: Build Site
-        run: yarn build
+        run: yarn workspace frontend-legacy build
         env:
           VITE_BAOSHUO_CDNJS: true
 
@@ -40,7 +43,7 @@ jobs:
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           ARGS: '-avz --delete'
-          SOURCE: dist/
+          SOURCE: apps/frontend-legacy/dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -51,7 +54,7 @@ jobs:
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           ARGS: '-avz --delete'
-          SOURCE: dist/
+          SOURCE: apps/frontend-legacy/dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST_2 }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
