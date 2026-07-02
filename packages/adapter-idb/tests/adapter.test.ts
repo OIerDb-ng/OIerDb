@@ -150,6 +150,10 @@ describe('IDBAdapter', () => {
     expect(await adapter.checkAvailability('wrong-version')).toBe(false);
   });
 
+  it('should expose the available loaded version', async () => {
+    expect(await adapter.getAvailableVersion()).toBe('mock-version');
+  });
+
   it('should get existing oier', async () => {
     const response = await adapter.getOIer(1);
     expect(response).not.toBeNull();

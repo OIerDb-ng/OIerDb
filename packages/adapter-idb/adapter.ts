@@ -252,6 +252,20 @@ export class IDBAdapter implements IAdapterWithLoader {
     return versionMatches && loadingComplete;
   }
 
+  async getAvailableVersion(): Promise<string | null> {
+    const [versionMeta, progressMeta] = await Promise.all([
+      this.db.meta.get(META_KEY_DATA_VERSION),
+      this.db.meta.get(META_KEY_LOADING_PROGRESS),
+    ]);
+
+    if (!versionMeta?.value || progressMeta?.value !== 'loaded') {
+      return null;
+    }
+
+    this.cachedVersion = versionMeta.value;
+    return versionMeta.value;
+  }
+
   async getVersion(): Promise<VersionResponse> {
     return { data_version: await this.getDataVersion() };
   }
