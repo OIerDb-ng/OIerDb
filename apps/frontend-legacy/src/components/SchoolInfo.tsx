@@ -43,9 +43,9 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
       // 奖项名称列表
       const years = Object.keys(school.award_counts[key]).map(Number);
       const setAwards = new Set(
-        years.flatMap((year) => [...school.award_counts[key][year].keys()])
+        years.flatMap(year => [...school.award_counts[key][year].keys()])
       );
-      const awards = awardLevels.filter((award) => setAwards.has(award));
+      const awards = awardLevels.filter(award => setAwards.has(award));
 
       if (!awards.length) return null;
 
@@ -54,7 +54,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
         datasets: awards.map((award) => {
           return {
             label: award,
-            data: years.map((year) =>
+            data: years.map(year =>
               school.award_counts[key][year].get(award)
             ),
             backgroundColor: awardColors[award] || null,
@@ -86,7 +86,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
                   id: null, // Make typing happy
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   beforeInit: (chart: any) => {
-                    // eslint-disable-next-line @typescript-eslint/ban-types
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
                     const originalFit = chart.legend.fit as Function;
 
                     chart.legend.fit = function fit() {
@@ -158,7 +158,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
         ),
       };
     })
-    .filter((pane) => pane);
+    .filter(pane => pane);
 
   return (
     <>

@@ -33,7 +33,7 @@ const Contests: React.FC = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {data.slice(perPage * (page - 1), perPage * page).map((contest) => (
+          {data.slice(perPage * (page - 1), perPage * page).map(contest => (
             <Table.Row key={contest.id}>
               <Table.Cell textAlign="center">{contest.id + 1}</Table.Cell>
               <Table.Cell>

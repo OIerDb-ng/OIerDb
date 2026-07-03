@@ -12,8 +12,8 @@ const promiseAny = async <T>(
       );
     })
   ).then(
-    (errors) => Promise.reject(errors),
-    (value) => Promise.resolve<T>(value)
+    errors => Promise.reject(errors),
+    value => Promise.resolve<T>(value)
   );
 };
 

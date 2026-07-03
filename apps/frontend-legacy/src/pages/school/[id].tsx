@@ -8,7 +8,7 @@ const NotFound = lazy(() => import('@/pages/404'));
 const School: React.FC = () => {
   const params = useParams();
   const id = Number(params.id) ?? -1;
-  const school = OIerDb.schools.find((school) => school.id === id);
+  const school = OIerDb.schools.find(school => school.id === id);
 
   if (!school) return <NotFound />;
 

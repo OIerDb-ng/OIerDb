@@ -23,7 +23,7 @@ const SchoolList: React.FC = () => {
     () =>
       isWholeCountry
         ? OIerDb.schools
-        : OIerDb.schools.filter((school) => school.province === province),
+        : OIerDb.schools.filter(school => school.province === province),
     [province]
   );
 
@@ -41,14 +41,13 @@ const SchoolList: React.FC = () => {
           search
           compact
           value={province}
-          options={['全国', ...provinces].map((province) => ({
+          options={['全国', ...provinces].map(province => ({
             key: province,
             value: province,
             text: province,
           }))}
           onChange={(_, { value }) =>
-            setSearchParams({ province: value as string, page: '1' })
-          }
+            setSearchParams({ province: value as string, page: '1' })}
           className={styles.dropdown}
         />
         <div>信息学奥林匹克竞赛学校排名</div>

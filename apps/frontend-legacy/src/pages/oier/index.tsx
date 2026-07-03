@@ -23,7 +23,7 @@ const OIerList: React.FC = () => {
     () =>
       isWholeCountry
         ? OIerDb.oiers
-        : OIerDb.oiers.filter((oier) => oier.provinces.includes(province)),
+        : OIerDb.oiers.filter(oier => oier.provinces.includes(province)),
     [province]
   );
 
@@ -41,14 +41,12 @@ const OIerList: React.FC = () => {
           search
           compact
           value={province}
-          options={['全国', ...provinces].map((province) => ({
+          options={['全国', ...provinces].map(province => ({
             key: province,
             value: province,
             text: province,
           }))}
-          onChange={(_, { value }) =>
-            setSearchParams({ province: value as string, page: '1' })
-          }
+          onChange={(_, { value }) => setSearchParams({ province: value as string, page: '1' })}
           className={styles.dropdown}
         />
         <div>信息学奥林匹克竞赛选手排名</div>

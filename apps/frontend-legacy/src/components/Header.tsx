@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Container,
-  Icon,
-  Menu,
-  Sidebar,
-  type SemanticICONS,
-} from 'semantic-ui-react';
+import { Container, Icon, Menu, Sidebar, type SemanticICONS } from 'semantic-ui-react';
 import { useScreenWidthWithin } from '@/utils/useScreenWidthWithin';
 import styles from './Header.module.less';
 
@@ -48,16 +42,11 @@ const Header: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (
-      sidebarOpen !==
-      document.documentElement.classList.contains(styles.sidebarOpen)
-    )
+    if (sidebarOpen !== document.documentElement.classList.contains(styles.sidebarOpen))
       document.documentElement.classList.toggle(styles.sidebarOpen);
   }, [sidebarOpen]);
 
-  const sidebarOpenStatusClassName = sidebarOpen
-    ? ' ' + styles.sidebarOpen
-    : '';
+  const sidebarOpenStatusClassName = sidebarOpen ? ' ' + styles.sidebarOpen : '';
 
   return (
     <>
@@ -69,19 +58,14 @@ const Header: React.FC = () => {
               <b>OIerDb</b>
             </div>
           </Menu.Item>
-          {(wide &&
-            headerButtons.map((button) => (
+          {(wide
+            && headerButtons.map(button => (
               <Menu.Item key={button.name} as={Link} to={button.to}>
                 <Icon name={button.icon} />
                 {button.name}
               </Menu.Item>
-            ))) || (
-            <Menu.Item
-              position="right"
-              icon="bars"
-              onClick={() => setSidebarOpen(true)}
-            ></Menu.Item>
-          )}
+            )))
+            || <Menu.Item position="right" icon="bars" onClick={() => setSidebarOpen(true)}></Menu.Item>}
         </Container>
       </Menu>
       {!wide && (
@@ -89,7 +73,7 @@ const Header: React.FC = () => {
           <div
             className={styles.sidebarDimmer + sidebarOpenStatusClassName}
             onClick={() => setSidebarOpen(false)}
-          ></div>
+          />
           <Sidebar
             as={Menu}
             className={styles.sidebarMenu + sidebarOpenStatusClassName}
@@ -106,13 +90,8 @@ const Header: React.FC = () => {
             >
               <b>OIerDb</b>
             </Menu.Item>
-            {headerButtons.map((button) => (
-              <Menu.Item
-                key={button.name}
-                as={Link}
-                to={button.to}
-                onClick={() => setSidebarOpen(false)}
-              >
+            {headerButtons.map(button => (
+              <Menu.Item key={button.name} as={Link} to={button.to} onClick={() => setSidebarOpen(false)}>
                 <Icon name={button.icon} />
                 {button.name}
               </Menu.Item>

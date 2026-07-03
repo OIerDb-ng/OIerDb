@@ -33,7 +33,7 @@ const Contest: React.FC = () => {
 
   const id = Number(params.id) ?? -1;
   const contest = useMemo(
-    () => OIerDb.contests.find((contest) => contest.id === id),
+    () => OIerDb.contests.find(contest => contest.id === id),
     [id]
   );
 
@@ -58,9 +58,9 @@ const Contest: React.FC = () => {
     );
 
     return [
-      ...new Set(contest.contestants.map((contestant) => contestant.province)),
+      ...new Set(contest.contestants.map(contestant => contestant.province)),
     ]
-      .map((province) => ({
+      .map(province => ({
         key: withId2[province],
         value: province,
         text: `${province} (${withId2[province]})`,
@@ -74,7 +74,7 @@ const Contest: React.FC = () => {
     () => [
       ...new Set(
         contest.contestants.map(
-          (contestant) =>
+          contestant =>
             contestant.enroll_middle?.value || contestant.oier.enroll_middle
         )
       ),
@@ -85,19 +85,19 @@ const Contest: React.FC = () => {
   const data = useMemo(
     () =>
       contest.contestants
-        .filter((contestant) =>
+        .filter(contestant =>
           province ? contestant.province === province : true
         )
-        .filter((contestant) =>
+        .filter(contestant =>
           grade
-            ? (contestant.enroll_middle?.value ||
-                contestant.oier.enroll_middle) === grade
+            ? (contestant.enroll_middle?.value
+              || contestant.oier.enroll_middle) === grade
             : true
         ),
     [contest, province, grade]
   );
 
-  const awards = awardLevels.filter((awardLevel) =>
+  const awards = awardLevels.filter(awardLevel =>
     contest.level_counts.has(awardLevel)
   );
 
@@ -147,8 +147,8 @@ const Contest: React.FC = () => {
               {
                 label: '数量',
                 barThickness: 30,
-                data: awards.map((award) => contest.level_counts.get(award)),
-                backgroundColor: awards.map((award) => awardColors[award]),
+                data: awards.map(award => contest.level_counts.get(award)),
+                backgroundColor: awards.map(award => awardColors[award]),
               },
             ],
           }}
@@ -168,7 +168,7 @@ const Contest: React.FC = () => {
             placeholder="年级"
             value={grade || null}
             options={grades
-              .map((grade) => ({
+              .map(grade => ({
                 key: grade,
                 value: grade,
                 text: getGrade(grade, contest.school_year()),
@@ -222,31 +222,33 @@ const Contest: React.FC = () => {
                     <Table.Cell>{contestant.oier.name}</Table.Cell>
                     <Table.Cell>
                       {getGrade(
-                        contestant.enroll_middle?.value ||
-                          contestant.oier.enroll_middle,
+                        contestant.enroll_middle?.value
+                        || contestant.oier.enroll_middle,
                         contest.school_year()
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      {contestant.score == null ? (
-                        '-'
-                      ) : (
-                        <>
-                          <span
-                            style={{
-                              color: `var(--theme-score-${getProgress(
-                                contestant.score,
-                                contestant.contest.full_score
-                              )})`,
-                            }}
-                          >
-                            {contestant.score}
-                          </span>{' '}
-                          <span className={styles.recordTotal}>
-                            / {contestant.contest.full_score}
-                          </span>
-                        </>
-                      )}
+                      {contestant.score == null
+                        ? (
+                            '-'
+                          )
+                        : (
+                            <>
+                              <span
+                                style={{
+                                  color: `var(--theme-score-${getProgress(
+                                    contestant.score,
+                                    contestant.contest.full_score
+                                  )})`,
+                                }}
+                              >
+                                {contestant.score}
+                              </span>{' '}
+                              <span className={styles.recordTotal}>
+                                / {contestant.contest.full_score}
+                              </span>
+                            </>
+                          )}
                     </Table.Cell>
                     <Table.Cell className={styles.contestLevel}>
                       <AwardEmoji level={contestant.level} />

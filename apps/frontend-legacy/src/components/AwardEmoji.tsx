@@ -9,8 +9,8 @@ const AwardEmoji: React.FC<AwardEmojiProps> = (props) => {
   const keywordsOfType = [['金'], ['银'], ['铜']];
   const emojis = ['🥇', '🥈', '🥉'];
 
-  const type = keywordsOfType.findIndex((keywords) =>
-    keywords.some((keyword) => props.level.includes(keyword))
+  const type = keywordsOfType.findIndex(keywords =>
+    keywords.some(keyword => props.level.includes(keyword))
   );
   const emoji = emojis[type];
 

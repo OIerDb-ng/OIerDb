@@ -87,7 +87,7 @@ const Search: React.FC = () => {
 
       if (!advanced) {
         result = OIerDb.oiers.filter(
-          (oier) => oier.lowered_name === input || oier.initials === input
+          oier => oier.lowered_name === input || oier.initials === input
         );
       } else if (!input && !grade && !school) {
         result = [];
@@ -106,7 +106,7 @@ const Search: React.FC = () => {
           }
           if (school) {
             res &&= oier.records
-              .map((record) => record.school.name)
+              .map(record => record.school.name)
               .includes(school);
           }
           if (gender) {
@@ -150,101 +150,113 @@ const Search: React.FC = () => {
             onClick={(_, data) => setAdvanced(data.checked)}
           />
         </div>
-        {!advanced ? (
-          <Input
-            fluid
-            placeholder="键入学生姓名或其拼音首字母..."
-            loading={isPending}
-            onChange={(_, { value }) => setInput(value.toLowerCase())}
-            spellCheck="false"
-            defaultValue={input}
-          />
-        ) : (
-          <Form onSubmit={() => false}>
-            <Form.Group widths="equal">
-              <Form.Input
-                label="姓名"
-                placeholder="姓名或姓名拼音首字母"
-                spellCheck="false"
+        {!advanced
+          ? (
+              <Input
+                fluid
+                placeholder="键入学生姓名或其拼音首字母..."
+                loading={isPending}
                 onChange={(_, { value }) => setInput(value.toLowerCase())}
+                spellCheck="false"
                 defaultValue={input}
               />
-              <Form.Dropdown
-                label="省份"
-                placeholder="省份"
-                search
-                selection
-                clearable
-                options={provinces}
-                defaultValue={province}
-                onChange={(_, { value }) => setProvince(value as string)}
-              />
-              <Form.Dropdown
-                label="年级"
-                placeholder="年级"
-                search
-                selection
-                clearable
-                options={OIerDb.enroll_middle_years
-                  .map((year) => ({
-                    key: year,
-                    value: year,
-                    text: getGrade(year, currentYear),
-                  }))
-                  .sort(compareGrades)}
-                defaultValue={grade}
-                onChange={(_, { value }) => setGrade(value as string)}
-              />
-              {displayGender && (
-                <Form.Dropdown
-                  label="性别"
-                  placeholder="性别"
-                  selection
-                  clearable
-                  options={searchableGenderKeys.map((key) => ({
-                    key: key,
-                    value: key,
-                    text: genders[key],
-                  }))}
-                  defaultValue={gender || null}
-                  onChange={(_, { value }) => setGender(value as number)}
+            )
+          : (
+              <Form onSubmit={() => false}>
+                <Form.Group widths="equal">
+                  <Form.Input
+                    label="姓名"
+                    placeholder="姓名或姓名拼音首字母"
+                    spellCheck="false"
+                    onChange={(_, { value }) => setInput(value.toLowerCase())}
+                    defaultValue={input}
+                  />
+                  <Form.Dropdown
+                    label="省份"
+                    placeholder="省份"
+                    search
+                    selection
+                    clearable
+                    options={provinces}
+                    defaultValue={province}
+                    onChange={(_, { value }) => setProvince(value as string)}
+                  />
+                  <Form.Dropdown
+                    label="年级"
+                    placeholder="年级"
+                    search
+                    selection
+                    clearable
+                    options={OIerDb.enroll_middle_years
+                      .map(year => ({
+                        key: year,
+                        value: year,
+                        text: getGrade(year, currentYear),
+                      }))
+                      .sort(compareGrades)}
+                    defaultValue={grade}
+                    onChange={(_, { value }) => setGrade(value as string)}
+                  />
+                  {displayGender && (
+                    <Form.Dropdown
+                      label="性别"
+                      placeholder="性别"
+                      selection
+                      clearable
+                      options={searchableGenderKeys.map(key => ({
+                        key: key,
+                        value: key,
+                        text: genders[key],
+                      }))}
+                      defaultValue={gender || null}
+                      onChange={(_, { value }) => setGender(value as number)}
+                    />
+                  )}
+                </Form.Group>
+                <Form.Input
+                  label="学校"
+                  placeholder="学校全称"
+                  defaultValue={school}
+                  onChange={(_, { value }) => setSchool(value)}
                 />
-              )}
-            </Form.Group>
-            <Form.Input
-              label="学校"
-              placeholder="学校全称"
-              defaultValue={school}
-              onChange={(_, { value }) => setSchool(value)}
-            />
-          </Form>
-        )}
-        {isPending ? (
-          <Loader active inline="centered" style={{ marginTop: '1rem' }} />
-        ) : result?.length ? (
-          <SearchResult result={result} />
-        ) : (
-          <>
-            {input || province || grade || school || gender ? (
-              <div style={{ paddingTop: '1rem' }}>
-                {gender || province ? (
-                  gender ? (
-                    '暂时不支持仅按照性别搜索选手。'
-                  ) : (
-                    <>
-                      请访问「
-                      <Link to="/oiers">选手</Link>」页面查询某省的所有选手。
-                    </>
-                  )
-                ) : (
-                  '未找到结果。'
-                )}
-              </div>
-            ) : (
-              <></>
+              </Form>
             )}
-          </>
-        )}
+        {isPending
+          ? (
+              <Loader active inline="centered" style={{ marginTop: '1rem' }} />
+            )
+          : result?.length
+            ? (
+                <SearchResult result={result} />
+              )
+            : (
+                <>
+                  {input || province || grade || school || gender
+                    ? (
+                        <div style={{ paddingTop: '1rem' }}>
+                          {gender || province
+                            ? (
+                                gender
+                                  ? (
+                                      '暂时不支持仅按照性别搜索选手。'
+                                    )
+                                  : (
+                                      <>
+                                        请访问「
+                                        <Link to="/oiers">选手</Link>」页面查询某省的所有选手。
+                                      </>
+                                    )
+                              )
+                            : (
+                                '未找到结果。'
+                              )}
+                        </div>
+                      )
+                    : (
+                        <></>
+                      )}
+                </>
+              )}
       </Segment>
     </>
   );

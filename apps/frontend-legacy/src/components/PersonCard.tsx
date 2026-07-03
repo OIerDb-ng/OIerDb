@@ -50,8 +50,7 @@ const PersonCard: React.FC<
               `/oier/${oier.uid}`,
               window.location.origin
             ).toString(),
-          })
-        }
+          })}
         size="large"
       >
         <Modal.Header>

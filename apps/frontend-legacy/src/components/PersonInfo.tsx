@@ -73,7 +73,7 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
         </Table.Header>
         <Table.Body>
           {oier.records
-            .map((data) => (
+            .map(data => (
               <Table.Row key={data.contest.id}>
                 <Table.Cell>
                   <Link
@@ -88,25 +88,25 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
                   </span>
                 </Table.Cell>
                 <Table.Cell>
-                  {data.score == null ? (
-                    '-'
-                  ) : (
-                    <>
-                      <span
-                        style={{
-                          color: `var(--theme-score-${getProgress(
-                            data.score,
-                            data.contest.full_score
-                          )})`,
-                        }}
-                      >
-                        {data.score}
-                      </span>{' '}
-                      <span className={styles.recordTotal}>
-                        / {data.contest.full_score}
-                      </span>
-                    </>
-                  )}
+                  {data.score == null
+                    ? '-'
+                    : (
+                        <>
+                          <span
+                            style={{
+                              color: `var(--theme-score-${getProgress(
+                                data.score,
+                                data.contest.full_score
+                              )})`,
+                            }}
+                          >
+                            {data.score}
+                          </span>{' '}
+                          <span className={styles.recordTotal}>
+                            / {data.contest.full_score}
+                          </span>
+                        </>
+                      )}
                 </Table.Cell>
                 <Table.Cell>
                   <span

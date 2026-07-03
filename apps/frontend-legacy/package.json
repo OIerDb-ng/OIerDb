@@ -7,9 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{ts,js,tsx,jsx}\" --fix",
-    "lint:check": "eslint \"src/**/*.{ts,js,tsx,jsx}\""
+    "preview": "vite preview"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
@@ -34,15 +32,8 @@
     "@types/react-dom": "^18.0.11",
     "@types/react-helmet": "^6.1.5",
     "@types/twemoji": "^13.1.2",
-    "@typescript-eslint/eslint-plugin": "^5.47.1",
-    "@typescript-eslint/parser": "^5.32.0",
     "@vitejs/plugin-react": "^1.0.7",
-    "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.31.10",
-    "prettier": "^2.8.1",
-    "typescript": "^4.9.4",
+    "typescript": "^6.0.3",
     "vite": "^2.9.13",
     "vite-plugin-externals": "0.5.0",
     "vite-plugin-html": "^3.2.0"

@@ -8,8 +8,17 @@
     "apps/*",
     "packages/*"
   ],
+  "scripts": {
+    "lint": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "lint:check": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\""
+  },
   "devDependencies": {
-    "prettier": "^2.8.1"
+    "@eslint/js": "^9.0.0",
+    "@stylistic/eslint-plugin": "^5.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.0.0"
   },
   "engines": {
     "node": ">=18"

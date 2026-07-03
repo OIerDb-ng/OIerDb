@@ -1,7 +1,7 @@
 import { OIer, Record } from '@/libs/OIerDb';
 
-export const currentYear =
-  new Date().getFullYear() - Number(new Date().getMonth() + 1 < 9);
+export const currentYear
+  = new Date().getFullYear() - Number(new Date().getMonth() + 1 < 9);
 
 const grades = [
   '一年级',
@@ -28,9 +28,9 @@ function getGrade(arg1: any, arg2?: any): string {
   if (arg1 instanceof OIer) {
     rel = currentYear - arg1.enroll_middle;
   } else if (arg1.oier) {
-    rel =
-      arg1.contest.school_year() -
-      (arg2 ? arg1.enroll_middle.value : arg1.oier.enroll_middle);
+    rel
+      = arg1.contest.school_year()
+        - (arg2 ? arg1.enroll_middle.value : arg1.oier.enroll_middle);
   } else if (typeof arg2 === 'number') {
     rel = arg2 - arg1;
   } else {

@@ -26,11 +26,7 @@ export const EmojiRenderer: React.FC<EmojiRendererProps> = (props) => {
 
   return (
     <Ref innerRef={refElement}>
-      {typeof props.children !== 'object' ? (
-        <span>{props.children}</span>
-      ) : (
-        props.children
-      )}
+      {typeof props.children !== 'object' ? <span>{props.children}</span> : props.children}
     </Ref>
   );
 };

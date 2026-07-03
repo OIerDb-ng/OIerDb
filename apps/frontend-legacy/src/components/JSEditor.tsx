@@ -32,7 +32,7 @@ const JSEditor: React.FC<JSEditorProps> = ({
       : 'light'
   );
 
-  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleChange = useCallback(
     (value: string | undefined) => onChange?.(value),
     [onChange]

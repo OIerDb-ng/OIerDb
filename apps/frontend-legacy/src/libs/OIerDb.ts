@@ -108,8 +108,8 @@ let __DATA__: OIerDbData = null;
 
 const checkSha512 = (staticSha512: string, resultSha512: string) => {
   try {
-    const { staticSha512: localStaticSha152, resultSha512: localResultSha512 } =
-      localStorage;
+    const { staticSha512: localStaticSha152, resultSha512: localResultSha512 }
+      = localStorage;
 
     return (
       staticSha512 === localStaticSha152 && resultSha512 === localResultSha512
@@ -165,16 +165,11 @@ const textToRaw = (text: string) => {
     ] = fields;
     const records = compressed_records.split('/').map((record) => {
       const [
-        contest,
-        ,
-        school,
-        ,
-        score,
-        ,
-        rank,
-        ,
-        province_id,
-        ,
+        contest,,
+        school,,
+        score,,
+        rank,,
+        province_id,,
         award_level_id,
         is_stay_down,
         enroll_middle,
@@ -253,8 +248,8 @@ const processData = (data: any) => {
       x.score == y.score ? x.id - y.id : y.score - x.score
     );
   result.schools.forEach((school, id) => {
-    school.rank =
-      id && school.score === result.schools[id - 1].score
+    school.rank
+      = id && school.score === result.schools[id - 1].score
         ? result.schools[id - 1].rank
         : id;
 
@@ -271,7 +266,7 @@ const processData = (data: any) => {
     oier = new OIer(oier);
 
     oier.provinces = [
-      ...new Set(oier.records.map((record) => record.province)),
+      ...new Set(oier.records.map(record => record.province)),
     ];
 
     oier.records.forEach((record) => {
@@ -293,7 +288,7 @@ const processData = (data: any) => {
   });
 
   result.enroll_middle_years = [
-    ...new Set(result.oiers.map((oier) => oier.enroll_middle)),
+    ...new Set(result.oiers.map(oier => oier.enroll_middle)),
   ];
 
   return result;
@@ -322,7 +317,7 @@ const getData = async (
       const chunks: Uint8Array[] = [];
 
       const reader = response.body.getReader();
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -373,15 +368,14 @@ const getData = async (
 export const initDb = async (setProgressPercent?: (p: number) => void) => {
   if (__DATA__) return __DATA__;
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   if (!setProgressPercent) setProgressPercent = () => {};
 
   const {
     sha512: staticSha512,
     size: staticSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/static.info.json?_=${+new Date()}`))
-  ).then((res) => res.json());
+    infoUrls.map(url => fetch(`${url}/static.info.json?_=${+new Date()}`))
+  ).then(res => res.json());
 
   setProgressPercent(4);
 
@@ -389,8 +383,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     sha512: resultSha512,
     size: resultSize,
   }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map((url) => fetch(`${url}/result.info.json?_=${+new Date()}`))
-  ).then((res) => res.json());
+    infoUrls.map(url => fetch(`${url}/result.info.json?_=${+new Date()}`))
+  ).then(res => res.json());
 
   setProgressPercent(8);
 
@@ -412,16 +406,16 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   setProgressPercent(10);
 
   const staticData = await getData(
-    urls.map((url) => `${url}/static.${staticSha512.substring(0, 7)}.json`),
+    urls.map(url => `${url}/static.${staticSha512.substring(0, 7)}.json`),
     staticSize,
     setProgressPercent,
     10,
     40,
     'static.json'
-  ).then((res) => JSON.parse(res));
+  ).then(res => JSON.parse(res));
 
   const oiers = await getData(
-    urls.map((url) => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
+    urls.map(url => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
     resultSize,
     setProgressPercent,
     40,
@@ -495,15 +489,15 @@ export const provinces = Object.values(
 
 // 奖项列表及颜色
 export const awardColors = {
-  金牌: '#ee961b',
-  银牌: '#939291',
-  铜牌: '#9c593b',
-  一等奖: '#ee961b',
-  二等奖: '#939291',
-  三等奖: '#9c593b',
-  国际金牌: '#ee961b',
-  国际银牌: '#939291',
-  国际铜牌: '#9c593b',
+  '金牌': '#ee961b',
+  '银牌': '#939291',
+  '铜牌': '#9c593b',
+  '一等奖': '#ee961b',
+  '二等奖': '#939291',
+  '三等奖': '#9c593b',
+  '国际金牌': '#ee961b',
+  '国际银牌': '#939291',
+  '国际铜牌': '#9c593b',
   '前5%': '#ee961b',
   '前15%': '#939291',
   '前25%': '#9c593b',

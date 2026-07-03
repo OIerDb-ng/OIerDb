@@ -19,8 +19,8 @@ const CustomSearch: React.FC = () => {
 
   const STORAGE_KEY = 'monaco-editor-content';
 
-  const DEFAULT_EDITOR_CONTENT =
-    `
+  const DEFAULT_EDITOR_CONTENT
+    = `
 /** @param {OIerDb} db */
 export default (db) => {
   return db.oiers.filter((oier) => {
@@ -66,8 +66,8 @@ export default (db) => {
           if (result instanceof type) {
             return setFilteredData({ type: type.name, result: [result] });
           } else if (
-            Array.isArray(result) &&
-            result.every((item) => item instanceof type)
+            Array.isArray(result)
+            && result.every(item => item instanceof type)
           ) {
             return setFilteredData({ type: type.name, result: result });
           }
@@ -98,7 +98,7 @@ export default (db) => {
           storageKey={STORAGE_KEY}
           defaultValue={DEFAULT_EDITOR_CONTENT}
           jsExtraLib={jsExtraLib}
-          onChange={(value) => setFilterCode(value || '')}
+          onChange={value => setFilterCode(value || '')}
         />
 
         <Button
