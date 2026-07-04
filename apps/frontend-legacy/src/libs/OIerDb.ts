@@ -146,78 +146,102 @@ const getDataFromIndexedDb = async (name: 'static' | 'oiers') => {
   return os.get(name);
 };
 
-const textToRaw = (text: string) => {
-  const data: any[] = [];
-
-  text.split('\n').forEach((line) => {
-    const fields = line.split(',');
-    if (fields.length !== 9) return;
+const parseResultLine = (line: string, data: any[]) => {
+  const fields = line.split(',');
+  if (fields.length !== 9) return;
+  const [
+    uid,
+    initials,
+    name,
+    gender,
+    enroll_middle,
+    _oierdb_score,
+    ccf_score,
+    ccf_level,
+    compressed_records,
+  ] = fields;
+  const records = compressed_records.split('/').map((record) => {
     const [
-      uid,
-      initials,
-      name,
-      gender,
+      contest,,
+      school,,
+      score,,
+      rank,,
+      province_id,,
+      award_level_id,
+      is_stay_down,
       enroll_middle,
-      _oierdb_score,
-      ccf_score,
-      ccf_level,
-      compressed_records,
-    ] = fields;
-    const records = compressed_records.split('/').map((record) => {
-      const [
-        contest,,
-        school,,
-        score,,
-        rank,,
-        province_id,,
-        award_level_id,
-        is_stay_down,
-        enroll_middle,
-      ] = record.split(/([:;])/);
-      return {
-        contest,
-        school,
-        ...(score !== '' && { score: parseFloat(score) }),
-        rank: parseInt(rank),
-        province:
-          province_id in provinces ? provinces[province_id] : province_id,
-        level:
-          award_level_id in awardLevels
-            ? awardLevels[award_level_id]
-            : award_level_id,
-        ...(enroll_middle != null && {
-          enroll_middle: {
-            is_stay_down: is_stay_down === ';',
-            value: parseInt(enroll_middle),
-          },
-        }),
-      };
-    });
-    const oierdb_score = parseFloat(_oierdb_score);
-    const oier = {
-      rank:
-        data.length && oierdb_score === data[data.length - 1].oierdb_score
-          ? data[data.length - 1].rank
-          : data.length,
-      uid: parseInt(uid),
-      initials,
-      name,
-      lowered_name: name.toLowerCase(),
-      gender: parseInt(gender),
-      enroll_middle: parseInt(enroll_middle),
-      oierdb_score,
-      ccf_score: parseFloat(ccf_score),
-      ccf_level: parseInt(ccf_level),
-      records,
+    ] = record.split(/([:;])/);
+    return {
+      contest,
+      school,
+      ...(score !== '' && { score: parseFloat(score) }),
+      rank: parseInt(rank),
+      province:
+        province_id in provinces ? provinces[province_id] : province_id,
+      level:
+        award_level_id in awardLevels
+          ? awardLevels[award_level_id]
+          : award_level_id,
+      ...(enroll_middle != null && {
+        enroll_middle: {
+          is_stay_down: is_stay_down === ';',
+          value: parseInt(enroll_middle),
+        },
+      }),
     };
-
-    data.push(oier);
   });
+  const oierdb_score = parseFloat(_oierdb_score);
+  const oier = {
+    rank:
+      data.length && oierdb_score === data[data.length - 1].oierdb_score
+        ? data[data.length - 1].rank
+        : data.length,
+    uid: parseInt(uid),
+    initials,
+    name,
+    lowered_name: name.toLowerCase(),
+    gender: parseInt(gender),
+    enroll_middle: parseInt(enroll_middle),
+    oierdb_score,
+    ccf_score: parseFloat(ccf_score),
+    ccf_level: parseInt(ccf_level),
+    records,
+  };
 
-  return data;
+  data.push(oier);
 };
 
-const processData = (data: any) => {
+const createResultParser = () => {
+  let data: any[] = [];
+  let tail = '';
+
+  return {
+    push(text: string) {
+      const lines = (tail + text).split('\n');
+      tail = lines.pop() || '';
+      lines.forEach(line => parseResultLine(line, data));
+    },
+    finish() {
+      if (tail) parseResultLine(tail, data);
+      tail = '';
+      return data;
+    },
+    reset() {
+      data = [];
+      tail = '';
+    },
+  };
+};
+
+const PROCESS_DATA_BATCH_SIZE = 8192;
+
+const yieldToMainThread = () =>
+  new Promise<void>(resolve => setTimeout(resolve));
+
+const processData = async (
+  data: any,
+  setProgressPercent?: (p: number) => void
+) => {
   const add_contestant = function (contest: Contest, record: Record) {
     contest.contestants.push(record);
     contest.level_counts.update(record.level);
@@ -262,23 +286,37 @@ const processData = (data: any) => {
     });
   });
 
-  result.oiers = data.oiers.map((oier) => {
-    oier = new OIer(oier);
+  result.oiers = new Array(data.oiers.length);
 
-    oier.provinces = [
-      ...new Set(oier.records.map(record => record.province)),
-    ];
+  for (let i = 0; i < data.oiers.length; i += PROCESS_DATA_BATCH_SIZE) {
+    const end = Math.min(i + PROCESS_DATA_BATCH_SIZE, data.oiers.length);
 
-    oier.records.forEach((record) => {
-      record.contest = result.contests[record.contest];
-      record.school = originSchools[record.school];
-      record.oier = oier;
-      add_contestant(record.contest, record);
-      add_school_record(record.school, record);
-    });
+    for (let j = i; j < end; j++) {
+      const oier: any = new OIer(data.oiers[j]);
 
-    return oier;
-  });
+      oier.provinces = [
+        ...new Set(oier.records.map(record => record.province)),
+      ];
+
+      oier.records.forEach((record) => {
+        record.contest = result.contests[record.contest];
+        record.school = originSchools[record.school];
+        record.oier = oier;
+        add_contestant(record.contest, record);
+        add_school_record(record.school, record);
+      });
+
+      result.oiers[j] = oier;
+    }
+
+    if (data.oiers.length) {
+      setProgressPercent?.(
+        96 + Math.floor((end / data.oiers.length) * 3)
+      );
+    }
+
+    if (end < data.oiers.length) await yieldToMainThread();
+  }
 
   result.contests.forEach((contest) => {
     contest.contestants.sort((x, y) => x.rank - y.rank);
@@ -291,16 +329,27 @@ const processData = (data: any) => {
     ...new Set(result.oiers.map(oier => oier.enroll_middle)),
   ];
 
+  setProgressPercent?.(100);
+
   return result;
+};
+
+interface GetDataOptions {
+  size: number;
+  onProgress?: (receivedBytes: number) => void;
+  onChunk?: (text: string) => void;
+  onRetry?: () => void;
+  trackLabel?: string;
+}
+
+type DataInfo = {
+  sha512: string;
+  size: number;
 };
 
 const getData = async (
   urls: string | string[],
-  size: number,
-  setProgressPercent?: (p: number) => void,
-  start = 0,
-  end = 100,
-  trackLabel = ''
+  options: GetDataOptions
 ) => {
   const startTime = performance.now();
 
@@ -308,44 +357,51 @@ const getData = async (
 
   for (const url of urls) {
     try {
+      options.onRetry?.();
+
       const response = await fetch(url);
       const realUrl = url;
 
       if (!response.ok) continue;
 
       let receivedSize = 0;
-      const chunks: Uint8Array[] = [];
-
+      let chunkProcessTime = 0;
+      const decoder = new TextDecoder();
+      const buffered: string[] = [];
       const reader = response.body.getReader();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        chunks.push(value);
         receivedSize += value.length;
 
-        if (setProgressPercent) {
-          setProgressPercent(
-            Math.ceil(
-              start + Math.min((receivedSize / size) * (end - start), end)
-            )
-          );
+        const text = decoder.decode(value, { stream: true });
+        if (options.onChunk) {
+          const processStartTime = performance.now();
+          options.onChunk(text);
+          chunkProcessTime += performance.now() - processStartTime;
+        } else {
+          buffered.push(text);
+        }
+
+        options.onProgress?.(receivedSize);
+      }
+
+      const rest = decoder.decode();
+      if (rest) {
+        if (options.onChunk) {
+          const processStartTime = performance.now();
+          options.onChunk(rest);
+          chunkProcessTime += performance.now() - processStartTime;
+        } else {
+          buffered.push(rest);
         }
       }
 
-      const chunksAll = new Uint8Array(receivedSize);
-      let pos = 0;
-      for (const chunk of chunks) {
-        chunksAll.set(chunk, pos);
-        pos += chunk.length;
-      }
+      if (options.trackLabel) {
+        const timeUsed = performance.now() - startTime - chunkProcessTime;
 
-      const data = new TextDecoder().decode(chunksAll);
-
-      if (trackLabel) {
-        const timeUsed = performance.now() - startTime;
-
-        trackEvent('Download: ' + trackLabel, {
+        trackEvent('Download: ' + options.trackLabel, {
           props: {
             url: realUrl,
             time:
@@ -356,7 +412,7 @@ const getData = async (
         });
       }
 
-      return data;
+      return buffered.join('');
     } catch (e) {
       console.error(e);
     }
@@ -370,58 +426,94 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
 
   if (!setProgressPercent) setProgressPercent = () => {};
 
+  const [staticInfo, resultInfo]: DataInfo[] = await Promise.all([
+    promiseAny(
+      infoUrls.map(url => fetch(`${url}/static.info.json?_=${+new Date()}`))
+    ).then(res => res.json()),
+    promiseAny(
+      infoUrls.map(url => fetch(`${url}/result.info.json?_=${+new Date()}`))
+    ).then(res => res.json()),
+  ]);
+
   const {
     sha512: staticSha512,
     size: staticSize,
-  }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map(url => fetch(`${url}/static.info.json?_=${+new Date()}`))
-  ).then(res => res.json());
-
-  setProgressPercent(4);
-
+  } = staticInfo;
   const {
     sha512: resultSha512,
     size: resultSize,
-  }: { sha512: string; size: number } = await promiseAny(
-    infoUrls.map(url => fetch(`${url}/result.info.json?_=${+new Date()}`))
-  ).then(res => res.json());
+  } = resultInfo;
 
-  setProgressPercent(8);
+  setProgressPercent(4);
 
   if (checkSha512(staticSha512, resultSha512)) {
     setProgressPercent(91);
 
     const [staticData, oiers] = await Promise.all([
-      await getDataFromIndexedDb('static'),
-      await getDataFromIndexedDb('oiers'),
+      getDataFromIndexedDb('static'),
+      getDataFromIndexedDb('oiers'),
     ]);
 
     setProgressPercent(96);
 
     if (staticData && oiers) {
-      return (__DATA__ = processData({ static: staticData, oiers }));
+      return (__DATA__ = await processData(
+        { static: staticData, oiers },
+        setProgressPercent
+      ));
     }
   }
 
-  setProgressPercent(10);
+  const received = {
+    static: 0,
+    result: 0,
+  };
+  const totalSize = staticSize + resultSize;
+  const reportProgress = () => {
+    const receivedSize = Math.min(received.static + received.result, totalSize);
+    const progress = totalSize
+      ? 4 + Math.floor((receivedSize / totalSize) * 86)
+      : 90;
 
-  const staticData = await getData(
-    urls.map(url => `${url}/static.${staticSha512.substring(0, 7)}.json`),
-    staticSize,
-    setProgressPercent,
-    10,
-    40,
-    'static.json'
-  ).then(res => JSON.parse(res));
+    setProgressPercent(progress);
+  };
 
-  const oiers = await getData(
-    urls.map(url => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
-    resultSize,
-    setProgressPercent,
-    40,
-    90,
-    'result.txt'
-  ).then(textToRaw);
+  const parser = createResultParser();
+
+  const [staticData, oiers] = await Promise.all([
+    getData(
+      urls.map(url => `${url}/static.${staticSha512.substring(0, 7)}.json`),
+      {
+        size: staticSize,
+        onProgress: (receivedBytes) => {
+          received.static = receivedBytes;
+          reportProgress();
+        },
+        onRetry: () => {
+          received.static = 0;
+          reportProgress();
+        },
+        trackLabel: 'static.json',
+      }
+    ).then(res => JSON.parse(res)),
+    getData(
+      urls.map(url => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
+      {
+        size: resultSize,
+        onProgress: (receivedBytes) => {
+          received.result = receivedBytes;
+          reportProgress();
+        },
+        onChunk: text => parser.push(text),
+        onRetry: () => {
+          parser.reset();
+          received.result = 0;
+          reportProgress();
+        },
+        trackLabel: 'result.txt',
+      }
+    ).then(() => parser.finish()),
+  ]);
 
   setProgressPercent(91);
 
@@ -436,11 +528,10 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   localStorage.setItem('staticSha512', staticSha512);
   localStorage.setItem('resultSha512', resultSha512);
 
-  setProgressPercent(97);
-
-  __DATA__ = processData({ static: staticData, oiers });
-
-  setProgressPercent(100);
+  __DATA__ = await processData(
+    { static: staticData, oiers },
+    setProgressPercent
+  );
 
   return __DATA__;
 };
