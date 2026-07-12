@@ -1,0 +1,12 @@
+{
+  "name": "@oierdb/core",
+  "description": "OIerDb core types, interfaces and query engine",
+  "version": "0.0.0",
+  "author": "Baoshuo <i@baoshuo.ren>",
+  "license": "AGPL-3.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  }
+}
