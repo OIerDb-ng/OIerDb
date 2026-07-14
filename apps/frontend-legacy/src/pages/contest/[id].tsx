@@ -47,9 +47,13 @@ const Contest: React.FC = () => {
     setSearchParams({ province, page: '1' });
   };
 
-  const grade = Number(searchParams.get('grade') || '0');
-  const setGrade = (grade: number) => {
-    setSearchParams({ grade: String(grade), page: '1' });
+  const gradeParam = searchParams.get('grade') || '';
+  const selectedGrades = useMemo(
+    () => gradeParam.split(',').map(Number).filter(Boolean),
+    [gradeParam]
+  );
+  const setSelectedGrades = (grades: number[]) => {
+    setSearchParams({ grade: grades.join(','), page: '1' });
   };
 
   const provinces = useMemo(() => {
@@ -70,7 +74,7 @@ const Contest: React.FC = () => {
       .sort((a, b) => a.key.localeCompare(b.key));
   }, [id]);
 
-  const grades = useMemo(
+  const gradeOptions = useMemo(
     () => [
       ...new Set(
         contest.contestants.map(
@@ -89,12 +93,13 @@ const Contest: React.FC = () => {
           province ? contestant.province === province : true
         )
         .filter(contestant =>
-          grade
-            ? (contestant.enroll_middle?.value
-              || contestant.oier.enroll_middle) === grade
+          selectedGrades.length
+            ? selectedGrades.includes(
+                contestant.enroll_middle?.value || contestant.oier.enroll_middle
+              )
             : true
         ),
-    [contest, province, grade]
+    [contest, province, selectedGrades]
   );
 
   const awards = awardLevels.filter(awardLevel =>
@@ -164,17 +169,19 @@ const Contest: React.FC = () => {
             fluid
             search
             selection
+            multiple
             clearable
             placeholder="年级"
-            value={grade || null}
-            options={grades
+            value={selectedGrades}
+            options={gradeOptions
               .map(grade => ({
                 key: grade,
                 value: grade,
                 text: getGrade(grade, contest.school_year()),
               }))
               .sort(compareGrades)}
-            onChange={(_, { value }) => setGrade(Number(value))}
+            onChange={(_, { value }) =>
+              setSelectedGrades((value as number[]).map(Number))}
           />
           <Form.Dropdown
             fluid
@@ -192,9 +199,9 @@ const Contest: React.FC = () => {
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell width={1}>
-              {grade || province ? `总排名` : '#'}
+              {selectedGrades.length || province ? `总排名` : '#'}
             </Table.HeaderCell>
-            {Boolean(grade || province) && (
+            {Boolean(selectedGrades.length || province) && (
               <Table.HeaderCell>#</Table.HeaderCell>
             )}
             <Table.HeaderCell>姓名</Table.HeaderCell>
@@ -214,7 +221,7 @@ const Contest: React.FC = () => {
                 trigger={
                   <>
                     <Table.Cell>{contestant.rank}</Table.Cell>
-                    {Boolean(grade || province) && (
+                    {Boolean(selectedGrades.length || province) && (
                       <Table.Cell width={1}>
                         {(page - 1) * perPage + index + 1}
                       </Table.Cell>
