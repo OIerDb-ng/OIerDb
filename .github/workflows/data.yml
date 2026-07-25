@@ -1,0 +1,144 @@
+name: data
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - generator/**
+      - data/**
+      - .github/workflows/data.yml
+  pull_request:
+    branches:
+      - master
+    paths:
+      - generator/**
+      - data/**
+      - .github/workflows/data.yml
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: generator
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Use Python 3
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build
+        run: python main.py
+
+      - name: Rename Files
+        run: |
+          STATIC_SHA512=$(jq -r .sha512 dist/static.info.json)
+          RESULT_SHA512=$(jq -r .sha512 dist/result.info.json)
+
+          mv dist/static.json dist/static.${STATIC_SHA512:0:7}.json
+          mv dist/result.txt  dist/result.${RESULT_SHA512:0:7}.txt
+
+          ln -s static.info.json dist/static.sha512.json
+          ln -s result.info.json dist/result.sha512.json
+
+          ln -s static.${STATIC_SHA512:0:7}.json dist/static.json
+          ln -s result.${RESULT_SHA512:0:7}.txt  dist/result.txt
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: data-dist
+          path: generator/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: data-dist
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          user_name: BaoshuoBot
+          user_email: bot@baoshuo.ren
+
+      - name: Deploy to server (Tokyo, JP)
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+          ARGS: '-avz --delete'
+          SOURCE: dist/
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          TARGET: ${{ secrets.REMOTE_PATH }}
+          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
+
+  sync:
+    name: Sync to CDN
+    needs: build
+    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: data-dist
+          path: dist
+
+      - name: Checkout renbaoshuo/cdn-sb
+        uses: actions/checkout@v7
+        with:
+          repository: renbaoshuo/cdn-sb
+          ssh-key: ${{ secrets.CDN_SB_SSH_PRIVATE_KEY }}
+          path: cdn-sb
+
+      - name: Copy Files
+        run: |
+          STATIC_SHA512=$(jq -r .sha512 dist/static.info.json)
+          RESULT_SHA512=$(jq -r .sha512 dist/result.info.json)
+
+          rm -rf cdn-sb/public/oier
+          mkdir -p cdn-sb/public/oier
+
+          cp dist/static.${STATIC_SHA512:0:7}.json cdn-sb/public/oier/static.${STATIC_SHA512:0:7}.json
+          cp dist/result.${RESULT_SHA512:0:7}.txt  cdn-sb/public/oier/result.${RESULT_SHA512:0:7}.txt
+
+      - id: get-commit-sha
+        run: |
+          id="${{ github.sha }}"
+          echo "id=${id:0:7}" >> $GITHUB_OUTPUT
+
+      - name: Upload
+        run: |
+          cd cdn-sb
+          git config --global user.name BaoshuoBot
+          git config --global user.email bot@baoshuo.dev
+          git add public/oier
+          git commit -m "[OIerDb/${{ steps.get-commit-sha.outputs.id }}] Upload dist on $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
+          git push

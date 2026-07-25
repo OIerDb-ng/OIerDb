@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "lint": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
-    "lint:check": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\""
+    "lint:check": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\"",
+    "generate": "cd generator && python3 main.py"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
