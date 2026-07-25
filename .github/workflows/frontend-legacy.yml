@@ -1,14 +1,27 @@
-name: Deploy
+name: frontend-legacy
 
 on:
   push:
     branches:
       - master
+    paths:
+      - package.json
+      - yarn.lock
+      - apps/frontend-legacy/**
+      - .github/workflows/frontend-legacy.yml
+  pull_request:
+    branches:
+      - master
+    paths:
+      - package.json
+      - yarn.lock
+      - apps/frontend-legacy/**
+      - .github/workflows/frontend-legacy.yml
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Build & Deploy
+  build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -20,13 +33,13 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('patches/**') }}
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: yarn
@@ -39,11 +52,32 @@ jobs:
         env:
           VITE_BAOSHUO_CDNJS: true
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-legacy-dist
+          path: apps/frontend-legacy/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-legacy-dist
+          path: dist
+
       - name: Deploy site to server (Tokyo, JP)
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           ARGS: '-avz --delete'
-          SOURCE: apps/frontend-legacy/dist/
+          SOURCE: dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -54,7 +88,7 @@ jobs:
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           ARGS: '-avz --delete'
-          SOURCE: apps/frontend-legacy/dist/
+          SOURCE: dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST_2 }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
