@@ -94,13 +94,13 @@ jobs:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          TARGET: ${{ secrets.REMOTE_PATH }}
+          TARGET: ${{ secrets.REMOTE_PATH_2 }}
           EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
 
   sync:
     name: Sync to CDN
     needs: build
-    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.repository == 'OIerDb-ng/OIerDb'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: renbaoshuo/cdn-sb
-          ssh-key: ${{ secrets.CDN_SB_SSH_PRIVATE_KEY }}
+          token: ${{ secrets.GH_TOKEN_CDN_SB }}
           path: cdn-sb
 
       - name: Copy Files

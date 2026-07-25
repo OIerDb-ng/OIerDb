@@ -62,7 +62,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.repository == 'OIerDb-ng/OIerDb'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -79,17 +79,6 @@ jobs:
           ARGS: '-avz --delete'
           SOURCE: dist/
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          TARGET: ${{ secrets.REMOTE_PATH }}
-          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
-
-      - name: Deploy site to server (Hong Kong, CN)
-        uses: easingthemes/ssh-deploy@v2.1.5
-        env:
-          ARGS: '-avz --delete'
-          SOURCE: dist/
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST_2 }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           TARGET: ${{ secrets.REMOTE_PATH }}
