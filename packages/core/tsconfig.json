@@ -3,9 +3,6 @@
     "target": "esnext",
     "module": "nodenext",
     "lib": ["esnext"],
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,6 +10,6 @@
     "moduleResolution": "nodenext",
     "types": ["jest", "node"]
   },
-  "include": ["*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
 }

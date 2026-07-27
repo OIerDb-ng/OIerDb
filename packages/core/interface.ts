@@ -1,7 +1,7 @@
 /** 性别（-1：女；0：未知；1：男） */
 export type Gender = -1 | 0 | 1;
 
-export interface DbSummary {
+interface DbStoragedSummary {
   /** 数据版本；这个需要等待重构数据生成器的时候改成目前的 delta 序号，目前为数据的 sha 值 */
   version: string;
   /** 省份列表 */
@@ -12,6 +12,9 @@ export interface DbSummary {
   contestTypes: string[];
   /** 奖项名称 */
   awards: string[];
+}
+
+interface DbGeneratedSummary {
   /** OIer 数量 */
   oierCount: number;
   /** 学校数量 */
@@ -19,6 +22,15 @@ export interface DbSummary {
   /** 比赛数量 */
   contestCount: number;
 }
+
+export interface DbSummary extends DbStoragedSummary, DbGeneratedSummary {}
+
+export type DbMetadata = {
+  [K in keyof DbStoragedSummary]: {
+    key: K;
+    value: DbStoragedSummary[K];
+  };
+}[keyof DbStoragedSummary];
 
 export interface DbOIer {
   // 主键 uid
