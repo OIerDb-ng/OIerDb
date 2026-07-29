@@ -124,6 +124,17 @@ type MatchingKeyPath<Paths, Name>
 export type StorePrimaryKey<Table extends StoreName>
   = KeyPathValue<StoreRecord<Table>, (typeof SCHEMA)[Table]['pk']>;
 
+export type StoreRecordByPrimaryKey<
+  Table extends StoreName,
+  Key extends StorePrimaryKey<Table>,
+> = StoreRecord<Table> extends infer Record
+  ? Record extends unknown
+    ? Key extends KeyPathValue<Record, (typeof SCHEMA)[Table]['pk']>
+      ? Record
+      : never
+    : never
+  : never;
+
 export type StoreIndexName<Table extends StoreName>
   = KeyPathName<(typeof SCHEMA)[Table]['indexes'][number]>;
 
@@ -170,10 +181,17 @@ type CountArgs<Table extends StoreName>
     }[StoreIndexName<Table>];
 
 export interface IDataStore {
-  get<Table extends StoreName>(
-    table: Table, key: StorePrimaryKey<NoInfer<Table>>): Promise<StoreRecord<Table> | undefined>;
-  bulkGet<Table extends StoreName>(
-    table: Table, keys: readonly StorePrimaryKey<NoInfer<Table>>[]): Promise<(StoreRecord<Table> | undefined)[]>;
+  get<
+    Table extends StoreName,
+    const Key extends StorePrimaryKey<NoInfer<Table>>,
+  >(table: Table, key: Key): Promise<StoreRecordByPrimaryKey<Table, Key> | undefined>;
+  bulkGet<
+    Table extends StoreName,
+    const Keys extends readonly StorePrimaryKey<NoInfer<Table>>[],
+  >(table: Table, keys: Keys): Promise<{
+    -readonly [Position in keyof Keys]:
+      StoreRecordByPrimaryKey<Table, Keys[Position]> | undefined;
+  }>;
   indexRange<Table extends StoreName>(query: IndexRangeQuery<Table>): Promise<StoreRecord<Table>[]>;
   count<Table extends StoreName>(table: Table, ...args: CountArgs<NoInfer<Table>>): Promise<number>;
   putBatch<Table extends StoreName>(table: Table, items: readonly StoreRecord<NoInfer<Table>>[]): Promise<void>;

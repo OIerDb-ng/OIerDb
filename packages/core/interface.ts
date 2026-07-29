@@ -25,12 +25,14 @@ interface DbGeneratedSummary {
 
 export interface DbSummary extends DbStoragedSummary, DbGeneratedSummary {}
 
-export type DbMetadata = {
-  [K in keyof DbStoragedSummary]: {
+export type DbMetadata<
+  Key extends keyof DbStoragedSummary = keyof DbStoragedSummary,
+> = {
+  [K in Key]: {
     key: K;
     value: DbStoragedSummary[K];
   };
-}[keyof DbStoragedSummary];
+}[Key];
 
 export interface DbOIer {
   // 主键 uid
