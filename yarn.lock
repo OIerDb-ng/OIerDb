@@ -633,6 +633,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@oierdb/core@workspace:packages/core":
+  version: 0.0.0-use.local
+  resolution: "@oierdb/core@workspace:packages/core"
+  dependencies:
+    "@types/node": "npm:^22.10.7"
+    quick-lru: "npm:^7.2.0"
+    typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
+
 "@popperjs/core@npm:^2.6.0":
   version: 2.11.6
   resolution: "@popperjs/core@npm:2.11.6"
@@ -4134,6 +4144,13 @@ __metadata:
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: 10c0/900a93d3cdae3acd7d16f642c29a642aea32c2026446151f0778c62ac089d4b8e6c986811076e1ae180a694cedf077d453a11b58ff0a865629a4f82ab558e102
+  languageName: node
+  linkType: hard
+
+"quick-lru@npm:^7.2.0":
+  version: 7.3.0
+  resolution: "quick-lru@npm:7.3.0"
+  checksum: 10c0/28dc8eaadcd489d26917f238ad27a6b09f8fe3a609152b0a4f399d5805094e07b56fe1e8c0d7ade0c11463c31bef329803672effc559601daf160a85f578fd05
   languageName: node
   linkType: hard
 
