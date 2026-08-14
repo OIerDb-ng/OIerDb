@@ -1031,5 +1031,13 @@
     "name": "NOI2026夏令营",
     "type": "NOID类",
     "year": 2026
+  },
+  {
+    "capacity": 368,
+    "fall_semester": false,
+    "full_score": 600,
+    "name": "IOI2026",
+    "type": "IOI",
+    "year": 2026
   }
 ]
