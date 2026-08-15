@@ -107,7 +107,7 @@ export interface DbRecord {
   /** 奖项。需要根据 summary 的 awards 确定名称 */
   award: number;
   /** 得分 */
-  score: number;
+  score?: number;
   /** 排名 */
   rank: number;
   /** 省份。根据 summary 的 provinces 确定名称 */
