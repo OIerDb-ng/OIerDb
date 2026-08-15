@@ -8,5 +8,14 @@
   "types": "./index.ts",
   "exports": {
     ".": "./index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "quick-lru": "^7.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }

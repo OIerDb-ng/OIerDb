@@ -637,7 +637,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@oierdb/core@workspace:packages/core"
   dependencies:
-    "@types/node": "npm:^22.10.7"
     quick-lru: "npm:^7.2.0"
     typescript: "npm:^6.0.3"
   languageName: unknown

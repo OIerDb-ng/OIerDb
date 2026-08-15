@@ -79,7 +79,7 @@ export const SCHEMA = {
   },
   contests: {
     pk: 'id',
-    indexes: ['id', 'name', 'year', 'type', ['type', 'year']],
+    indexes: ['name', 'year', 'type', ['type', 'year']],
   },
   records: {
     pk: ['contestId', 'uid'],
