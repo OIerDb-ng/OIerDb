@@ -9,8 +9,8 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
-    "lint:check": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\"",
+    "lint": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\" \"packages/*/*.{ts,tsx,js,jsx}\" --fix",
+    "lint:check": "eslint \"apps/*/src/**/*.{ts,tsx,js,jsx}\" \"packages/*/*.{ts,tsx,js,jsx}\"",
     "generate": "cd generator && python3 main.py"
   },
   "devDependencies": {
