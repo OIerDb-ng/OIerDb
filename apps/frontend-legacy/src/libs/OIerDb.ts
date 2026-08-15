@@ -95,13 +95,11 @@ export interface OIerDbData {
 
 const infoUrls = [
   'https://oier.api.baoshuo.dev',
-  'https://oierdb-ng.github.io/OIerDb-data-generator',
 ];
 
 const urls = [
   'https://cos-1.cdn.baoshuo.xyz/oier',
   'https://oier.api.baoshuo.dev',
-  'https://oierdb-ng.github.io/OIerDb-data-generator',
 ];
 
 let __DATA__: OIerDbData = null;
