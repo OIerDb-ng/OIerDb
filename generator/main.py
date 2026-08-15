@@ -60,6 +60,10 @@ def __main__():
         contest_name, level, name, grade_name, school_name, score, province, gender_name, identifier = li
         if name == "":
             raise ValueError("姓名不能为空")
+        if province not in util.provinces:
+            raise util.UnknownReferenceError(f"未知的省级行政区：\x1b[32m'{province}'\x1b[0m")
+        if level not in util.award_levels:
+            raise util.UnknownReferenceError(f"未知的奖项名称：\x1b[32m'{level}'\x1b[0m")
         contest = Contest.by_name(contest_name)
 
         try:
@@ -93,14 +97,35 @@ def __main__():
 
         with open("../data/raw.txt", encoding="utf-8") as f:
             raw_data = f.readlines()
+        unknown_references = 0
         for idx, line in tqdm(enumerate(raw_data), total=len(raw_data)):
             try:
                 parse_raw_line(line.strip())
+            except util.UnknownReferenceError as e:
+                # 未知的省份/奖项/比赛必须中止生成（继续会在 result.txt 中
+                # 写入未经索引的原始字符串，破坏前端解析约定），先收集全部再退出
+                print(
+                    f"\x1b[01mraw.txt:{idx + 1}: \x1b[31mfatal: \x1b[0;37m'{line.strip()}'\x1b[0m，{e}",
+                    file=stderr,
+                )
+                unknown_references += 1
             except ValueError as e:
                 print(
                     f"\x1b[01mraw.txt:{idx + 1}: \x1b[31merror: \x1b[0;37m'{line.strip()}'\x1b[0m，{e}",
                     file=stderr,
                 )
+        if unknown_references:
+            print("\n" + "=" * 60, file=stderr)
+            print(
+                f"\x1b[01;31mraw.txt 中共有 {unknown_references} 行引用了未知的省份/奖项/比赛（如上所示）\x1b[0m",
+                file=stderr,
+            )
+            print(
+                "\x1b[31m请先在 data/contests.json（比赛）或 generator/util.py（省份/奖项列表）中补充定义，再重新生成\x1b[0m",
+                file=stderr,
+            )
+            print("=" * 60, file=stderr)
+            raise ValueError("数据验证失败，存在未知的省份/奖项/比赛，无法生成最终结果")
 
     def attempt_merge(threshold=240):
         """尝试合并信息。

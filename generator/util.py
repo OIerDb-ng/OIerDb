@@ -8,6 +8,14 @@ from sys import stderr
 
 getcontext().prec = 64
 
+
+class UnknownReferenceError(ValueError):
+    """数据条目引用了未知的省份/奖项/比赛（raw.txt 与 data/*.json 不一致）。
+
+    与普通的 ValueError 不同，这类错误必须中止生成，而不是跳过对应行继续输出。
+    """
+
+
 provinces = [
     "安徽",
     "北京",

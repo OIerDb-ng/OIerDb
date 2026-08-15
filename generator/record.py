@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 from itertools import chain
-from sys import stderr
 import util
 
 __school_penalty__ = {
@@ -55,25 +54,19 @@ class Record:
 
     @staticmethod
     def __province_format__(province):
-        try:
-            return util.provinces.index(province)
-        except:
-            print(
-                f"\x1b[01;33mwarning: \x1b[0m未知的省级行政区：\x1b[0;32m'{province}'\x1b[0m",
-                file=stderr,
+        if province not in util.provinces:
+            raise util.UnknownReferenceError(
+                f"未知的省级行政区：\x1b[0;32m'{province}'\x1b[0m"
             )
-            return province
+        return util.provinces.index(province)
 
     @staticmethod
     def __award_level_format__(level):
-        try:
-            return util.award_levels.index(level)
-        except:
-            print(
-                f"\x1b[01;33mwarning: \x1b[0m未知的奖项名称：\x1b[0;32m'{level}'\x1b[0m",
-                file=stderr,
+        if level not in util.award_levels:
+            raise util.UnknownReferenceError(
+                f"未知的奖项名称：\x1b[0;32m'{level}'\x1b[0m"
             )
-            return level
+        return util.award_levels.index(level)
 
     def to_compress_format(self, reference_em):
         "转化成压缩格式字符串。"

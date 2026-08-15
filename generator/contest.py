@@ -5,6 +5,7 @@ from collections import Counter
 from record import Record
 from sys import stderr
 import re
+import util
 
 __re_score_with_rank__ = re.compile(r"^(\d+\.?\d+)\(rk(\d+)\)$")
 
@@ -46,7 +47,7 @@ class Contest:
 
         if name in Contest.__all_contests_map__:
             return Contest.__all_contests_map__[name]
-        raise ValueError(f"未知的比赛名：\x1b[32m'{name}'\x1b[0m")
+        raise util.UnknownReferenceError(f"未知的比赛名：\x1b[32m'{name}'\x1b[0m")
 
     @staticmethod
     def count_all():
