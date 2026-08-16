@@ -41,6 +41,7 @@ export class Contest {
   constructor(id: number, settings: any) {
     this.id = id;
     for (const setting in settings) this[setting] = settings[setting];
+    this.type = contestTypes[settings.type] || '';
     this.contestants = [];
     this.level_counts = new Counter();
   }
@@ -69,7 +70,11 @@ export class School {
   constructor(id: number, settings: any[]) {
     this.id = id;
     this.rank = 0;
-    [this.name, this.province, this.city, this.score] = settings;
+    const [name, province, city, score] = settings;
+    this.name = name;
+    this.province = provinces[province] || '';
+    this.city = city;
+    this.score = score;
     this.members = [];
     this.records = [];
     this.award_counts = {};
@@ -593,6 +598,24 @@ export const awardColors = {
 };
 
 export const awardLevels = Object.keys(awardColors);
+
+// 比赛类型列表；下标与 static.json 中的比赛类型索引、generator 严格对应
+export const contestTypes = [
+  'NOI',
+  'NOIP提高',
+  'CTSC',
+  'APIO',
+  'NOID类',
+  'IOI',
+  'NOIP普及',
+  'WC',
+  'CSP提高',
+  'CSP入门',
+  'NOIP',
+  'NGOI',
+  'NOIST',
+  'WC-AI',
+];
 
 export const genders = {
   [-1]: '女',
