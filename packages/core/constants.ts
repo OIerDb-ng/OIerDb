@@ -57,3 +57,21 @@ export const awardColors = {
 
 /** 奖项名称列表；下标与 generator 严格对应 */
 export const awards: readonly string[] = Object.keys(awardColors);
+
+/** 比赛类型列表；下标与 generator 严格对应 */
+export const contestTypes: readonly string[] = [
+  'NOI',
+  'NOIP提高',
+  'CTSC',
+  'APIO',
+  'NOID类',
+  'IOI',
+  'NOIP普及',
+  'WC',
+  'CSP提高',
+  'CSP入门',
+  'NOIP',
+  'NGOI',
+  'NOIST',
+  'WC-AI',
+];

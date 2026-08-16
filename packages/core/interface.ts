@@ -71,6 +71,8 @@ export interface DbSchool {
   city: string;
   /** 学校排名 */
   rank: number;
+  /** 学校评分 */
+  score: number;
   /** summary.awards 的索引到数量 */
   awardCounts: Record<number, number>;
 }
