@@ -75,3 +75,12 @@ export const contestTypes: readonly string[] = [
   'NOIST',
   'WC-AI',
 ];
+
+/** 性别列表；下标与 generator 严格对应 */
+export const genders = {
+  [-1]: '女',
+  1: '男',
+  0: '不详',
+} as const;
+
+export const genderKeys = Object.keys(genders).map(Number) as readonly (-1 | 0 | 1)[];

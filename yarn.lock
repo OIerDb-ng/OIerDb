@@ -633,12 +633,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oierdb/core@workspace:packages/core":
+"@oierdb/core@workspace:*, @oierdb/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@oierdb/core@workspace:packages/core"
   dependencies:
     quick-lru: "npm:^7.2.0"
     typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
+
+"@oierdb/parser@workspace:*, @oierdb/parser@workspace:packages/parser":
+  version: 0.0.0-use.local
+  resolution: "@oierdb/parser@workspace:packages/parser"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    "@oierdb/core": "workspace:*"
   languageName: unknown
   linkType: soft
 
