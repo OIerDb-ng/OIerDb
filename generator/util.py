@@ -68,6 +68,24 @@ award_levels = [
     "前25%",
 ]
 
+# 比赛类型列表；下标即 static.json 中的比赛类型索引，顺序为 data/contests.json 中的首次出现顺序，只能在末尾追加
+contest_types = [
+    "NOI",
+    "NOIP提高",
+    "CTSC",
+    "APIO",
+    "NOID类",
+    "IOI",
+    "NOIP普及",
+    "WC",
+    "CSP提高",
+    "CSP入门",
+    "NOIP",
+    "NGOI",
+    "NOIST",
+    "WC-AI",
+]
+
 
 def __main__():
     import json

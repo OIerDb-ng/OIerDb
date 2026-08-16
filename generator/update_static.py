@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import util
+
 
 def main():
     """将静态 JSON 文件合并并生成相应的信息文件。"""
@@ -17,6 +19,14 @@ def main():
             name = json_file.stem
             with open(json_file, "r", encoding="utf-8") as f:
                 output[name] = json.load(f)
+
+    # contests.json 的 type 为可读字符串，线上 static.json 输出为 util.contest_types 的数字下标
+    # （Contest.__init__ 在加载时已校验过类型合法性，这里的 index 不会失败）
+    if isinstance(output.get("contests"), list):
+        output["contests"] = [
+            {**contest, "type": util.contest_types.index(contest["type"])}
+            for contest in output["contests"]
+        ]
 
     # 读取 dist/school.json 文件
     school_file = Path("dist/school.json")
