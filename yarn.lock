@@ -2474,6 +2474,8 @@ __metadata:
   resolution: "frontend-legacy@workspace:apps/frontend-legacy"
   dependencies:
     "@monaco-editor/react": "npm:^4.6.0"
+    "@oierdb/core": "workspace:*"
+    "@oierdb/parser": "workspace:*"
     "@tanstack/react-virtual": "npm:^3.13.0"
     "@types/node": "npm:^22.10.7"
     "@types/react": "npm:^18.0.28"

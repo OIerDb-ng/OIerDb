@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { openDB } from 'idb';
+import { parseInfo, parseStatic, ResultParser } from '@oierdb/parser';
+import type { DataInfo, ParsedContest, ParsedOIer, ParsedSchool, ParsedStatic } from '@oierdb/parser';
+import { awards, contestTypes, provinces } from '@oierdb/core/constants';
 import { trackEvent } from '@/libs/plausible';
 import { Counter } from './Counter';
 import promiseAny from '@/utils/promiseAny';
@@ -38,10 +41,14 @@ export interface Record {
 }
 
 export class Contest {
-  constructor(id: number, settings: any) {
-    this.id = id;
-    for (const setting in settings) this[setting] = settings[setting];
+  constructor(settings: ParsedContest) {
+    this.id = settings.id;
+    this.name = settings.name;
+    this.year = settings.year;
     this.type = contestTypes[settings.type] || '';
+    this.fall_semester = settings.fallSemester;
+    this.full_score = settings.fullScore;
+    this.capacity = settings.capacity;
     this.contestants = [];
     this.level_counts = new Counter();
   }
@@ -61,20 +68,19 @@ export class Contest {
     return this.fall_semester ? this.year : this.year - 1;
   }
 
-  n_contestants() {
+  n_contestants(): number {
     return this.capacity ? this.capacity : this.contestants.length;
   }
 }
 
 export class School {
-  constructor(id: number, settings: any[]) {
-    this.id = id;
+  constructor(settings: ParsedSchool) {
+    this.id = settings.id;
     this.rank = 0;
-    const [name, province, city, score] = settings;
-    this.name = name;
-    this.province = provinces[province] || '';
-    this.city = city;
-    this.score = score;
+    this.name = settings.name;
+    this.province = provinces[settings.province] || '';
+    this.city = settings.city;
+    this.score = settings.score;
     this.members = [];
     this.records = [];
     this.award_counts = {};
@@ -99,12 +105,14 @@ export interface OIerDbData {
 }
 
 const infoUrls = [
-  'https://oier.api.baoshuo.dev',
+  'http://localhost:30002',
+  // 'https://oier.api.baoshuo.dev',
 ];
 
 const urls = [
-  'https://cos-1.cdn.baoshuo.xyz/oier',
-  'https://oier.api.baoshuo.dev',
+  'http://localhost:30002',
+  // 'https://cos-1.cdn.baoshuo.xyz/oier',
+  // 'https://oier.api.baoshuo.dev',
 ];
 
 let __DATA__: OIerDbData = null;
@@ -123,7 +131,10 @@ const checkSha512 = (staticSha512: string, resultSha512: string) => {
   }
 };
 
-const saveDataToIndexedDb = async (name: 'static' | 'oiers', data: any) => {
+const saveDataToIndexedDb = async (
+  name: 'parsed-static' | 'parsed-oiers',
+  data: any
+) => {
   const db = await openDB('OIerDb', 2, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('main')) {
@@ -137,7 +148,9 @@ const saveDataToIndexedDb = async (name: 'static' | 'oiers', data: any) => {
   await os.put(data, name);
 };
 
-const getDataFromIndexedDb = async (name: 'static' | 'oiers') => {
+const getDataFromIndexedDb = async (
+  name: 'parsed-static' | 'parsed-oiers'
+) => {
   const db = await openDB('OIerDb');
 
   if (!db.objectStoreNames.contains('main')) {
@@ -149,100 +162,13 @@ const getDataFromIndexedDb = async (name: 'static' | 'oiers') => {
   return os.get(name);
 };
 
-const parseResultLine = (line: string, data: any[]) => {
-  const fields = line.split(',');
-  if (fields.length !== 9) return;
-  const [
-    uid,
-    initials,
-    name,
-    gender,
-    enroll_middle,
-    _oierdb_score,
-    ccf_score,
-    ccf_level,
-    compressed_records,
-  ] = fields;
-  const records = compressed_records.split('/').map((record) => {
-    const [
-      contest,,
-      school,,
-      score,,
-      rank,,
-      province_id,,
-      award_level_id,
-      is_stay_down,
-      enroll_middle,
-    ] = record.split(/([:;])/);
-    return {
-      contest,
-      school,
-      ...(score !== '' && { score: parseFloat(score) }),
-      rank: parseInt(rank),
-      province:
-        province_id in provinces ? provinces[province_id] : province_id,
-      level:
-        award_level_id in awardLevels
-          ? awardLevels[award_level_id]
-          : award_level_id,
-      ...(enroll_middle != null && {
-        enroll_middle: {
-          is_stay_down: is_stay_down === ';',
-          value: parseInt(enroll_middle),
-        },
-      }),
-    };
-  });
-  const oierdb_score = parseFloat(_oierdb_score);
-  const oier = {
-    rank:
-      data.length && oierdb_score === data[data.length - 1].oierdb_score
-        ? data[data.length - 1].rank
-        : data.length,
-    uid: parseInt(uid),
-    initials,
-    name,
-    lowered_name: name.toLowerCase(),
-    gender: parseInt(gender),
-    enroll_middle: parseInt(enroll_middle),
-    oierdb_score,
-    ccf_score: parseFloat(ccf_score),
-    ccf_level: parseInt(ccf_level),
-    records,
-  };
-
-  data.push(oier);
-};
-
-const createResultParser = () => {
-  let data: any[] = [];
-  let tail = '';
-
-  return {
-    push(text: string) {
-      const lines = (tail + text).split('\n');
-      tail = lines.pop() || '';
-      lines.forEach(line => parseResultLine(line, data));
-    },
-    finish() {
-      if (tail) parseResultLine(tail, data);
-      tail = '';
-      return data;
-    },
-    reset() {
-      data = [];
-      tail = '';
-    },
-  };
-};
-
 const PROCESS_DATA_BATCH_SIZE = 8192;
 
 const yieldToMainThread = () =>
   new Promise<void>(resolve => setTimeout(resolve));
 
-const processData = async (
-  data: any,
+export const processData = async (
+  data: { static: ParsedStatic; oiers: ParsedOIer[] },
   setProgressPercent?: (p: number) => void
 ) => {
   const add_contestant = function (contest: Contest, record: Record) {
@@ -262,12 +188,15 @@ const processData = async (
   const result: OIerDbData = {};
 
   result.contests = data.static.contests.map(
-    (x, id: number) => new Contest(id, x)
+    contest => new Contest(contest)
   );
 
-  const originSchools = (result.schools = data.static.schools.map(
-    (x: any[], id: number) => new School(id, x)
-  ));
+  const originSchools: School[] = [];
+  result.schools = data.static.schools.map((school) => {
+    const instance = new School(school);
+    originSchools[instance.id] = instance;
+    return instance;
+  });
 
   result.schools = result.schools
     .filter((school: School) => school.name)
@@ -295,16 +224,44 @@ const processData = async (
     const end = Math.min(i + PROCESS_DATA_BATCH_SIZE, data.oiers.length);
 
     for (let j = i; j < end; j++) {
-      const oier: any = new OIer(data.oiers[j]);
+      const parsed = data.oiers[j];
+      const oier: any = new OIer({
+        uid: parsed.uid,
+        name: parsed.name,
+        lowered_name: parsed.loweredName,
+        initials: parsed.initials,
+        gender: parsed.gender,
+        enroll_middle: parsed.enrollMiddle,
+        oierdb_score: parsed.oierdbScore,
+        ccf_score: parsed.ccfScore,
+        ccf_level: parsed.ccfLevel,
+        rank: parsed.rank,
+      });
+
+      oier.records = parsed.records.map((record): Record => {
+        const legacy: any = {
+          oier,
+          contest: result.contests[record.contestId],
+          school: originSchools[record.schoolId],
+          level: awards[record.award],
+          province: provinces[record.province],
+          rank: record.rank,
+        };
+        if (record.score !== undefined) legacy.score = record.score;
+        if (record.enrollMiddle !== undefined) {
+          legacy.enroll_middle = {
+            is_stay_down: record.isStayDown ?? false,
+            value: record.enrollMiddle,
+          };
+        }
+        return legacy;
+      });
 
       oier.provinces = [
         ...new Set(oier.records.map(record => record.province)),
       ];
 
       oier.records.forEach((record) => {
-        record.contest = result.contests[record.contest];
-        record.school = originSchools[record.school];
-        record.oier = oier;
         add_contestant(record.contest, record);
         add_school_record(record.school, record);
       });
@@ -344,11 +301,6 @@ interface GetDataOptions {
   onRetry?: () => void;
   trackLabel?: string;
 }
-
-type DataInfo = {
-  sha512: string;
-  size: number;
-};
 
 const getData = async (
   urls: string | string[],
@@ -432,10 +384,10 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   const [staticInfo, resultInfo]: DataInfo[] = await Promise.all([
     promiseAny(
       infoUrls.map(url => fetch(`${url}/static.info.json?_=${+new Date()}`))
-    ).then(res => res.json()),
+    ).then(res => res.text()).then(parseInfo),
     promiseAny(
       infoUrls.map(url => fetch(`${url}/result.info.json?_=${+new Date()}`))
-    ).then(res => res.json()),
+    ).then(res => res.text()).then(parseInfo),
   ]);
 
   const {
@@ -453,8 +405,8 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     setProgressPercent(91);
 
     const [staticData, oiers] = await Promise.all([
-      getDataFromIndexedDb('static'),
-      getDataFromIndexedDb('oiers'),
+      getDataFromIndexedDb('parsed-static'),
+      getDataFromIndexedDb('parsed-oiers'),
     ]);
 
     setProgressPercent(96);
@@ -481,7 +433,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
     setProgressPercent(progress);
   };
 
-  const parser = createResultParser();
+  const parser = new ResultParser();
 
   const [staticData, oiers] = await Promise.all([
     getData(
@@ -498,7 +450,7 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
         },
         trackLabel: 'static.json',
       }
-    ).then(res => JSON.parse(res)),
+    ).then(parseStatic),
     getData(
       urls.map(url => `${url}/result.${resultSha512.substring(0, 7)}.txt`),
       {
@@ -520,11 +472,11 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
 
   setProgressPercent(91);
 
-  await saveDataToIndexedDb('static', staticData);
+  await saveDataToIndexedDb('parsed-static', staticData);
 
   setProgressPercent(93);
 
-  await saveDataToIndexedDb('oiers', oiers);
+  await saveDataToIndexedDb('parsed-oiers', oiers);
 
   setProgressPercent(96);
 
@@ -539,84 +491,12 @@ export const initDb = async (setProgressPercent?: (p: number) => void) => {
   return __DATA__;
 };
 
-// 省份列表
-export const provincesWithId = {
-  AH: '安徽',
-  BJ: '北京',
-  FJ: '福建',
-  GS: '甘肃',
-  GD: '广东',
-  GX: '广西',
-  GZ: '贵州',
-  HI: '海南',
-  HE: '河北',
-  HA: '河南',
-  HL: '黑龙江',
-  HB: '湖北',
-  HN: '湖南',
-  JL: '吉林',
-  JS: '江苏',
-  JX: '江西',
-  LN: '辽宁',
-  NM: '内蒙古',
-  SD: '山东',
-  SX: '山西',
-  SN: '陕西',
-  SH: '上海',
-  SC: '四川',
-  TJ: '天津',
-  XJ: '新疆',
-  ZJ: '浙江',
-  CQ: '重庆',
-  NX: '宁夏',
-  YN: '云南',
-  MO: '澳门',
-  HK: '香港',
-  QH: '青海',
-  XC: '西藏',
-  TW: '台湾',
-} as const;
+// 展示用常量统一来自 @oierdb/core，保持原有的导出名不变
+export { awardColors, contestTypes, provinces } from '@oierdb/core/constants';
+export { awards as awardLevels } from '@oierdb/core/constants';
+export { provincesIdMap as provincesWithId } from '@oierdb/core/constants';
 
-export const provinces = Object.values(
-  provincesWithId
-) as (typeof provincesWithId)[keyof typeof provincesWithId][];
-
-// 奖项列表及颜色
-export const awardColors = {
-  '金牌': '#ee961b',
-  '银牌': '#939291',
-  '铜牌': '#9c593b',
-  '一等奖': '#ee961b',
-  '二等奖': '#939291',
-  '三等奖': '#9c593b',
-  '国际金牌': '#ee961b',
-  '国际银牌': '#939291',
-  '国际铜牌': '#9c593b',
-  '前5%': '#ee961b',
-  '前15%': '#939291',
-  '前25%': '#9c593b',
-};
-
-export const awardLevels = Object.keys(awardColors);
-
-// 比赛类型列表；下标与 static.json 中的比赛类型索引、generator 严格对应
-export const contestTypes = [
-  'NOI',
-  'NOIP提高',
-  'CTSC',
-  'APIO',
-  'NOID类',
-  'IOI',
-  'NOIP普及',
-  'WC',
-  'CSP提高',
-  'CSP入门',
-  'NOIP',
-  'NGOI',
-  'NOIST',
-  'WC-AI',
-];
-
+// 性别（与数据解析无关的展示常量）
 export const genders = {
   [-1]: '女',
   1: '男',
