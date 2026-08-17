@@ -1,4 +1,4 @@
-name: data
+name: deploy
 
 on:
   push:
@@ -7,19 +7,27 @@ on:
     paths:
       - generator/**
       - data/**
-      - .github/workflows/data.yml
+      - package.json
+      - yarn.lock
+      - apps/frontend-legacy/**
   pull_request:
     branches:
       - master
     paths:
       - generator/**
       - data/**
-      - .github/workflows/data.yml
+      - package.json
+      - yarn.lock
+      - apps/frontend-legacy/**
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build
+  build-data:
+    name: Build Data
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -64,42 +72,48 @@ jobs:
           path: generator/dist/
           retention-days: 1
 
-  deploy:
-    name: Deploy
-    needs: build
-    if: github.event_name == 'push' && github.repository == 'OIerDb-ng/OIerDb'
+  build-frontend:
+    name: Build Frontend (legacy)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7
         with:
-          name: data-dist
-          path: dist
+          fetch-depth: 0
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4.1.0
+      - uses: actions/cache@v6
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist
-          user_name: BaoshuoBot
-          user_email: bot@baoshuo.ren
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-      - name: Deploy to server (Tokyo, JP)
-        uses: easingthemes/ssh-deploy@v2.1.5
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build Site
+        run: yarn workspace frontend-legacy build
         env:
-          ARGS: '-avz --delete'
-          SOURCE: dist/
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          TARGET: ${{ secrets.REMOTE_PATH_2 }}
-          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
+          VITE_BAOSHUO_CDNJS: true
 
-  sync:
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-legacy-dist
+          path: apps/frontend-legacy/dist/
+          retention-days: 1
+
+  sync-cdn:
     name: Sync to CDN
-    needs: build
+    needs: build-data
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.repository == 'OIerDb-ng/OIerDb'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -142,3 +156,45 @@ jobs:
           git add public/oier
           git commit -m "[OIerDb/${{ steps.get-commit-sha.outputs.id }}] Upload dist on $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push
+
+  deploy-server:
+    name: Deploy to Server
+    needs: [build-data, build-frontend, sync-cdn]
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.repository == 'OIerDb-ng/OIerDb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download Data Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: data-dist
+          path: dist-data
+
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-legacy-dist
+          path: dist-frontend
+
+      - name: Deploy data to server (Tokyo, JP)
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+          ARGS: '-avz --delete'
+          SOURCE: dist-data/
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          TARGET: ${{ secrets.REMOTE_PATH_2 }}
+          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
+
+      - name: Deploy site to server (Tokyo, JP)
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+          ARGS: '-avz --delete'
+          SOURCE: dist-frontend/
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          TARGET: ${{ secrets.REMOTE_PATH }}
+          EXCLUDE: .git,.github,.gitlab-ci.yml,.nojekyll
