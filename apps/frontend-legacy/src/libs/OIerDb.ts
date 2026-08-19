@@ -105,14 +105,14 @@ export interface OIerDbData {
 }
 
 const infoUrls = [
-  'http://localhost:30002',
-  // 'https://oier.api.baoshuo.dev',
+  // 'http://localhost:30002',
+  'https://oier.api.baoshuo.dev',
 ];
 
 const urls = [
-  'http://localhost:30002',
-  // 'https://cos-1.cdn.baoshuo.xyz/oier',
-  // 'https://oier.api.baoshuo.dev',
+  // 'http://localhost:30002',
+  'https://cos-1.cdn.baoshuo.xyz/oier',
+  'https://oier.api.baoshuo.dev',
 ];
 
 let __DATA__: OIerDbData = null;
