@@ -30,6 +30,9 @@ def __main__():
         if len(li) < 3:
             raise ValueError("格式错误")
         province, city, name, *aliases = li
+        # 全空的废弃条目（,,）仅用于占位以保持 ID 对齐，不校验省份
+        if (province or city or name) and province not in util.provinces:
+            raise util.UnknownReferenceError(f"未知的省级行政区：\x1b[32m'{province}'\x1b[0m")
         School.create(name, province, city, aliases)
 
     def parse_school():
@@ -37,14 +40,34 @@ def __main__():
 
         with open("../data/school.txt", encoding="utf-8") as f:
             raw_data = f.readlines()
+        unknown_references = 0
         for idx, line in tqdm(enumerate(raw_data), total=len(raw_data)):
             try:
                 parse_school_line(line.strip())
+            except util.UnknownReferenceError as e:
+                # 未知的省份必须中止生成（static.json 的省份为数字下标，无法编码未知值）
+                print(
+                    f"\x1b[01mschool.txt:{idx + 1}: \x1b[31mfatal: \x1b[0;37m'{line.strip()}'\x1b[0m，{e}",
+                    file=stderr,
+                )
+                unknown_references += 1
             except ValueError as e:
                 print(
                     f"\x1b[01mschool.txt:{idx + 1}: \x1b[031merror: \x1b[0;37m'{line.strip()}'\x1b[0m，{e}",
                     file=stderr,
                 )
+        if unknown_references:
+            print("\n" + "=" * 60, file=stderr)
+            print(
+                f"\x1b[01;31mschool.txt 中共有 {unknown_references} 行存在未知的省级行政区（如上所示）\x1b[0m",
+                file=stderr,
+            )
+            print(
+                "\x1b[31m请先在 generator/util.py 的省份列表中补充定义，或更正对应条目，再重新生成\x1b[0m",
+                file=stderr,
+            )
+            print("=" * 60, file=stderr)
+            raise ValueError("数据验证失败，school.txt 中存在未知的省级行政区，无法生成最终结果")
 
     def parse_raw_line(line):
         """解析 raw.txt 文件的一行。
@@ -312,7 +335,9 @@ def __main__():
 
         output = []
         for school in tqdm(School.get_all()):
-            output.append([school.name, school.province, school.city, float(round(school.score, 2))])
+            # 省份输出为 util.provinces 的数字下标；全空的废弃条目记 -1（前端解析时跳过）
+            province = -1 if school.province == "" else util.provinces.index(school.province)
+            output.append([school.name, province, school.city, float(round(school.score, 2))])
         with open("dist/school.json", "w", newline="\n", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False)
 

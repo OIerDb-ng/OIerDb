@@ -71,6 +71,8 @@ export interface DbSchool {
   city: string;
   /** 学校排名 */
   rank: number;
+  /** 学校评分 */
+  score: number;
   /** summary.awards 的索引到数量 */
   awardCounts: Record<number, number>;
 }
@@ -107,7 +109,7 @@ export interface DbRecord {
   /** 奖项。需要根据 summary 的 awards 确定名称 */
   award: number;
   /** 得分 */
-  score: number;
+  score?: number;
   /** 排名 */
   rank: number;
   /** 省份。根据 summary 的 provinces 确定名称 */

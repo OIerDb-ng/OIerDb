@@ -633,12 +633,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oierdb/core@workspace:packages/core":
+"@oierdb/core@workspace:*, @oierdb/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@oierdb/core@workspace:packages/core"
   dependencies:
     quick-lru: "npm:^7.2.0"
     typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
+
+"@oierdb/parser@workspace:*, @oierdb/parser@workspace:packages/parser":
+  version: 0.0.0-use.local
+  resolution: "@oierdb/parser@workspace:packages/parser"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    "@oierdb/core": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2464,6 +2474,8 @@ __metadata:
   resolution: "frontend-legacy@workspace:apps/frontend-legacy"
   dependencies:
     "@monaco-editor/react": "npm:^4.6.0"
+    "@oierdb/core": "workspace:*"
+    "@oierdb/parser": "workspace:*"
     "@tanstack/react-virtual": "npm:^3.13.0"
     "@types/node": "npm:^22.10.7"
     "@types/react": "npm:^18.0.28"

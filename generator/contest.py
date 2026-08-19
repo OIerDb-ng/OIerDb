@@ -18,6 +18,10 @@ class Contest:
         self.id = idx
         self.name = settings["name"]
         self.type = settings["type"]
+        if self.type not in util.contest_types:
+            raise util.UnknownReferenceError(
+                f"未知的比赛类型：\x1b[32m'{self.type}'\x1b[0m（比赛 \x1b[32m'{self.name}'\x1b[0m）"
+            )
         self.year = settings["year"]
         self.fall_semester = settings["fall_semester"]
         self.full_score = settings["full_score"]

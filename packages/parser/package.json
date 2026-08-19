@@ -1,20 +1,18 @@
 {
-  "name": "@oierdb/core",
-  "description": "OIerDb core types, interfaces and query engine",
+  "name": "@oierdb/parser",
   "version": "0.0.0",
   "author": "Baoshuo <i@baoshuo.ren>",
   "license": "AGPL-3.0",
   "main": "./index.ts",
   "types": "./index.ts",
   "exports": {
-    ".": "./index.ts",
-    "./constants": "./constants.ts"
+    ".": "./index.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
   },
-  "dependencies": {
-    "quick-lru": "^7.2.0"
+  "peerDependencies": {
+    "@oierdb/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
