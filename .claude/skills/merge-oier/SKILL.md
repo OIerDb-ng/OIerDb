@@ -136,7 +136,7 @@ For example, if merging entries for 王泽宇 across 江苏 and 上海, the defa
 If an issue number was provided in the pre-step, append the following line to the commit message body:
 
 ```
-Resolves #{issue_number}.
+Resolves {owner}/{repo}#{issue_number}.
 ```
 
 Then create the commit with the approved title and message.
