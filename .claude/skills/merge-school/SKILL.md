@@ -118,13 +118,13 @@ Use `Edit` with the full original secondary line as `old_string` and `,,` as `ne
 After all edits, use `AskUserQuestion` to ask whether to commit. Provide a default commit title following this format:
 
 ```
-fix: {正式名称} ({省份})
+data: fix {正式名称} ({省份})
 ```
 
 For example, merging entries for 长沙市雅礼中学 in 湖南:
 
 ```
-fix: 长沙市雅礼中学 (湖南)
+data: fix 长沙市雅礼中学 (湖南)
 ```
 
 If an issue number was provided in the pre-step, append the following line to the commit message body:

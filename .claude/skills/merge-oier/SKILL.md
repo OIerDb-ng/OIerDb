@@ -128,10 +128,10 @@ Remember:
 After completing all edits, use `AskUserQuestion` to ask the user whether to commit. Provide a default commit title following this format:
 
 ```
-fix: {姓名} ({省份列表，用半角逗号分隔})
+data: fix {姓名} ({省份列表，用半角逗号分隔})
 ```
 
-For example, if merging entries for 王泽宇 across 江苏 and 上海, the default title would be `fix: 王泽宇 (江苏,上海)`.
+For example, if merging entries for 王泽宇 across 江苏 and 上海, the default title would be `data: fix 王泽宇 (江苏,上海)`.
 
 If an issue number was provided in the pre-step, append the following line to the commit message body:
 
