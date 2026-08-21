@@ -2,35 +2,32 @@ import type { DbRecord, Gender } from '@oierdb/core';
 
 import type { ParsedOIer } from './types';
 
-export interface ResultParserOptions {
-  onOIer?: (oier: ParsedOIer) => void;
-}
-
 export class ResultParser {
-  private readonly options: ResultParserOptions;
   private decoder: InstanceType<typeof TextDecoder> | null = null;
-  private oiers: ParsedOIer[] = [];
+  private parsedCount = 0;
   private tail = '';
   private lastScore = NaN;
   private lastRank = 0;
 
-  constructor(options: ResultParserOptions = {}) {
-    this.options = options;
-  }
-
-  /** 已解析出的 OIer 数量 */
   get count(): number {
-    return this.oiers.length;
+    return this.parsedCount;
   }
 
-  push(chunk: string | Uint8Array): number {
+  push(chunk: string | Uint8Array): ParsedOIer[] {
     const text = typeof chunk === 'string' ? chunk : (this.decoder ??= new TextDecoder()).decode(chunk, { stream: true });
+    const input = this.tail + text;
+    const oiers: ParsedOIer[] = [];
+    let start = 0;
+    let end = input.indexOf('\n');
 
-    const lines = (this.tail + text).split('\n');
-    this.tail = lines.pop() ?? '';
+    while (end !== -1) {
+      oiers.push(this.parseLine(input.slice(start, end)));
+      start = end + 1;
+      end = input.indexOf('\n', start);
+    }
 
-    for (let i = 0; i < lines.length; i++) this.parseLine(lines[i]);
-    return lines.length;
+    this.tail = input.slice(start);
+    return oiers;
   }
 
   finish(): ParsedOIer[] {
@@ -40,21 +37,22 @@ export class ResultParser {
       if (rest) this.tail += rest;
     }
     if (this.tail !== '') {
-      this.parseLine(this.tail);
+      const oier = this.parseLine(this.tail);
       this.tail = '';
+      return [oier];
     }
-    return this.oiers;
+    return [];
   }
 
   reset(): void {
     this.decoder = null;
-    this.oiers = [];
+    this.parsedCount = 0;
     this.tail = '';
     this.lastScore = NaN;
     this.lastRank = 0;
   }
 
-  private parseLine(line: string): void {
+  private parseLine(line: string): ParsedOIer {
     const [uid_, initials, name, gender, enrollMiddle, dbScore_, ccfScore, ccfLevel, compressedRecords] = line.split(',');
 
     const uid = Number(uid_);
@@ -69,14 +67,14 @@ export class ResultParser {
       oierdbScore: dbScore,
       ccfScore: Number(ccfScore),
       ccfLevel: Number(ccfLevel),
-      rank: dbScore === this.lastScore ? this.lastRank : this.oiers.length,
+      rank: dbScore === this.lastScore ? this.lastRank : this.parsedCount,
       records: compressedRecords.split('/').map(record => this.parseRecord(record, uid)),
     };
 
     this.lastScore = dbScore;
     this.lastRank = oier.rank;
-    this.oiers.push(oier);
-    this.options.onOIer?.(oier);
+    this.parsedCount += 1;
+    return oier;
   }
 
   private parseRecord(record: string, uid: number): DbRecord {
@@ -100,8 +98,7 @@ export class ResultParser {
   }
 }
 
-export function parseResult(text: string, options?: ResultParserOptions): ParsedOIer[] {
-  const parser = new ResultParser(options);
-  parser.push(text);
-  return parser.finish();
+export function parseResult(text: string): ParsedOIer[] {
+  const parser = new ResultParser();
+  return parser.push(text).concat(parser.finish());
 }
