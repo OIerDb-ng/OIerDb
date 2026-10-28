@@ -19,6 +19,8 @@ simulate 选项:
                                   3) 不能时给出最小的标识符修改建议（含毕业状态、最近参赛）；
                                   4) 按建议（或按 --assign/--strip 的假设）模拟并校验是否与期望一致。
                                   同时给出 --expect 与 --strip/--assign 时，只校验该假设，不给建议。
+                                  应把该姓名的全部记录都列入期望：未列入的行若混进某个
+                                  期望组，会被标记为“混入了未列入期望的行 ✗”。
 
 说明:
     · 有效行号 = 跳过注释和空行后的行号，与网站链接里的 OIer uid 一致；物理行号是 grep -n 看到的行号。
@@ -327,21 +329,24 @@ class Expectation:
             for ln in s:
                 self.index[ln] = i
         self.records = records
+        # 未列入期望的行：它们混进某个期望组时同样说明分组不对，必须被检出
+        self.unlisted = sorted(lr.phys_line for lr in records if lr.phys_line not in self.index)
 
     def check(self, groups):
-        """返回每组的状态: ("ok",) / ("merged", [其他组号]) / ("split", 人数)。"""
+        """返回每组的状态: ("ok",) / ("merged", [其他组号], [未列入的行]) / ("split", 人数)。"""
 
         status = []
         for i, s in enumerate(self.sets):
             persons = [g for g in groups if {lr.phys_line for lr in g} & s]
             if len(persons) == 1:
-                touched = {
-                    self.index[lr.phys_line]
-                    for lr in persons[0]
-                    if lr.phys_line in self.index
-                }
+                members = {lr.phys_line for lr in persons[0]}
+                touched = {self.index[ln] for ln in members if ln in self.index}
                 others = sorted(touched - {i})
-                status.append(("ok",) if not others else ("merged", others))
+                extra = sorted(ln for ln in members if ln not in self.index)
+                if others or extra:
+                    status.append(("merged", others, extra))
+                else:
+                    status.append(("ok",))
             else:
                 status.append(("split", len(persons)))
         return status
@@ -357,8 +362,13 @@ class Expectation:
             if s[0] == "ok":
                 lines.append(f"    组 {i + 1}（行 {members}）：恰好自成一人 ✓")
             elif s[0] == "merged":
-                names = "、".join(f"组 {j + 1}" for j in s[1])
-                lines.append(f"    组 {i + 1}（行 {members}）：与 {names} 被并成一人 ✗")
+                parts = []
+                if s[1]:
+                    parts.append("与 " + "、".join(f"组 {j + 1}" for j in s[1]) + " 被并成一人")
+                if s[2]:
+                    extra = ",".join(str(ln) for ln in s[2])
+                    parts.append(f"混入了未列入期望的行（行 {extra}）")
+                lines.append(f"    组 {i + 1}（行 {members}）：" + "，".join(parts) + " ✗")
             else:
                 lines.append(f"    组 {i + 1}（行 {members}）：被拆成 {s[1]} 人 ✗")
         return "\n".join(lines)
@@ -546,6 +556,12 @@ def cmd_simulate(name, strip, assign, expect):
         return 0
 
     expectation = Expectation(parse_expect(expect, records), records)
+    if expectation.unlisted:
+        unlisted = ",".join(str(ln) for ln in expectation.unlisted)
+        print(
+            f"注意：有 {len(expectation.unlisted)} 行未列入 --expect（行 {unlisted}）。"
+            "它们混入期望分组时会被标记为 ✗；建议把该姓名的全部记录都列入期望。"
+        )
 
     current_groups = simulate_groups([lr.clone() for lr in records])
     print_groups("当前状态的模拟分组", current_groups)
@@ -556,6 +572,8 @@ def cmd_simulate(name, strip, assign, expect):
         hypo_groups = simulate_groups(hypothetical_records())
         mode = "去掉全部标识符后" if strip else "按 --assign 假设"
         print_groups(f"{mode}的模拟分组", hypo_groups)
+        print(f"\n—— 与期望分组的对比（{mode}）——")
+        print(expectation.describe(hypo_groups))
         ok = expectation.all_ok(hypo_groups)
         print("\n校验结果：" + ("与期望一致 ✓" if ok else "与期望不一致 ✗"))
         return 0 if ok else 1
