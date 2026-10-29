@@ -94,8 +94,10 @@ def _to_int(value, default=1):
 
 
 def _normalize_cell_text(raw):
-    text = raw.replace("\xa0", " ")  # &nbsp; 常被 Excel 用作空单元格占位
-    return "\n".join(line.strip() for line in text.split("\n")).strip()
+    text = raw.replace("\r", "").replace("\xa0", " ")  # &nbsp; 常被 Excel 用作空单元格占位
+    # <br> 只是 Excel 对长单元格（如学校名）的软折行，折行处直接拼接，
+    # 保证任何单元格都不含换行符，一条逻辑记录只占 CSV 的一行
+    return "".join(line.strip() for line in text.split("\n")).strip()
 
 
 def _trim_trailing_empty(rows):
@@ -136,9 +138,10 @@ def convert(input_path, output_path):
     parser.feed(html_text)
     rows = parser.to_rows()
 
-    # 使用 utf-8-sig（带 BOM），方便 Excel 直接打开且不出现中文乱码
+    # 使用 utf-8-sig（带 BOM），方便 Excel 直接打开且不出现中文乱码；
+    # 行尾固定为 \n，与仓库内数据文件一致
     with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-        csv.writer(f).writerows(rows)
+        csv.writer(f, lineterminator="\n").writerows(rows)
 
     return len(rows)
 
