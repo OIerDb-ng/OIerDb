@@ -6,9 +6,7 @@ export function normalizePositiveInteger(value: number | null | undefined, fallb
 
 export function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) {
-    const error = new Error('The operation was aborted');
-    error.name = 'AbortError';
-    throw error;
+    throw new DOMException('The operation was aborted', 'AbortError');
   }
 }
 
