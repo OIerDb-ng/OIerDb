@@ -51,8 +51,15 @@ jobs:
         id: data-cache
         uses: actions/cache@v6
         with:
-          path: generator/dist
-          key: data-dist-${{ runner.os }}-${{ hashFiles('generator/**', 'data/**') }}
+          path: generator/.data-cache
+          key: data-dist-${{ runner.os }}-${{ hashFiles('generator/*.py', 'generator/**/*.py', 'generator/requirements.txt', 'data/**') }}
+
+      - name: Restore generated data files
+        if: steps.data-cache.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p dist
+          cp .data-cache/static.json .data-cache/static.info.json \
+            .data-cache/result.txt .data-cache/result.info.json dist/
 
       - name: Use Python 3
         if: steps.data-cache.outputs.cache-hit != 'true'
@@ -67,6 +74,13 @@ jobs:
       - name: Build
         if: steps.data-cache.outputs.cache-hit != 'true'
         run: python main.py --lex-rank
+
+      - name: Save generated data files
+        if: steps.data-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .data-cache
+          cp dist/static.json dist/static.info.json \
+            dist/result.txt dist/result.info.json .data-cache/
 
       - name: Rename Files
         run: |
