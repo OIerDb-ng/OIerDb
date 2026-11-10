@@ -1,0 +1,90 @@
+{
+  "_project": "OIerDb LexRank",
+  "_author": "Yanhao Xiang",
+  "_license": "AGPL-3.0",
+  "_modified": "2026-11-10",
+  "_provenance": [
+    "本文件与 generator/ranking.py 实现的「分层优先排名」由 Yanhao Xiang 二次开发。",
+    "原项目 OIerDb（作者 Baoshuo）以 GNU Affero General Public License v3.0 发布；",
+    "本修改同样遵循 AGPL-3.0，完整源码即本仓库，保留原项目的版权与许可声明。"
+  ],
+  "_doc": [
+    "分层优先（lexicographic）排名的规则表。contest_tier 越大 = 赛事层级越高；award_rank 越大 = 奖项越高。",
+    "主键 = (该选手所有记录里的最高赛事层级, 在该层级上取得的最高奖项层级)，比较时严格字典序。",
+    "主键相同时用 secondary（其余成绩的有界加权分，∈[0,1)）比较；再相同按 uid（首次有效行号）稳定排序。",
+    "调整顺序只需改本文件，不需要改代码。"
+  ],
+  "contest_tier": {
+    "_doc": [
+      "9 IOI 国际学科奥赛",
+      "8 国内最高档：NOI 全国决赛 / CTSC 国家队选拔 / APIO 亚太国际赛",
+      "   三者参赛池高度重叠（CTSC、APIO 均以 NOI 成绩为资格），故同档，由奖项与其余成绩区分。",
+      "7 WC 全国冬令营",
+      "6 NOID类 NOI 夏令营（含 D 类）",
+      "5 NGOI 女生竞赛 / NOIST 春季测试 / WC-AI AI 赛道",
+      "3 NOIP（2020 年起）：不再分普及/提高组的单组别省级联赛，高于 CSP-S",
+      "2 省级提高级：NOIP(提高组, 2020 年前) 与 CSP-S 第二轮（同一层级）",
+      "1 省级入门级：NOIP(普及组) 与 CSP-J 第二轮"
+    ],
+    "IOI": 9,
+    "NOI": 8,
+    "CTSC": 8,
+    "APIO": 8,
+    "WC": 7,
+    "NOID类": 6,
+    "NGOI": 5,
+    "NOIST": 5,
+    "WC-AI": 5,
+    "NOIP": 2,
+    "NOIP提高": 2,
+    "CSP提高": 2,
+    "NOIP普及": 1,
+    "CSP入门": 1
+  },
+  "noip_unsplit_since": 2020,
+  "noip_unsplit_tier": 3,
+  "award_rank": {
+    "_doc": [
+      "只在同一赛事层级内部比较，因此要保证各赛种自己的奖牌顺序正确。",
+      "APIO 的「国际金牌/银牌/铜牌」与 NOI 的「金牌/银牌/铜牌」同档：同一档内由其余成绩区分。"
+    ],
+    "国际金牌": 5,
+    "金牌": 5,
+    "国际银牌": 4,
+    "银牌": 4,
+    "国际铜牌": 3,
+    "铜牌": 3,
+    "一等奖": 3,
+    "前5%": 3,
+    "二等奖": 2,
+    "前15%": 2,
+    "三等奖": 1,
+    "前25%": 1
+  },
+  "default_tier": 0,
+  "primary_order": ["tier", "award"],
+  "excluded_contest_names": [],
+  "excluded_contest_doc": [
+    "留空。派生赛事由 ranking.detect_derived_contests() 在生成时自动判定并填入：",
+    "把每条 NGOI 与同一人「上一学年」的 NOIP 原始分数比对，全部一致者整场不计入排名。",
+    "判定依据与实测见 generator/audit_ngoi.py 与 generator/audit_merge.py：",
+    "  NGOI2022↔NOIP2021 / NGOI2023↔NOIP2022：0% 一致 → 独立赛事，保留",
+    "  NGOI2024↔NOIP2023 / NGOI2025↔NOIP2024 / NGOI2026↔NOIP2025：100% 一致 → 排除",
+    "本列表也可以手工追加赛事名，作为自动判定的覆盖项。"
+  ],
+  "secondary": {
+    "_doc": [
+      "其余成绩分：每个 (赛种, 年份) 只取最好一条，避免同一场比赛重复计分。",
+      "base = rank_coefficient/100 ∈ [0,1]；乘 tier_floor + (1-tier_floor)*tier/9，使高等级赛事的其余成绩更重。",
+      "默认 decay_per_year = 0：主键已经决定了「哪个舞台」，同一舞台内部不再按年代加权，",
+      "否则会在桶内重新引入「越近越优先」。需要时可以调大（线性，且在 min_decay 处截断，不用复利）。",
+      "按分数降序施加 diminishing 权重（1, 0.5, 0.25, ...），使「堆次数」的边际收益迅速消失。",
+      "最后映射到 [0,1) 以保证主键永远优先于其余成绩。"
+    ],
+    "tier_floor": 0.4,
+    "decay_per_year": 0.0,
+    "min_decay": 0.5,
+    "diminishing": 0.5,
+    "ref_year": 2026
+  }
+}

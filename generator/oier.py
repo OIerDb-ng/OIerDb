@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+# 修改说明（AGPL-3.0 §5(a)）
+# 本文件在原项目 OIerDb（作者 Baoshuo，AGPL-3.0）基础上新增了 to_compress_format 的
+# 分数覆盖参数与 sort_by_key，用于支持分层优先排名，由 Yanhao Xiang 于 2026-11-10
+# 二次开发，修改后的代码同样以 GNU AGPL-3.0 发布（完整源码即本仓库）。
+
 import gc
 import re
 import util
@@ -76,22 +81,32 @@ class OIer:
         OIer.__all_oiers_list__.sort(key=lambda oier: (-oier.oierdb_score, oier.uid))
 
     @staticmethod
+    def sort_by_key(key):
+        """按给定键排序（升序即排名从高到低）。
+
+        key: 一个接受 OIer 并返回可比较对象的函数。
+        """
+
+        OIer.__all_oiers_list__.sort(key=key)
+
+    @staticmethod
     def __float2p_format__(x):
         return f"{x:.2f}".rstrip("0").rstrip(".").lstrip("0") or "0"
 
     def __get_compressed_records__(self):
         return "/".join(record.to_compress_format(self.enroll_middle) for record in self.records)
 
-    def to_compress_format(self):
-        "转化成压缩格式字符串。"
+    def to_compress_format(self, score_value=None):
+        "转化成压缩格式字符串。score_value 省略时使用旧的累加评分。"
 
+        score = self.oierdb_score if score_value is None else score_value
         return "{},{},{},{},{},{},{},{},{}".format(
             self.uid,
             self.initials,
             self.name,
             self.gender,
             self.enroll_middle,
-            OIer.__float2p_format__(self.oierdb_score),
+            OIer.__float2p_format__(score),
             OIer.__float2p_format__(float(self.ccf_score)),
             self.ccf_level,
             self.__get_compressed_records__(),

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+# 修改说明（AGPL-3.0 §5(a)）
+# 本文件在原项目 OIerDb（作者 Baoshuo，AGPL-3.0）基础上新增了「分层优先排名」入口
+# （--lex-rank / --rank=lex）及相应输出与预览报告，由 Yanhao Xiang 于 2026-11-10 二次开发，
+# 修改后的代码同样以 GNU AGPL-3.0 发布（完整源码即本仓库）。
+
 import hashlib
 import json
 import os
@@ -214,6 +219,185 @@ def __main__():
             oier.compute_ccf_level()
             oier.compute_oierdb_score()
 
+    def apply_lex_ranking():
+        """分层优先排名：先按最高赛事层级，再按该层级上的最高奖项，最后看其余成绩。
+
+        同时保留旧的累加排名（rank_old），供预览文件对比。
+        """
+
+        import ranking
+
+        ranking.load()
+
+        # 先判定派生赛事（NGOI(y) 与 NOIP(y-1) 成绩一致者不计入排名）
+        report = ranking.detect_derived_contests(OIer.get_all())
+        excluded = ranking._RULES.get("excluded_contest_names", [])
+        for name, total, sample, same, ratio in report:
+            mark = "排除" if name in excluded else "保留"
+            print(f"  {name}: {total} 条记录，{sample} 条可与上年 NOIP 比对，"
+                  f"{same} 条分数一致（{ratio * 100:.1f}%）→ {mark}", file=stderr)
+
+        # 旧排名（累加模型）
+        old_order = sorted(OIer.get_all(), key=lambda o: (-o.oierdb_score, o.uid))
+        for idx, oier in enumerate(old_order, 1):
+            oier.rank_old = idx
+
+        # 新排名（分层优先）
+        pairs = [(ranking.prepare(oier), oier) for oier in tqdm(OIer.get_all())]
+        pairs.sort(key=lambda pair: pair[0])
+        OIer.__all_oiers_list__[:] = [oier for _, oier in pairs]
+        for idx, oier in enumerate(OIer.get_all(), 1):
+            oier.rank_new = idx
+
+    def output_lex_result():
+        "输出新排名结果，并把旧排名另存一份用于对比。"
+
+        import ranking
+
+        ranking_on = any(a in ("--lex-rank", "--rank=lex") for a in argv)
+        with open("dist/result.txt", "w", newline="\n", encoding="utf-8") as f:
+            for oier in tqdm(OIer.get_all()):
+                score = oier.lex_rating if ranking_on else None
+                print(oier.to_compress_format(score), file=f, end="\n")
+        if not ranking_on:
+            return
+
+        # 旧排名的结果另存，便于 A/B 对比
+        old_order = sorted(OIer.get_all(), key=lambda o: o.rank_old)
+        with open("dist/result_old.txt", "w", newline="\n", encoding="utf-8") as f:
+            for oier in tqdm(old_order):
+                print(oier.to_compress_format(), file=f, end="\n")
+
+        with open("dist/rank_diff.tsv", "w", newline="\n", encoding="utf-8") as f:
+            print("new_rank\told_rank\tdelta\tuid\tname\ttier\taward\tbest\tsecondary\trating"
+                  "\told_score\trecords", file=f)
+            for oier in tqdm(OIer.get_all()):
+                print(f"{oier.rank_new}\t{oier.rank_old}\t{oier.rank_old - oier.rank_new}\t"
+                      f"{oier.uid}\t{oier.name}\t{oier.lex_tier}\t{oier.lex_award}\t"
+                      f"{ranking.describe(oier)}\t{oier.lex_secondary:.4f}\t{oier.lex_rating:.2f}\t"
+                      f"{float(oier.oierdb_score):.2f}\t{len(oier.records)}", file=f)
+
+        write_rank_preview()
+
+    def write_rank_preview():
+        "生成人类可读的排名对比报告 dist/rank_preview.md。"
+
+        import ranking
+        from collections import Counter, defaultdict
+
+        people = OIer.get_all()
+        total = len(people)
+
+        def has_medal(oier, types, levels=("金牌", "银牌", "铜牌", "国际金牌", "国际银牌", "国际铜牌")):
+            return any(r.contest.type in types and r.level in levels for r in oier.records)
+
+        def has_level(oier, types, level):
+            return any(r.contest.type in types and r.level == level for r in oier.records)
+
+        def best_award_text(oier):
+            return ranking.describe(oier)
+
+        buckets = Counter((o.lex_tier, o.lex_award) for o in people)
+        with open("dist/rank_preview.md", "w", newline="\n", encoding="utf-8") as f:
+            print("# 分层优先排名预览\n", file=f)
+            print("规则：`contest_tier`（赛事层级）→ `award_rank`（该层级上的最高奖项）"
+                  "→ `secondary`（其余成绩，有界）→ `uid`。规则表见 `data/ranking.json`。\n", file=f)
+            print(f"- 总人数：{total}", file=f)
+            print(f"- 主键分桶数（同一 (层级, 奖项) 的组）：{len(buckets)}", file=f)
+            print(f"- 最大一桶：{buckets.most_common(1)[0]}", file=f)
+
+            print("\n## 前 100 名\n", file=f)
+            print("| 新名次 | 旧名次 | 变动 | 姓名 | 最高成就 | 其余成绩 | 合成评分 | 记录数 |",
+                  file=f)
+            print("|---:|---:|---:|---|---|---:|---:|---:|", file=f)
+            for o in people[:100]:
+                d = o.rank_old - o.rank_new
+                print(f"| {o.rank_new} | {o.rank_old} | {d:+d} | {o.name} | {best_award_text(o)} "
+                      f"| {o.lex_secondary:.3f} | {o.lex_rating:.1f} | {len(o.records)} |", file=f)
+
+            print("\n## IOI 金牌得主的新旧名次\n", file=f)
+            ioi_gold = [o for o in people if has_medal(o, ("IOI",), ("金牌",))]
+            ioi_gold.sort(key=lambda o: o.rank_new)
+            print(f"共 {len(ioi_gold)} 人\n", file=f)
+            print("| 新名次 | 旧名次 | 变动 | 姓名 | 最高成就 | 记录数 |", file=f)
+            print("|---:|---:|---:|---|---|---:|", file=f)
+            for o in ioi_gold[:20]:
+                d = o.rank_old - o.rank_new
+                print(f"| {o.rank_new} | {o.rank_old} | {d:+d} | {o.name} | {best_award_text(o)} "
+                      f"| {len(o.records)} |", file=f)
+            if len(ioi_gold) > 20:
+                print(f"| … | | | 其余 {len(ioi_gold) - 20} 人 | | |", file=f)
+            if ioi_gold:
+                new_rk = [o.rank_new for o in ioi_gold]
+                old_rk = [o.rank_old for o in ioi_gold]
+                print(f"\n- 新名次：最好 #{min(new_rk)}，中位 #{sorted(new_rk)[len(new_rk)//2]}，"
+                      f"最差 #{max(new_rk)}", file=f)
+                print(f"- 旧名次：最好 #{min(old_rk)}，中位 #{sorted(old_rk)[len(old_rk)//2]}，"
+                      f"最差 #{max(old_rk)}", file=f)
+
+            print("\n## 变动最大的选手\n", file=f)
+            movers = sorted(people, key=lambda o: o.rank_old - o.rank_new)
+            print("上升最多的 15 人：\n", file=f)
+            print("| 变动 | 新名次 | 旧名次 | 姓名 | 最高成就 |", file=f)
+            print("|---:|---:|---:|---|---|", file=f)
+            for o in movers[::-1][:15]:
+                print(f"| {o.rank_old - o.rank_new:+d} | {o.rank_new} | {o.rank_old} | {o.name} "
+                      f"| {best_award_text(o)} |", file=f)
+            print("\n下降最多的 15 人：\n", file=f)
+            print("| 变动 | 新名次 | 旧名次 | 姓名 | 最高成就 |", file=f)
+            print("|---:|---:|---:|---|---|", file=f)
+            for o in movers[:15]:
+                print(f"| {o.rank_old - o.rank_new:+d} | {o.rank_new} | {o.rank_old} | {o.name} "
+                      f"| {best_award_text(o)} |", file=f)
+
+            print("\n## 效度检查（旧模型 vs 新模型）\n", file=f)
+            top1000_new = people[:1000]
+            old_top1000 = sorted(people, key=lambda o: o.rank_old)[:1000]
+
+            print("| 指标 | 旧模型 | 新模型 |", file=f)
+            print("|---|---:|---:|", file=f)
+            print(f"| 前 1000 名里有 IOI 金牌 | "
+                  f"{sum(1 for o in old_top1000 if has_level(o, ('IOI',), '金牌'))} | "
+                  f"{sum(1 for o in top1000_new if has_level(o, ('IOI',), '金牌'))} |", file=f)
+            print(f"| 前 1000 名里有 IOI 奖牌 | "
+                  f"{sum(1 for o in old_top1000 if has_medal(o, ('IOI',)))} | "
+                  f"{sum(1 for o in top1000_new if has_medal(o, ('IOI',)))} |", file=f)
+            print(f"| 前 1000 名里有 NOI 金牌 | "
+                  f"{sum(1 for o in old_top1000 if has_level(o, ('NOI',), '金牌'))} | "
+                  f"{sum(1 for o in top1000_new if has_level(o, ('NOI',), '金牌'))} |", file=f)
+            print(f"| 前 1000 名里有 NOIP/CSP-S 一等奖（无更高奖项） | "
+                  f"{sum(1 for o in old_top1000 if has_level(o, ('NOIP', 'NOIP提高', 'CSP提高'), '一等奖') and not has_medal(o, ('IOI', 'NOI', 'NOID类', 'WC', 'APIO', 'CTSC')))} | "
+                  f"{sum(1 for o in top1000_new if has_level(o, ('NOIP', 'NOIP提高', 'CSP提高'), '一等奖') and not has_medal(o, ('IOI', 'NOI', 'NOID类', 'WC', 'APIO', 'CTSC')))} |",
+                  file=f)
+            print(f"| IOI 金牌最差名次 | {max((o.rank_old for o in ioi_gold), default=0)} | "
+                  f"{max((o.rank_new for o in ioi_gold), default=0)} |", file=f)
+            print(f"| IOI 金牌中位名次 | "
+                  f"{sorted(o.rank_old for o in ioi_gold)[len(ioi_gold)//2] if ioi_gold else 0} | "
+                  f"{sorted(o.rank_new for o in ioi_gold)[len(ioi_gold)//2] if ioi_gold else 0} |",
+                  file=f)
+
+            churn = sum(1 for o in people if abs(o.rank_old - o.rank_new) >= 1000)
+            print(f"| 名次变动 ≥1000 的人数 | — | {churn} ({churn/total*100:.1f}%) |", file=f)
+
+            print("\n## 最高赛事层级的分布\n", file=f)
+            by_tier = Counter(o.lex_tier for o in people)
+            print("| 层级 | 人数 | 占比 |", file=f)
+            print("|---:|---:|---:|", file=f)
+            for t in sorted(by_tier, reverse=True):
+                print(f"| {t} | {by_tier[t]} | {by_tier[t]/total*100:.2f}% |", file=f)
+
+            print("\n## 派生赛事判定（NGOI）\n", file=f)
+            print("NGOI 是当年 NOIP 成绩在全体女选手中的排名。下表把每条 NGOI 与"
+                  "同一人上一年 NOIP 的原始分数比对；一致率 ≥95% 的整场排除。\n", file=f)
+            print("| 赛事 | 记录数 | 可比记录 | 分数一致 | 一致率 | 处理 |", file=f)
+            print("|---|---:|---:|---:|---:|---|", file=f)
+            excluded = ranking._RULES.get("excluded_contest_names", [])
+            for name, tot, sample, same, ratio in ranking.last_report:
+                mark = "**排除**" if name in excluded else "保留"
+                print(f"| {name} | {tot} | {sample} | {same} | {ratio*100:.1f}% | {mark} |",
+                      file=f)
+
+
     def validate_data():
         "验证数据完整性，检查是否存在重复的 UID、学校 ID、比赛 ID 及【比赛 ID、UID】组合。"
 
@@ -384,6 +568,13 @@ def __main__():
     report_status("分析选手中")
     analyze_individual_oier()
 
+    lex_ranking = any(a in ("--lex-rank", "--rank=lex") for a in argv)
+    if lex_ranking:
+        report_status("计算分层优先排名中")
+        apply_lex_ranking()
+    else:
+        OIer.sort_by_score()
+
     report_status("验证数据完整性中")
     validate_data()
 
@@ -396,7 +587,10 @@ def __main__():
         export_unknown_schools()
 
     report_status("输出到 dist/result.txt 中")
-    output_compressed()
+    if lex_ranking:
+        output_lex_result()
+    else:
+        output_compressed()
 
     report_status("计算 SHA512 摘要中")
     compute_sha512()
