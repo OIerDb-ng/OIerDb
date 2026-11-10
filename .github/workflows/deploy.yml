@@ -10,6 +10,7 @@ on:
       - package.json
       - yarn.lock
       - apps/frontend-legacy/**
+      - .github/workflows/deploy.yml
   pull_request:
     branches:
       - master
@@ -19,7 +20,13 @@ on:
       - package.json
       - yarn.lock
       - apps/frontend-legacy/**
+      - .github/workflows/deploy.yml
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,7 +56,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Build
-        run: python main.py
+        run: python main.py --lex-rank
 
       - name: Rename Files
         run: |
@@ -74,6 +81,7 @@ jobs:
 
   build-frontend:
     name: Build Frontend (legacy)
+    needs: build-data
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -99,10 +107,28 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
+      - name: Download Generated Data
+        uses: actions/download-artifact@v8
+        with:
+          name: data-dist
+          path: dist-data
+
+      - name: Prepare Local Data
+        run: |
+          mkdir -p apps/frontend-legacy/public/data
+          STATIC_SHA512=$(jq -r .sha512 dist-data/static.info.json)
+          RESULT_SHA512=$(jq -r .sha512 dist-data/result.info.json)
+          cp dist-data/static.info.json apps/frontend-legacy/public/data/static.info.json
+          cp "dist-data/static.${STATIC_SHA512:0:7}.json" apps/frontend-legacy/public/data/
+          cp dist-data/result.info.json apps/frontend-legacy/public/data/result.info.json
+          cp "dist-data/result.${RESULT_SHA512:0:7}.txt" apps/frontend-legacy/public/data/
+
       - name: Build Site
         run: yarn workspace frontend-legacy build
         env:
           VITE_BAOSHUO_CDNJS: true
+          VITE_LOCAL_DATA: /OIerDb-LexRank/data
+          BASE_PATH: /OIerDb-LexRank/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
@@ -110,6 +136,30 @@ jobs:
           name: frontend-legacy-dist
           path: apps/frontend-legacy/dist/
           retention-days: 1
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-frontend
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Site
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-legacy-dist
+          path: dist
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   sync-cdn:
     name: Sync to CDN

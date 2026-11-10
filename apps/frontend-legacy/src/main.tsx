@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Helmet } from 'react-helmet';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
 
 import {
@@ -108,12 +108,12 @@ const localBuild = Boolean(import.meta.env.VITE_LOCAL_DATA);
 const siteName = localBuild ? 'OIerDb LexRank' : 'OIerDb NG';
 const defaultTitle = localBuild ? 'OIerDb LexRank · 分层优先排名' : siteName;
 createRoot(rootElement).render(
-  <BrowserRouter>
+  <HashRouter>
     <Helmet defaultTitle={defaultTitle} titleTemplate={`%s · ${siteName}`} />
     <Header />
     <Container className={styles.container}>
       <App />
     </Container>
     <Footer />
-  </BrowserRouter>
+  </HashRouter>
 );

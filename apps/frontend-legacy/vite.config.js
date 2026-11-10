@@ -18,7 +18,9 @@ const buildHash =
 
 const data = {
   appVersion: buildHash,
+  basePath: process.env.BASE_PATH || '/',
 };
+const basePath = data.basePath;
 
 const cdnjsBaseUrl = process.env.VITE_BAOSHUO_CDNJS
   ? '//cdnjs.baoshuo.xyz/ajax/libs'
@@ -65,6 +67,7 @@ const externalStylesheetList = {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
+  base: basePath,
   esbuild: {
     keepNames: true,
   },

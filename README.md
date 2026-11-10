@@ -16,6 +16,13 @@
 - 排名机制说明：[`generator/RANKING.md`](./generator/RANKING.md)；规则表：`data/ranking.json`。
 - 本地一键预览：`start-local.cmd`（`--regen` 重新生成，`--refresh` 先同步上游数据）。
 
+### GitHub Pages 部署
+
+仓库的 `deploy` workflow 会在 `master` 推送时生成 LexRank 数据并发布静态站点。
+首次使用时，请在仓库 Settings → Pages → Build and deployment 中将 Source 设为
+**GitHub Actions**。项目站点地址通常为：
+`https://xiangyanhao.github.io/OIerDb-LexRank/`。
+
 本项目依原项目的 AGPL-3.0 发布，作者信息与修改署名见 `generator/RANKING.md`。
 
 ## 开源许可
