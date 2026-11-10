@@ -126,7 +126,6 @@ jobs:
       - name: Build Site
         run: yarn workspace frontend-legacy build
         env:
-          VITE_BAOSHUO_CDNJS: true
           VITE_LOCAL_DATA: /OIerDb-LexRank/data
           BASE_PATH: /OIerDb-LexRank/
 
