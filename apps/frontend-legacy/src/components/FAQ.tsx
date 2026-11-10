@@ -88,11 +88,11 @@ const FAQ: React.FC = () => {
           {' '}
           许可发布；修改后的完整源代码在{' '}
           <a
-            href="https://github.com/xiangyanhao/OIerDb"
+            href="https://github.com/xiangyanhao/OIerDb-LexRank"
             target="_blank"
             rel="noopener noreferrer"
           >
-            xiangyanhao/OIerDb
+            xiangyanhao/OIerDb-LexRank
           </a>
           。排名机制由 Yanhao Xiang 于 2026-11-10 二次开发。
         </p>

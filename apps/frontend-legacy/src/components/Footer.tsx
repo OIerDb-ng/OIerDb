@@ -8,7 +8,7 @@ import { EmojiRenderer } from './EmojiRenderer';
 import styles from './Footer.module.less';
 
 // 本项目（LexRank）与其上游
-const REPO_URL = 'https://github.com/xiangyanhao/OIerDb';
+const REPO_URL = 'https://github.com/xiangyanhao/OIerDb-LexRank';
 const UPSTREAM_URL = 'https://github.com/OIerDb-ng/OIerDb';
 
 /*
@@ -58,7 +58,7 @@ const Footer: React.FC = () => (
         </a>
       </div>
       <div className={styles.footerMeta}>
-        源代码：<a href={REPO_URL} target="_blank" rel="noreferrer noopener">xiangyanhao/OIerDb</a>
+        源代码：<a href={REPO_URL} target="_blank" rel="noreferrer noopener">xiangyanhao/OIerDb-LexRank</a>
         {' · 上游项目：'}
         <a href={UPSTREAM_URL} target="_blank" rel="noreferrer noopener">OIerDb-ng/OIerDb</a>
         {' · 许可：'}
