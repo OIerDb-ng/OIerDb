@@ -40,6 +40,7 @@ const headerButtons: {
 const Header: React.FC = () => {
   const wide = useScreenWidthWithin(768, Infinity);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const localPreview = Boolean(import.meta.env.VITE_LOCAL_DATA);
 
   useEffect(() => {
     if (sidebarOpen !== document.documentElement.classList.contains(styles.sidebarOpen))
@@ -53,10 +54,12 @@ const Header: React.FC = () => {
       <Menu fixed="top" borderless>
         <Container>
           <Menu.Item as={Link} to="/">
-            <img src="/logo.png" style={{ marginRight: '0.75em' }} />
-            <div style={{ fontSize: '20px' }}>
-              <b>OIerDb</b>
-            </div>
+            <span className={styles.brand}>
+              <span className={styles.brandMark}>
+                OIerDb<span className={styles.brandAccent}>LexRank</span>
+              </span>
+              {localPreview && <span className={styles.brandBadge}>本地预览</span>}
+            </span>
           </Menu.Item>
           {(wide
             && headerButtons.map(button => (
@@ -88,7 +91,12 @@ const Header: React.FC = () => {
               style={{ fontSize: '20px', textAlign: 'center' }}
               onClick={() => setSidebarOpen(false)}
             >
-              <b>OIerDb</b>
+            <span className={styles.brand}>
+              <span className={styles.brandMark}>
+                OIerDb<span className={styles.brandAccent}>LexRank</span>
+              </span>
+              {localPreview && <span className={styles.brandBadge}>本地预览</span>}
+            </span>
             </Menu.Item>
             {headerButtons.map(button => (
               <Menu.Item key={button.name} as={Link} to={button.to} onClick={() => setSidebarOpen(false)}>

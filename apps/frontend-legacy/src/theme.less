@@ -1,0 +1,88 @@
+/* 本部署的配色覆盖 —— 用于与上游官方站点（oier.baoshuo.dev）区分。
+   只调整颜色与品牌标识，不影响数据与功能。
+   署名：Yanhao Xiang 于 2026-11-10 二次开发，依原项目 AGPL-3.0 发布。 */
+
+:root {
+  --theme-hyperlink: #0f766e;
+  --theme-hyperlink-hover: #0b5f59;
+  --theme-toggle-lane-checked: #0f766e;
+  --theme-toggle-lane-checked-focus: #0b5f59;
+  --theme-selection-background: #ccfbf1;
+  --theme-border-active: #5eead4;
+  --theme-input-border-focus: #5eead4;
+  --theme-menu-item-active-background: #e6f4f1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme-hyperlink: #5eead4;
+    --theme-hyperlink-hover: #99f6e4;
+    --theme-selection-background: #115e59;
+    --theme-border-active: #2dd4bf;
+    --theme-input-border-focus: #2dd4bf;
+    --theme-menu-item-active-background: #26413e;
+  }
+}
+
+/* 顶部导航：深青底 + 浅色字，和官方站点的白底蓝字区分开 */
+body .ui.menu.fixed.top {
+  background: linear-gradient(180deg, #0d3f3b 0%, #0a3330 100%) !important;
+  border-bottom: 2px solid #14b8a6 !important;
+  box-shadow: 0 2px 12px rgba(4, 47, 44, 0.28) !important;
+}
+
+body .ui.menu.fixed.top .item,
+body .ui.menu.fixed.top .item .icon {
+  color: #e6fffb !important;
+}
+
+body .ui.menu.fixed.top .item:hover,
+body .ui.menu.fixed.top a.item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body .ui.menu.fixed.top .active.item {
+  background: rgba(20, 184, 166, 0.22) !important;
+}
+
+body .ui.menu.fixed.top .brandMark {
+  color: #e6fffb !important;
+}
+
+/* 浅色模式：页面底色偏青灰，卡片保持白色 */
+@media (prefers-color-scheme: light) {
+  body {
+    background: #f2f7f6 !important;
+  }
+
+  body .ui.segment:not(.vertical):not(.attached),
+  body .ui.attached.segment {
+    background: #ffffff !important;
+  }
+}
+
+/* 标题块（常见问题等） */
+body .ui.block.header {
+  background: #e4f2ef !important;
+  color: #0b3b38 !important;
+  border-color: #cfe7e2 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body .ui.block.header {
+    background: #22403c !important;
+    color: #d7f5ef !important;
+    border-color: #2f544f !important;
+  }
+}
+
+/* 表头底色 */
+body table:not(.basic) > thead > tr > th {
+  background-color: #eef6f4 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body table:not(.basic) > thead > tr > th {
+    background-color: #263b38 !important;
+  }
+}

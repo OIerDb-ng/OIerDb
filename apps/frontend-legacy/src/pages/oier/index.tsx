@@ -52,6 +52,15 @@ const OIerList: React.FC = () => {
         <div>信息学奥林匹克竞赛选手排名</div>
       </h2>
 
+      {import.meta.env.VITE_LOCAL_DATA && (
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
+          本地数据 · 分层优先排名：先比最高赛事层级，再比该层级上的最高奖项，最后看其余成绩。
+          「评分」列为该排序的合成分（层级 × 1000 + 奖项 × 100 + 其余成绩）。
+          <br />
+          排名机制由 Yanhao Xiang 二次开发，依原项目 AGPL-3.0 许可发布。
+        </p>
+      )}
+
       <Table celled unstackable>
         <Table.Header>
           <Table.Row>

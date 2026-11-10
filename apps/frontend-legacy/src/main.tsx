@@ -31,6 +31,7 @@ const About = lazy(() => import('@/pages/about'));
 
 // Styles
 import './main.less';
+import './theme.less';
 import styles from './main.module.less';
 
 // 是否支持 indexedDB
@@ -103,9 +104,12 @@ const App: React.FC = () => {
 };
 
 const rootElement = document.getElementById('app');
+const localBuild = Boolean(import.meta.env.VITE_LOCAL_DATA);
+const siteName = localBuild ? 'OIerDb LexRank' : 'OIerDb NG';
+const defaultTitle = localBuild ? 'OIerDb LexRank · 分层优先排名' : siteName;
 createRoot(rootElement).render(
   <BrowserRouter>
-    <Helmet defaultTitle="OIerDb NG" titleTemplate="%s - OIerDb NG" />
+    <Helmet defaultTitle={defaultTitle} titleTemplate={`%s · ${siteName}`} />
     <Header />
     <Container className={styles.container}>
       <App />

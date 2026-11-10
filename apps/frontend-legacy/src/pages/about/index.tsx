@@ -9,17 +9,35 @@ import styles from './index.module.less';
 
 const AboutHeader: React.FC = () => (
   <>
-    <img
-      width={128}
-      src="/logo.png"
-      title="OIerDb"
-      style={{ margin: '0 auto', display: 'block' }}
-    />
-    <h1 style={{ textAlign: 'center' }}>OIerDb</h1>
+    <h1 style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+      OIerDb <span style={{ color: '#0f766e' }}>LexRank</span>
+      {import.meta.env.VITE_LOCAL_DATA && (
+        <span
+          style={{
+            marginLeft: '.5rem',
+            padding: '3px 8px',
+            borderRadius: 999,
+            background: '#14b8a6',
+            color: '#052e2b',
+            fontSize: 13,
+            fontWeight: 600,
+            verticalAlign: 'middle',
+          }}
+        >
+          本地预览
+        </span>
+      )}
+    </h1>
     <p style={{ textAlign: 'center' }}>
       OIerDb 是中国信息学竞赛选手的一个数据库
       <br />
       <small>OIerDb is a database for Chinese OI participants</small>
+      {import.meta.env.VITE_LOCAL_DATA && (
+        <>
+          <br />
+          <small>LexRank 为二次开发版本，排名口径与官方站点不同</small>
+        </>
+      )}
     </p>
   </>
 );
@@ -151,6 +169,28 @@ const Config: React.FC = () => {
   );
 };
 
+const LocalNotice: React.FC = () => {
+  if (!import.meta.env.VITE_LOCAL_DATA) return null;
+  return (
+    <Segment>
+      <Header as="h3">本部署的修改说明</Header>
+      <p>
+        本页面使用本地生成的数据，展示的是「分层优先排名」：先比较选手参加过的最高赛事层级，
+        再比较该层级上取得的最高奖项，最后才看其余成绩。
+      </p>
+      <p>
+        该排名机制由 <b>Yanhao Xiang</b> 于 2026-11-10 在 OIerDb（作者 Baoshuo）基础上二次开发，
+        依原项目的{' '}
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">
+          GNU AGPL-3.0
+        </a>{' '}
+        许可发布；修改后的完整源代码即本项目仓库，网络部署时同样按 AGPL-3.0 提供对应源码。
+        原项目的名称与商标不用于背书本修改版。
+      </p>
+    </Segment>
+  );
+};
+
 const About: React.FC = () => (
   <>
     <Helmet>
@@ -158,6 +198,7 @@ const About: React.FC = () => (
     </Helmet>
 
     <AboutHeader />
+    <LocalNotice />
     <FAQ />
     <Stats />
     <Developers />

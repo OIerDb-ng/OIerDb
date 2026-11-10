@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OIerDb NG</title>
+    <title>OIerDb LexRank · 分层优先排名</title>
     <meta
       name="description"
-      content="OIerDb 是中国信息学竞赛选手的一个数据库。你能够在这个网站上查询选手们的获奖记录，目前可以通过姓名、姓名首字母缩写、省份、年级和学校来进行查询。"
+      content="OIerDb LexRank：OIerDb 的二次开发版本，使用「分层优先排名」——先比最高赛事层级，再比该层级上的最高奖项，最后看其余成绩。数据来自开源项目 OIerDb（AGPL-3.0）。"
     />
     <script>
       window.appVersion = '<%= appVersion %>';
@@ -16,8 +16,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#a8a8a8">
-    <meta name="msapplication-TileColor" content="#a8a8a8">
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="msapplication-TileColor" content="#0d3f3b">
+    <meta name="theme-color" content="#0d3f3b" />
     <meta rel="canonical" href="https://oier.baoshuo.dev" />
   </head>
 
@@ -30,11 +30,22 @@
       </style>
 
       <!-- header -->
-      <div class="ui borderless top fixed menu">
+      <div class="ui borderless top fixed menu" style="background: #0d3f3b">
         <div class="ui container">
-          <a class="item" href="/">
-            <img src="/logo.png" style="margin-right: 0.75em" />
-            <div style="font-size: 20px"><b>OIerDb</b></div>
+          <a class="item" href="/" style="color: #e6fffb">
+            <span style="font-size: 20px; font-weight: 700">OIerDb</span>
+            <span
+              style="
+                margin-left: 0.5em;
+                padding: 3px 7px;
+                border-radius: 999px;
+                background: #14b8a6;
+                color: #052e2b;
+                font-size: 11px;
+                font-weight: 600;
+              "
+              >本地预览</span
+            >
           </a>
         </div>
       </div>
@@ -66,6 +77,9 @@
               <i aria-hidden="true" class="github icon"></i>
               Source Code
             </a>
+          </div>
+          <div style="margin-top: 0.5rem; color: #14b8a6; font-size: 0.8em">
+            本地预览构建 · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
           </div>
           <div style="margin-top: 0.75rem">
             Made with 💖 by

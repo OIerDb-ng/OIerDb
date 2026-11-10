@@ -13,3 +13,7 @@ dist-ssr
 !.yarn/versions
 
 .zcode/
+
+# 本地预览
+apps/frontend-legacy/.env.local
+apps/frontend-legacy/public/data/

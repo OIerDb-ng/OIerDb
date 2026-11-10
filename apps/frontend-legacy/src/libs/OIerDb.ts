@@ -10,16 +10,27 @@ import type { ResultCacheVersion, ResultChunkCacheWriter } from './OIerDbCache';
 export { Contest, OIer, OIerDbDataBuilder, School } from './OIerDbDataBuilder';
 export type { OIerDbData, Record } from './OIerDbDataBuilder';
 
-const infoUrls = [
-  // 'http://localhost:30002',
-  'https://oier.api.baoshuo.dev',
-];
+// 本地预览：设置 VITE_LOCAL_DATA（例如 /data）后只从本地静态目录取数，
+// 数据由 generator/make_local_data.py 铺到 apps/frontend-legacy/public/data。
+//
+// 修改说明（AGPL-3.0 §5(a)）：本文件的本地取数开关由 Yanhao Xiang 于 2026-11-10
+// 二次开发，用于预览「分层优先排名」；修改后的代码同样以 GNU AGPL-3.0 发布。
+const localData = import.meta.env.VITE_LOCAL_DATA as string | undefined;
 
-const urls = [
-  // 'http://localhost:30002',
-  'https://cos-1.cdn.baoshuo.xyz/oier',
-  'https://oier.api.baoshuo.dev',
-];
+const infoUrls = localData
+  ? [localData]
+  : [
+      // 'http://localhost:30002',
+      'https://oier.api.baoshuo.dev',
+    ];
+
+const urls = localData
+  ? [localData]
+  : [
+      // 'http://localhost:30002',
+      'https://cos-1.cdn.baoshuo.xyz/oier',
+      'https://oier.api.baoshuo.dev',
+    ];
 
 let __DATA__: OIerDbData = null;
 

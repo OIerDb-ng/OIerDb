@@ -59,7 +59,7 @@ export const NotSupportIndexedDB: React.FC = () => {
           >
             Google Chrome 浏览器
           </a>{' '}
-          访问 OIerDb NG。
+          访问 {import.meta.env.VITE_LOCAL_DATA ? 'OIerDb LexRank' : 'OIerDb NG'}。
         </p>
       </div>
     </>
