@@ -2,6 +2,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
 
 # yarn
 .pnp.*
@@ -14,6 +17,16 @@ dist-ssr
 
 .zcode/
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
 # 本地预览
-apps/frontend-legacy/.env.local
 apps/frontend-legacy/public/data/
+
+# 同步脚本备份
+data/.backup/
