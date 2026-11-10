@@ -52,7 +52,7 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
       <h4>选手信息</h4>
       <p>现在{getGrade(oier)}。</p>
       <p>
-        OIerDb 排名：
+        LexRank 排名：
         <Link to={'/oier?page=' + Math.ceil((oier.rank + 1) / 30)}>
           {oier.rank + 1}
         </Link>

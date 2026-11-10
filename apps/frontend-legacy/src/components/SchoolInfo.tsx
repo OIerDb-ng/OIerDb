@@ -168,7 +168,7 @@ const SchoolInfo: React.FC<SchoolProps> = ({ school }) => {
         {school.city}。
       </p>
       <p>
-        OIerDb 排名：
+        LexRank 排名：
         <Link to={'/school?page=' + Math.ceil((school.rank + 1) / 30)}>
           {school.rank + 1}
         </Link>
