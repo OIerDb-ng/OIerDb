@@ -1,0 +1,391 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OIerDb LexRank · 分层优先排名</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#fff; --line:#e6e8ee; --ink:#1d2129; --muted:#6b7280;
+    --accent:#2f6feb; --gold:#b8860b; --green:#0f7b46; --red:#c0392b;
+    --tier9:#f4c542; --tier8:#7aa2f7; --tier7:#8fbc8f; --tier6:#b0a8e0; --tier5:#e0a8c0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+         border-bottom:1px solid var(--line);padding:12px 20px 10px}
+  h1{margin:0 0 6px;font-size:17px;font-weight:650;letter-spacing:.2px}
+  h1 small{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
+  .stats{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#eef2fb;border:1px solid #dbe4f6;border-radius:999px;padding:2px 10px;font-size:12px;color:#33415c}
+  .chip b{color:var(--accent)}
+  .chip.gold{background:#fdf6e3;border-color:#f0e0b8;color:#7a5c00}
+  .chip.gold b{color:#a06a00}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 20px;background:var(--panel);
+           border-bottom:1px solid var(--line);position:sticky;top:66px;z-index:25}
+  input[type=search]{flex:1 1 260px;min-width:200px;padding:8px 12px;border:1px solid var(--line);
+                     border-radius:8px;font-size:14px;outline:none;background:#fff}
+  input[type=search]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,235,.12)}
+  .tiers{display:flex;flex-wrap:wrap;gap:6px}
+  .tbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12.5px;color:#33415c}
+  .tbtn b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500;margin-left:4px}
+  .tbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tbtn.on b{color:rgba(255,255,255,.8)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:7px 12px;cursor:pointer;font-size:13px;color:#33415c}
+  .seg button.on{background:#eef2fb;color:var(--accent);font-weight:600}
+  main{padding:0 0 80px}
+  table{width:100%;border-collapse:collapse;background:var(--panel)}
+  thead th{position:sticky;top:118px;z-index:20;background:#fbfcfe;border-bottom:1px solid var(--line);
+           text-align:left;padding:9px 10px;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody td{padding:8px 10px;border-bottom:1px solid #f0f2f6;vertical-align:middle}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#f5f8ff}
+  .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .rank{font-weight:700;font-variant-numeric:tabular-nums}
+  .old{color:var(--muted);font-variant-numeric:tabular-nums}
+  .delta.up{color:var(--green)} .delta.down{color:var(--red)} .delta.flat{color:var(--muted)}
+  .name{font-weight:600;white-space:nowrap}
+  .ini{color:var(--muted);font-size:11.5px;margin-left:5px;text-transform:uppercase}
+  .best{white-space:nowrap}
+  .best .lv{color:var(--muted);font-size:12px;margin-left:6px}
+  .badge{display:inline-block;min-width:20px;text-align:center;border-radius:5px;padding:1px 6px;
+         font-size:11.5px;font-weight:700;color:#3a2c00}
+  .b9{background:#f8dfa0} .b8{background:#d8e3fb} .b7{background:#d9edd9} .b6{background:#e6e0f7}
+  .b5{background:#f7dfe9} .b2{background:#eceef2} .b1{background:#f3f4f6}
+  .bar{height:5px;background:#eef0f4;border-radius:3px;overflow:hidden;width:76px;display:inline-block;vertical-align:middle}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#8fb4ff,#2f6feb)}
+  .pager{display:flex;gap:8px;align-items:center;justify-content:center;padding:18px;flex-wrap:wrap}
+  .pager button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+  .pager button:disabled{opacity:.45;cursor:default}
+  .pager input{width:70px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;text-align:center}
+  aside{position:fixed;top:0;right:0;height:100vh;width:min(560px,94vw);background:#fff;border-left:1px solid var(--line);
+        box-shadow:-12px 0 32px rgba(20,30,60,.12);transform:translateX(102%);transition:transform .18s ease;
+        z-index:50;display:flex;flex-direction:column}
+  aside.on{transform:none}
+  .ah{padding:16px 18px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start}
+  .ah h2{margin:0;font-size:18px}
+  .ah .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .close{border:0;background:#f2f4f8;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:#556}
+  .abody{overflow:auto;padding:14px 18px 30px}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:6px 10px;margin-bottom:14px;font-size:13px}
+  .kv dt{color:var(--muted)} .kv dd{margin:0}
+  .reclist{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .rec{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 11px;border-bottom:1px solid #f2f4f8}
+  .rec:last-child{border-bottom:0}
+  .rec .c{font-weight:600}
+  .rec .m{color:var(--muted);font-size:12px;margin-top:2px}
+  .rec .r{text-align:right;white-space:nowrap}
+  .rec .award{font-size:12.5px;padding:1px 7px;border-radius:5px;background:#f1f4fa;color:#3a4a66}
+  .rec.ioi{background:#fffcf0}
+  .rec.noi{background:#f7faff}
+  details.rules{margin:10px 20px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  details.rules summary{cursor:pointer;font-weight:600;color:#33415c}
+  details.rules table{margin-top:8px;font-size:12.5px}
+  details.rules td{padding:4px 8px;border-bottom:1px solid #f2f4f8}
+  .muted{color:var(--muted)}
+  @media (max-width:820px){
+    thead th{top:150px}
+    .toolbar{top:auto;position:static}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OIerDb <span style="color:#0f766e">LexRank</span> <small>本地预览 · 数据来自本仓库 generator 的生成结果 · 排名机制由 Yanhao Xiang 二次开发（AGPL-3.0）</small></h1>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="toolbar">
+  <input id="q" type="search" placeholder="搜索姓名 / 拼音首字母 / 最高成就（例：程思元、csy、IOI2023）" autocomplete="off">
+  <div class="seg" id="mode">
+    <button data-m="new" class="on">按新模型排序</button>
+    <button data-m="old">按旧模型排序</button>
+  </div>
+  <div class="tiers" id="tiers"></div>
+</div>
+
+<details class="rules" open>
+  <summary>排序规则（点击展开）</summary>
+  <div class="muted" style="margin:6px 0 8px">
+    主键 = (最高赛事层级, 该层级上的最高奖项, 其余成绩, uid)，严格字典序。
+    其余成绩 = 每个(赛种,年份)取最好一条，按场内百分位 × 层级权重，再按 1, 1/2, 1/4… 递减，映射到 [0,1)。
+    规则表：data/ranking.json；说明：generator/RANKING.md。
+    <div id="ngoi"></div>
+  </div>
+  <table>
+    <tr><td>9</td><td>IOI</td><td>8</td><td>NOI 全国决赛 / CTSC 国家队选拔 / APIO 亚太赛</td></tr>
+    <tr><td>7</td><td>WC 全国冬令营</td><td>6</td><td>NOID类 NOI 夏令营</td></tr>
+    <tr><td>5</td><td>NGOI 女生赛 / NOIST 春季测试 / WC-AI</td><td>3</td><td>NOIP（2020 年起不分普及/提高）</td></tr>
+    <tr><td>2</td><td>NOIP 提高组（2020 年前）/ CSP-S</td><td>1</td><td>NOIP 普及组 / CSP-J</td></tr>
+  </table>
+</details>
+
+<main>
+  <table>
+    <thead>
+      <tr>
+        <th class="num" style="width:64px">新名次</th>
+        <th class="num" style="width:74px">旧名次</th>
+        <th class="num" style="width:74px">变动</th>
+        <th style="width:150px">姓名</th>
+        <th>最高成就</th>
+        <th class="num" style="width:96px">其余成绩</th>
+        <th class="num" style="width:80px">评分</th>
+        <th class="num" style="width:60px">记录</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="pager" id="pager"></div>
+  <p style="text-align:center;color:#9aa3b2;font-size:12px;padding:0 20px 10px">
+    OIerDb LexRank · 基于 OIerDb（© Baoshuo，GNU AGPL-3.0）二次开发；
+    排名机制由 Yanhao Xiang 开发，同样以 AGPL-3.0 发布（完整源码见本仓库）。
+  </p>
+</main>
+
+<aside id="detail">
+  <div class="ah">
+    <div>
+      <h2 id="d-name">—</h2>
+      <div class="sub" id="d-sub"></div>
+    </div>
+    <button class="close" id="d-close" title="关闭">✕</button>
+  </div>
+  <div class="abody" id="d-body"></div>
+</aside>
+
+<script src="preview_data.js"></script>
+<script>
+const DATA = window.__PREVIEW__;
+const META = DATA.meta;
+const STATS = DATA.stats;
+const RAW = DATA.rows;
+
+// 行格式：uid|ini|name|g|em|rating|ccf|ccfLvl|oldScore|oldRank|tier|award|sec|best|recs|sids
+const FIELDS = {uid:0, ini:1, name:2, g:3, em:4, rating:5, ccf:6, ccfLevel:7,
+                oldScore:8, oldRank:9, tier:10, award:11, sec:12, best:13, recs:14, sids:15};
+
+// 搜索索引：姓名 + 首字母 + 最高成就
+const IDX = new Array(RAW.length);
+for (let i = 0; i < RAW.length; i++) {
+  const p = RAW[i].split('|', 14);
+  IDX[i] = (p[2] + '\u0001' + p[1] + '\u0001' + p[13]).toLowerCase();
+}
+
+// 旧模型顺序
+const OLD_ORDER = RAW.map((_, i) => i).sort((a, b) => {
+  const ra = +RAW[a].split('|', 10)[9], rb = +RAW[b].split('|', 10)[9];
+  return ra - rb;
+});
+
+let state = { mode: 'new', q: '', tiers: new Set(), page: 1, per: 100, view: null };
+
+const $ = (id) => document.getElementById(id);
+const fmt = (x, d = 0) => Number(x).toLocaleString('zh-CN', {minimumFractionDigits: d, maximumFractionDigits: d});
+
+function tierName(t) { return META.tierNames[String(t)] || ('层级 ' + t); }
+function tierClass(t) { return 'b' + t; }
+
+function buildStats() {
+  const s = STATS;
+  const el = $('stats');
+  el.innerHTML = [
+    `<span class="chip">总人数 <b>${fmt(s.total)}</b></span>`,
+    `<span class="chip gold">IOI 金牌进前 1000：旧 <b>${s.top1000WithIoiGoldOld}</b> → 新 <b>${s.top1000WithIoiGold}</b></span>`,
+    `<span class="chip">有全国以上奖牌进前 1000：旧 <b>${s.medalTop1000Old}</b> → 新 <b>${s.medalTop1000New}</b></span>`,
+    `<span class="chip">IOI 层级 <b>${fmt(s.tierCount['9'] || 0)}</b> 人</span>`,
+    `<span class="chip">国家级（NOI/CTSC/APIO）<b>${fmt(s.tierCount['8'] || 0)}</b> 人</span>`,
+  ].join('');
+}
+
+function buildNgoi() {
+  const el = $('ngoi');
+  if (!META.ngoi || !META.ngoi.length) { el.innerHTML = ''; return; }
+  const rows = META.ngoi.map(([n, tot, cmp, same, ratio]) => {
+    const ex = META.excluded.indexOf(n) >= 0;
+    return `<tr><td>${esc(n)}</td><td class="num">${tot}</td><td class="num">${cmp}</td>
+                <td class="num">${same}</td><td class="num">${(ratio * 100).toFixed(1)}%</td>
+                <td>${ex ? '<b>排除</b>' : '保留'}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<div class="muted" style="margin:8px 0 4px">
+      NGOI 是当年 NOIP 成绩在全体女选手中的排名，不是额外竞赛。下表把每条 NGOI 与
+      <b>同一人上一学年 NOIP</b> 的原始分数逐条比对；分数完全一致的整场不计入排名。</div>
+    <table><thead><tr><th>赛事</th><th>记录</th><th>可比</th><th>分数一致</th><th>一致率</th><th>处理</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function buildTierButtons() {
+  const el = $('tiers');
+  const order = ['9', '8', '7', '6', '5', '3', '2', '1'];
+  const parts = [`<button class="tbtn on" data-t="all">全部</button>`];
+  for (const t of order) {
+    const n = STATS.tierCount[t];
+    if (!n) continue;
+    const label = t === '9' ? 'IOI' : t === '8' ? '国家级' : t === '7' ? 'WC'
+                : t === '6' ? '夏令营' : t === '5' ? '专项' : t === '3' ? 'NOIP'
+                : t === '2' ? '省提高' : '省入门';
+    parts.push(`<button class="tbtn" data-t="${t}">${label}<b>${fmt(n)}</b></button>`);
+  }
+  el.innerHTML = parts.join('');
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('.tbtn');
+    if (!b) return;
+    const t = b.dataset.t;
+    if (t === 'all') { state.tiers.clear(); }
+    else if (state.tiers.has(t)) { state.tiers.delete(t); }
+    else { state.tiers.add(t); }
+    for (const x of el.querySelectorAll('.tbtn'))
+      x.classList.toggle('on', x.dataset.t === 'all' ? state.tiers.size === 0 : state.tiers.has(x.dataset.t));
+    state.page = 1; state.view = null; render();
+  });
+}
+
+function computeView() {
+  if (state.view) return state.view;
+  const q = state.q.trim().toLowerCase();
+  const order = state.mode === 'old' ? OLD_ORDER : null;
+  const n = RAW.length;
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const i = order ? order[k] : k;
+    if (state.tiers.size) {
+      const t = RAW[i].split('|', 12)[10];
+      if (!state.tiers.has(t)) continue;
+    }
+    if (q && IDX[i].indexOf(q) < 0) continue;
+    out.push(i);
+  }
+  state.view = out;
+  return out;
+}
+
+function rowHtml(i) {
+  const p = RAW[i].split('|');
+  const uid = p[0], ini = p[1], name = p[2], rating = p[5],
+        oldScore = p[8], oldRank = +p[9], tier = +p[10], award = +p[11],
+        sec = +p[12], best = p[13], recs = p[14];
+  const nr = i + 1;                    // RAW 恒为新模型顺序，新名次 = 行号
+  const delta = oldRank - nr;
+  const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  const dtxt = delta > 0 ? '+' + fmt(delta) : fmt(delta);
+  const nrec = recs ? recs.split('/').length : 0;
+  const [cname, lv] = splitBest(best);
+  return `<tr data-i="${i}">
+    <td class="num rank">${fmt(nr)}</td>
+    <td class="num old">${fmt(oldRank)}</td>
+    <td class="num delta ${cls}">${dtxt}</td>
+    <td class="name">${esc(name)}<span class="ini">${esc(ini)}</span></td>
+    <td class="best"><span class="badge ${tierClass(tier)}">${tier}</span>
+        ${esc(cname)}<span class="lv">${esc(lv)}</span></td>
+    <td class="num">${sec.toFixed(3)}</td>
+    <td class="num">${Number(rating).toFixed(1)}</td>
+    <td class="num">${nrec}</td>
+  </tr>`;
+}
+
+function splitBest(best) {
+  const m = best.match(/^(\S+)\s+(\S+)$/);
+  return m ? [m[1], m[2]] : [best, ''];
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+}
+
+let renderTimer = null;
+function render() {
+  const view = computeView();
+  const total = view.length;
+  const pages = Math.max(1, Math.ceil(total / state.per));
+  if (state.page > pages) state.page = pages;
+  const start = (state.page - 1) * state.per;
+  const slice = view.slice(start, start + state.per);
+  $('tbody').innerHTML = slice.map(rowHtml).join('');
+  $('pager').innerHTML = `
+    <button id="p-first" ${state.page === 1 ? 'disabled' : ''}>« 首页</button>
+    <button id="p-prev" ${state.page === 1 ? 'disabled' : ''}>‹ 上一页</button>
+    <span class="muted">第 <input id="p-jump" value="${state.page}"> / ${fmt(pages)} 页 · 共 ${fmt(total)} 人</span>
+    <button id="p-next" ${state.page === pages ? 'disabled' : ''}>下一页 ›</button>
+    <button id="p-last" ${state.page === pages ? 'disabled' : ''}>末页 »</button>`;
+  $('p-first').onclick = () => { state.page = 1; render(); };
+  $('p-prev').onclick = () => { state.page--; render(); };
+  $('p-next').onclick = () => { state.page++; render(); };
+  $('p-last').onclick = () => { state.page = pages; render(); };
+  $('p-jump').onchange = (e) => {
+    const v = Math.max(1, Math.min(pages, parseInt(e.target.value) || 1));
+    state.page = v; render();
+  };
+}
+
+function openDetail(i) {
+  const p = RAW[i].split('|');
+  const uid = p[0], ini = p[1], name = p[2], g = +p[3], em = p[4], rating = p[5],
+        ccf = p[6], ccfLevel = +p[7], oldScore = p[8], oldRank = +p[9],
+        tier = +p[10], award = +p[11], sec = +p[12], best = p[13], recs = p[14];
+  $('d-name').textContent = name;
+  $('d-sub').textContent = `${ini.toUpperCase()} · uid ${uid} · ${tierName(tier)} · 新名次 #${i + 1} / 旧名次 #${fmt(oldRank)}`;
+  const recRows = (recs ? recs.split('/') : []).map(s => {
+    const f = s.split(':');
+    const cid = +f[0], sid = +f[1], score = f[2], rank = f[3], prov = +f[4];
+    const lvl = (f[5] || '').split(';')[0];
+    const c = META.contests[cid] || ['?', 0, 0, 0];
+    const lvName = META.levels[+lvl] || '?';
+    const sch = (META.schools[sid] || ['?'])[0];
+    const cls = c[1] === META.types.indexOf('IOI') ? 'ioi'
+              : (c[1] === META.types.indexOf('NOI') ? 'noi' : '');
+    return `<div class="rec ${cls}">
+      <div><div class="c">${esc(c[0])}</div>
+           <div class="m">${esc(META.types[c[1]] || '')} · ${esc(sch)} · ${esc(META.provinces[prov] || '')}</div></div>
+      <div class="r"><span class="award">${esc(lvName)}</span>
+           <div class="m">第 ${fmt(rank)} 名${score ? ' · ' + esc(score) + ' 分' : ''}</div></div>
+    </div>`;
+  }).join('');
+  $('d-body').innerHTML = `
+    <dl class="kv">
+      <dt>最高成就</dt><dd><b>${esc(best)}</b></dd>
+      <dt>赛事层级</dt><dd>${tierName(tier)}（${tier}）· 奖项档 ${award}</dd>
+      <dt>其余成绩</dt><dd>${sec.toFixed(4)}</dd>
+      <dt>新模型评分</dt><dd>${Number(rating).toFixed(2)}</dd>
+      <dt>旧模型分数</dt><dd>${Number(oldScore).toFixed(2)}（旧名次 #${fmt(oldRank)}）</dd>
+      <dt>CCF</dt><dd>${ccf} 分 · ${ccfLevel} 级</dd>
+      <dt>入学年份</dt><dd>${esc(em)}</dd>
+      <dt>性别</dt><dd>${g === 1 ? '男' : g === -1 ? '女' : '未知'}</dd>
+    </dl>
+    <div class="muted" style="margin:4px 0 8px">全部记录（${recs ? recs.split('/').length : 0} 条）</div>
+    <div class="reclist">${recRows || '<div class="rec muted">无记录</div>'}</div>`;
+  $('detail').classList.add('on');
+}
+
+$('tbody').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr');
+  if (tr) openDetail(+tr.dataset.i);
+});
+$('d-close').onclick = () => $('detail').classList.remove('on');
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('detail').classList.remove('on'); });
+
+$('q').addEventListener('input', (e) => {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(() => {
+    state.q = e.target.value; state.page = 1; state.view = null; render();
+  }, 120);
+});
+
+$('mode').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  state.mode = b.dataset.m;
+  for (const x of $('mode').querySelectorAll('button')) x.classList.toggle('on', x === b);
+  state.page = 1; state.view = null; render();
+});
+
+
+buildStats();
+buildNgoi();
+buildTierButtons();
+render();
+</script>
+</body>
+</html>

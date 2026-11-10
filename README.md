@@ -1,10 +1,22 @@
-<p align="center"><img src="apps/frontend-legacy/public/logo.png"></p>
+<h1 align="center">OIerDb <span style="color:#0f766e">LexRank</span></h1>
 
-<h1 align="center">OIerDb</h1>
+> OIerDb 的分层优先排名（LexRank）二次开发版本。
 
-> 下一代的 OIerDb。
+原项目 OIerDb 可以通过 [oier.baoshuo.dev](https://oier.baoshuo.dev) 在线使用。
 
-OIerDb 可以通过 [oier.baoshuo.dev](https://oier.baoshuo.dev) 在线使用。
+## 本仓库：OIerDb LexRank
+
+本仓库在 OIerDb 的基础上，把「累加评分」改成**分层优先排名**：先比最高赛事层级，
+再比该层级上的最高奖项，两者都相同才比较其余成绩。
+
+- **数据与合并流程完全沿用上游**：`data/raw.txt`、`data/school.txt`、选手/学校合并逻辑
+  均未改动。重新抓取数据有两个入口：
+  - `python scripts/sync-upstream-data.py`：把 `data/` 对齐到上游最新版本（带回滚备份）；
+  - `.agents/skills/add-contest`：按官方公示手动追加一场新比赛。
+- 排名机制说明：[`generator/RANKING.md`](./generator/RANKING.md)；规则表：`data/ranking.json`。
+- 本地一键预览：`start-local.cmd`（`--regen` 重新生成，`--refresh` 先同步上游数据）。
+
+本项目依原项目的 AGPL-3.0 发布，作者信息与修改署名见 `generator/RANKING.md`。
 
 ## 开源许可
 
