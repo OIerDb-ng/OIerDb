@@ -21,6 +21,7 @@ NOI 金牌只在其余成绩里体现 —— 这是「先看最高舞台」的�
 """
 
 import json
+from collections import defaultdict
 from sys import stderr
 
 import util
@@ -238,6 +239,40 @@ def prepare(oier):
 
 def rank_key_of(t, a, s, uid):
     return (*(-x for x in _ordered(t, a)), -s, uid)
+
+
+def school_scores(oiers):
+    """按学校内去重学生的 LexRank 聚合学校评分。
+
+    学生按个人 LexRank 从高到低排列，最高学生的评分作为主值，其余学生
+    按 1/2、1/4、... 衰减后作为补充。一个学生在学校的多条比赛记录只计一次。
+    """
+
+    students_by_school = defaultdict(set)
+    for oier in oiers:
+        for school in {
+            record.school for record in oier.records if not is_excluded(record)
+        }:
+            students_by_school[school].add(oier)
+
+    scores = {}
+    for school, students in students_by_school.items():
+        ordered = sorted(
+            students,
+            key=lambda oier: (
+                -oier.lex_tier,
+                -oier.lex_award,
+                -oier.lex_secondary,
+                oier.uid,
+            ),
+        )
+        score = float(ordered[0].lex_rating)
+        factor = 0.5
+        for oier in ordered[1:]:
+            score += float(oier.lex_rating) / 10000.0 * factor
+            factor *= 0.5
+        scores[school] = score
+    return scores
 
 
 def rating(t, a, s):

@@ -249,6 +249,12 @@ def __main__():
         for idx, oier in enumerate(OIer.get_all(), 1):
             oier.rank_new = idx
 
+        # 学校榜也使用 LexRank：每个学生在同一学校只贡献一次，
+        # 学生之间按个人排名排序并用递减权重聚合。
+        school_scores = ranking.school_scores(OIer.get_all())
+        for school in School.get_all():
+            school.score = school_scores.get(school, 0.0)
+
     def output_lex_result():
         "输出新排名结果，并把旧排名另存一份用于对比。"
 
