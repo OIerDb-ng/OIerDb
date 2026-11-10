@@ -11,7 +11,7 @@ const AboutHeader: React.FC = () => (
   <>
     <h1 style={{ textAlign: 'center', marginTop: '0.5rem' }}>
       OIerDb <span style={{ color: '#0f766e' }}>LexRank</span>
-      {import.meta.env.VITE_LOCAL_DATA && (
+      {import.meta.env.VITE_LOCAL_PREVIEW === 'true' && (
         <span
           style={{
             marginLeft: '.5rem',

@@ -46,6 +46,7 @@ def main():
     with open(env_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("# 由 generator/make_local_data.py 生成：指向本地数据而非线上 API\n")
         f.write("VITE_LOCAL_DATA=/data\n")
+        f.write("VITE_LOCAL_PREVIEW=true\n")
     print(f"  已写入 {os.path.abspath(env_path)}")
     print("\n本地数据就绪。")
 

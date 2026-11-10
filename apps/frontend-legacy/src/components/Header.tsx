@@ -40,7 +40,7 @@ const headerButtons: {
 const Header: React.FC = () => {
   const wide = useScreenWidthWithin(768, Infinity);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const localPreview = Boolean(import.meta.env.VITE_LOCAL_DATA);
+  const localPreview = import.meta.env.VITE_LOCAL_PREVIEW === 'true';
 
   useEffect(() => {
     if (sidebarOpen !== document.documentElement.classList.contains(styles.sidebarOpen))

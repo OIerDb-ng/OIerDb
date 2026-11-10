@@ -19,6 +19,7 @@ const buildHash =
 const data = {
   appVersion: buildHash,
   basePath: process.env.BASE_PATH || '/',
+  localPreview: process.env.VITE_LOCAL_PREVIEW === 'true',
 };
 const basePath = data.basePath;
 

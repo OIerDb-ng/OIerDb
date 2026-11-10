@@ -34,7 +34,7 @@
         <div class="ui container">
           <a class="item" href="<%= basePath %>" style="color: #e6fffb">
             <span style="font-size: 20px; font-weight: 700">OIerDb</span>
-            <span
+            <% if (localPreview) { %><span
               style="
                 margin-left: 0.5em;
                 padding: 3px 7px;
@@ -45,7 +45,7 @@
                 font-weight: 600;
               "
               >本地预览</span
-            >
+            ><% } %>
           </a>
         </div>
       </div>
@@ -79,7 +79,7 @@
             </a>
           </div>
           <div style="margin-top: 0.5rem; color: #14b8a6; font-size: 0.8em">
-            OIerDb LexRank · 本地预览构建 · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
+            OIerDb LexRank · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
           </div>
           <div style="margin-top: 0.75rem">
             Made with 💖 by
