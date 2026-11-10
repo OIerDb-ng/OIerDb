@@ -7,6 +7,10 @@ import { EmojiRenderer } from './EmojiRenderer';
 // Styles
 import styles from './Footer.module.less';
 
+// 本项目（LexRank）与其上游
+const REPO_URL = 'https://github.com/xiangyanhao/OIerDb';
+const UPSTREAM_URL = 'https://github.com/OIerDb-ng/OIerDb';
+
 /*
   本项目基于 AGPL 3.0 许可协议开源。
   在您自行部署本项目时，请保留此处的作者信息。
@@ -16,12 +20,7 @@ const Footer: React.FC = () => (
     <Container textAlign="center">
       <div className={styles.footerIcons}>
         <code>{window.appVersion.substring(0, 7)}</code>
-        <a
-          href="https://github.com/renbaoshuo/OIerDb"
-          title="GitHub"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
+        <a href={REPO_URL} title="本仓库源代码" target="_blank" rel="noreferrer noopener">
           <Icon name="github" style={{ margin: '0 .25rem 0' }} />
           Source Code
         </a>
@@ -56,6 +55,19 @@ const Footer: React.FC = () => (
         and{' '}
         <a href="https://github.com/yhx-12243" target="_blank" rel="noreferrer">
           yhx-12243
+        </a>
+      </div>
+      <div className={styles.footerMeta}>
+        源代码：<a href={REPO_URL} target="_blank" rel="noreferrer noopener">xiangyanhao/OIerDb</a>
+        {' · 上游项目：'}
+        <a href={UPSTREAM_URL} target="_blank" rel="noreferrer noopener">OIerDb-ng/OIerDb</a>
+        {' · 许可：'}
+        <a
+          href="https://www.gnu.org/licenses/agpl-3.0.html"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          AGPL-3.0
         </a>
       </div>
     </Container>
