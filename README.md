@@ -23,6 +23,10 @@
 **GitHub Actions**。项目站点地址通常为：
 `https://xiangyanhao.github.io/OIerDb-LexRank/`。
 
+如需不经过本地环境、只从上游同步选手和比赛数据，请在 Actions 中手动运行
+`Sync upstream data` workflow。它只更新 `data/` 中的上游数据文件，发现变化后会
+自动提交并重新触发 Pages 部署，不会修改 `data/ranking.json` 或 LexRank 代码。
+
 本项目依原项目的 AGPL-3.0 发布，作者信息与修改署名见 `generator/RANKING.md`。
 
 ## 开源许可

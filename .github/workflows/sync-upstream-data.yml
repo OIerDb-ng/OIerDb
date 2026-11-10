@@ -1,0 +1,55 @@
+name: Sync upstream data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: sync-upstream-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync data and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Use Python 3
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Sync upstream data
+        run: python scripts/sync-upstream-data.py
+
+      - name: Commit data changes
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw.txt data/school.txt data/contests.json data/grades.json \
+            data/scoring.json data/surnames.json data/name_exceptions.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream data is already up to date."
+            exit 0
+          fi
+          git commit -m "chore: sync upstream data" \
+            -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push origin HEAD:master
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Pages deployment
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref master
