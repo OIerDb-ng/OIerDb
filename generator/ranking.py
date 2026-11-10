@@ -29,6 +29,8 @@ import util
 _RULES = None
 _REF_YEAR = 2026
 _MAX_TIER = 9
+_DERIVED_EXCLUDED_RECORD_IDS = set()
+_DERIVED_MISSING_RECORD_IDS = set()
 
 
 def load(path="../data/ranking.json"):
@@ -91,7 +93,11 @@ def award(level):
 def is_excluded(record):
     """该记录是否不计入排名函数（如派生的 NGOI）。"""
 
-    return record.contest.name in _RULES.get("excluded_contest_names", ())
+    return (
+        record.id in _DERIVED_EXCLUDED_RECORD_IDS
+        or record.id in _DERIVED_MISSING_RECORD_IDS
+        or record.contest.name in _RULES.get("excluded_contest_names", ())
+    )
 
 
 last_report = []
@@ -114,6 +120,9 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
     """
 
     global last_report
+    global _DERIVED_EXCLUDED_RECORD_IDS, _DERIVED_MISSING_RECORD_IDS
+    _DERIVED_EXCLUDED_RECORD_IDS = set()
+    _DERIVED_MISSING_RECORD_IDS = set()
 
     groups = {}
     for oier in oiers:
@@ -140,10 +149,17 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
         if sample >= min_samples and ratio >= threshold:
             derived.append(name)
 
-    excluded = _RULES.setdefault("excluded_contest_names", [])
     for name in derived:
-        if name not in excluded:
-            excluded.append(name)
+        for oier, record in groups[name]:
+            candidates = [
+                candidate for candidate in oier.records
+                if candidate.contest.type.startswith(base_prefix)
+                and candidate.contest.school_year() == record.contest.school_year()
+            ]
+            if candidates:
+                _DERIVED_EXCLUDED_RECORD_IDS.add(record.id)
+            else:
+                _DERIVED_MISSING_RECORD_IDS.add(record.id)
     last_report = report
     return report
 
@@ -209,6 +225,12 @@ def secondary(oier, ref_year=None):
         key = (record.contest.type, record.contest.year)
         if value > best.get(key, 0.0):
             best[key] = value
+
+    missing_bonus = float(cfg.get("derived_missing_bonus", 0.0))
+    for record in oier.records:
+        if record.id in _DERIVED_MISSING_RECORD_IDS:
+            key = (record.contest.type, record.contest.year)
+            best[key] = max(best.get(key, 0.0), missing_bonus)
 
     total, factor = 0.0, 1.0
     for value in sorted(best.values(), reverse=True):

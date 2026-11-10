@@ -205,14 +205,14 @@ function buildNgoi() {
   const el = $('ngoi');
   if (!META.ngoi || !META.ngoi.length) { el.innerHTML = ''; return; }
   const rows = META.ngoi.map(([n, tot, cmp, same, ratio]) => {
-    const ex = META.excluded.indexOf(n) >= 0;
     return `<tr><td>${esc(n)}</td><td class="num">${tot}</td><td class="num">${cmp}</td>
                 <td class="num">${same}</td><td class="num">${(ratio * 100).toFixed(1)}%</td>
-                <td>${ex ? '<b>排除</b>' : '保留'}</td></tr>`;
+                <td>按选手记录处理</td></tr>`;
   }).join('');
   el.innerHTML = `<div class="muted" style="margin:8px 0 4px">
       NGOI 是当年 NOIP 成绩在全体女选手中的排名，不是额外竞赛。下表把每条 NGOI 与
-      <b>同一人上一学年 NOIP</b> 的原始分数逐条比对；分数完全一致的整场不计入排名。</div>
+      <b>同一人上一学年 NOIP</b> 的原始分数逐条比对；有对应 NOIP 的记录不重复计分，
+      没有对应 NOIP 的记录只获得极小补分。</div>
     <table><thead><tr><th>赛事</th><th>记录</th><th>可比</th><th>分数一致</th><th>一致率</th><th>处理</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 }

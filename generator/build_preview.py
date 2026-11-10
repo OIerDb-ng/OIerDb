@@ -110,11 +110,11 @@ def main():
                 if META_TYPES[c[1]] == "NGOI" and sc:
                     ngoi_seen[c[0]].append((uid, sc))
 
-    # 派生赛事判定：NGOI 与同一人「上一学年」NOIP 原始分数完全一致 → 整场排除
+    # 派生赛事判定：同卷后的 NGOI 按选手记录去重，缺失 NOIP 的记录保留小额补分
     def is_noip(cid):
         return META_TYPES[meta["contests"][cid][1]].startswith("NOIP")
 
-    report, excluded = [], []
+    report = []
     for cname in sorted(ngoi_seen):
         cid = next(i for i, c in enumerate(meta["contests"]) if c[0] == cname)
         target_sy = meta["contests"][cid][4]
@@ -133,9 +133,7 @@ def main():
                 same += 1
         ratio = same / sample if sample else 0.0
         report.append([cname, len(ngoi_seen[cname]), sample, same, round(ratio, 4)])
-        if sample >= 10 and ratio >= 1.0:
-            excluded.append(cname)
-    meta["excluded"] = excluded
+    meta["excluded"] = []
     meta["ngoi"] = report
 
     # 统计

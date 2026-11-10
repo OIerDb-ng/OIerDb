@@ -79,5 +79,5 @@ start-local.cmd --refresh    :: 先同步上游 data/，再生成并启动预览
 
 - `raw.txt` 里存在报名渠道串（`个人报名`、培训机构等），它们被当作学校对象参与合并；
   这部分属于上游数据问题，本仓库**未修改**，只在排名侧不做特殊处理。
-- NGOI 是「当年 NOIP 成绩在女选手中的排名」，与上一年 NOIP 分数完全一致的场次
-  在排名时整场排除（规则见 `generator/RANKING.md`）。
+- NGOI 是「当年 NOIP 成绩在女选手中的排名」；与 NOIP 同卷后，有对应 NOIP 的记录不重复计分，
+  没有对应 NOIP 的记录只获得极小补分（规则见 `generator/RANKING.md`）。
