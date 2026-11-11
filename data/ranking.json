@@ -66,7 +66,7 @@
   "excluded_contest_names": [],
   "excluded_contest_doc": [
     "留空。派生赛事由 ranking.detect_derived_contests() 按记录自动判定：",
-    "与同一人「上一学年」NOIP 成绩对应的 NGOI 记录不计入排名；没有对应 NOIP 的记录保留并获得极小补分。",
+    "与同一人「上一学年」NOIP 成绩对应的 NGOI 记录不计入排名；没有对应 NOIP 的记录按同省份同原始分的 NOIP 奖项等级计入相当于 NOIP 的加分。",
     "判定依据与实测见 generator/audit_ngoi.py 与 generator/audit_merge.py：",
     "  NGOI2022↔NOIP2021 / NGOI2023↔NOIP2022：0% 一致 → 独立赛事，保留",
     "  NGOI2024↔NOIP2023 / NGOI2025↔NOIP2024 / NGOI2026↔NOIP2025：同卷，按人处理",
@@ -79,14 +79,13 @@
       "默认 decay_per_year = 0：主键已经决定了「哪个舞台」，同一舞台内部不再按年代加权，",
       "否则会在桶内重新引入「越近越优先」。需要时可以调大（线性，且在 min_decay 处截断，不用复利）。",
       "按分数降序施加 diminishing 权重（1, 0.5, 0.25, ...），使「堆次数」的边际收益迅速消失。",
-      "同卷后的 NGOI 若没有对应 NOIP 记录，增加 derived_missing_bonus；有对应 NOIP 时不重复计分。",
+      "同卷后的 NGOI 若没有对应 NOIP 记录，按同学年、同省份、同原始分的 NOIP 记录中最高奖项等级，计入相当于 NOIP 的 secondary 加分；有对应 NOIP 时不重复计分。",
       "最后映射到 [0,1) 以保证主键永远优先于其余成绩。"
     ],
     "tier_floor": 0.4,
     "decay_per_year": 0.0,
     "min_decay": 0.5,
     "diminishing": 0.5,
-    "derived_missing_bonus": 0.01,
     "ref_year": 2026
   }
 }

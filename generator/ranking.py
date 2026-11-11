@@ -31,6 +31,7 @@ _REF_YEAR = 2026
 _MAX_TIER = 9
 _DERIVED_EXCLUDED_RECORD_IDS = set()
 _DERIVED_MISSING_RECORD_IDS = set()
+_DERIVED_MISSING_NOIP_AWARDS = {}
 
 
 def load(path="../data/ranking.json"):
@@ -100,6 +101,16 @@ def is_excluded(record):
     )
 
 
+def _score_key(score):
+    """Return a stable key for raw scores used to match derived records."""
+    if score is None:
+        return None
+    try:
+        return float(score)
+    except (TypeError, ValueError):
+        return None
+
+
 def derived_scores_match(score, candidate_scores):
     """判断派生赛事分数是否与任一对应基础赛事分数一致。"""
 
@@ -143,8 +154,10 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
 
     global last_report
     global _DERIVED_EXCLUDED_RECORD_IDS, _DERIVED_MISSING_RECORD_IDS
+    global _DERIVED_MISSING_NOIP_AWARDS
     _DERIVED_EXCLUDED_RECORD_IDS = set()
     _DERIVED_MISSING_RECORD_IDS = set()
+    _DERIVED_MISSING_NOIP_AWARDS = {}
 
     groups = {}
     for oier in oiers:
@@ -171,6 +184,21 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
             derived.append(name)
 
     for name in derived:
+        noip_awards = defaultdict(list)
+        for oier in oiers:
+            for candidate in oier.records:
+                if (
+                    candidate.contest.type.startswith(base_prefix)
+                    and candidate.province
+                ):
+                    key = (
+                        candidate.contest.school_year(),
+                        candidate.province,
+                        _score_key(candidate.score),
+                    )
+                    if key[2] is not None:
+                        noip_awards[key].append(candidate)
+
         for oier, record in groups[name]:
             candidates = [
                 candidate for candidate in oier.records
@@ -181,6 +209,17 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                 _DERIVED_EXCLUDED_RECORD_IDS.add(record.id)
             else:
                 _DERIVED_MISSING_RECORD_IDS.add(record.id)
+                key = (
+                    record.contest.school_year(),
+                    record.province,
+                    _score_key(record.score),
+                )
+                matched = noip_awards.get(key, ())
+                if matched:
+                    _DERIVED_MISSING_NOIP_AWARDS[record.id] = max(
+                        matched,
+                        key=lambda candidate: award(candidate.level),
+                    )
     last_report = report
     return report
 
@@ -247,11 +286,21 @@ def secondary(oier, ref_year=None):
         if value > best.get(key, 0.0):
             best[key] = value
 
-    missing_bonus = float(cfg.get("derived_missing_bonus", 0.0))
     for record in oier.records:
         if record.id in _DERIVED_MISSING_RECORD_IDS:
+            noip_record = _DERIVED_MISSING_NOIP_AWARDS.get(record.id)
+            if noip_record is None:
+                continue
+            noip_tier = tier(noip_record.contest)
+            noip_award = award(noip_record.level)
+            max_award = max(
+                value for value in _RULES["award_rank"].values()
+                if isinstance(value, (int, float))
+            )
+            noip_weight = floor + (1.0 - floor) * noip_tier / _MAX_TIER
+            value = noip_award / max_award * noip_weight
             key = (record.contest.type, record.contest.year)
-            best[key] = max(best.get(key, 0.0), missing_bonus)
+            best[key] = max(best.get(key, 0.0), value)
 
     total, factor = 0.0, 1.0
     for value in sorted(best.values(), reverse=True):

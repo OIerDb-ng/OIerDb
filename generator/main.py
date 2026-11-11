@@ -229,7 +229,7 @@ def __main__():
 
         ranking.load()
 
-        # 先判定派生赛事：有对应 NOIP 的 NGOI 不重复计分，缺失 NOIP 的只保留极小补分
+        # 先判定派生赛事：有对应 NOIP 的 NGOI 不重复计分，缺失 NOIP 的按省份和原始分映射 NOIP 奖项
         report = ranking.detect_derived_contests(OIer.get_all())
         for name, total, sample, same, ratio in report:
             mark = "按选手记录处理"
@@ -393,7 +393,8 @@ def __main__():
 
             print("\n## 派生赛事判定（NGOI）\n", file=f)
             print("NGOI 是当年 NOIP 成绩在全体女选手中的排名。对于同卷年份，"
-                  "有对应 NOIP 的记录不重复计分，没有对应 NOIP 的记录只获得极小补分。\n", file=f)
+                  "有对应 NOIP 的记录不重复计分；没有对应 NOIP 的记录，按同省份同原始分的 "
+                  "NOIP 成绩对应的奖项等级计入相当于 NOIP 的加分。\n", file=f)
             print("| 赛事 | 记录数 | 可比记录 | 分数一致 | 一致率 | 处理 |", file=f)
             print("|---|---:|---:|---:|---:|---|", file=f)
             for name, tot, sample, same, ratio in ranking.last_report:

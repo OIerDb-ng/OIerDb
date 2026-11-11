@@ -78,7 +78,7 @@ start-local.cmd --refresh    :: 先同步上游 data/，再生成并启动预览
 | `generator/dist/result.txt` 行数 | 与 `data/raw.txt` 的有效记录去重后的人数一致（当前 125,964） |
 | `generator/dist/unknown-schools.txt` | 为空 |
 | `python generator/rank_check.py` | 四条排序不变量全部 OK |
-| `generator/dist/rank_preview.md` 的「派生赛事判定」 | NGOI 与上一年 NOIP 分数一致的场次被标为「排除」 |
+| `generator/dist/rank_preview.md` 的「派生赛事判定」 | NGOI 与上一年 NOIP 分数一致的场次被标为「排除」；缺失 NOIP 时按同省份原始分映射奖项 |
 | 前端 `/oiers` 首行 | 与 `result.txt` 第一行一致 |
 
 ## 六、已知的数据边界
@@ -86,4 +86,5 @@ start-local.cmd --refresh    :: 先同步上游 data/，再生成并启动预览
 - `raw.txt` 里存在报名渠道串（`个人报名`、培训机构等），它们被当作学校对象参与合并；
   这部分属于上游数据问题，本仓库**未修改**，只在排名侧不做特殊处理。
 - NGOI 是「当年 NOIP 成绩在女选手中的排名」；与 NOIP 同卷后，有对应 NOIP 的记录不重复计分，
-  没有对应 NOIP 的记录只获得极小补分（规则见 `generator/RANKING.md`）。
+  没有对应 NOIP 的记录按同省份同原始分对应的 NOIP 奖项等级获得相当于 NOIP 的加分
+  （规则见 `generator/RANKING.md`）。
