@@ -12,6 +12,8 @@ const OIerList: React.FC = () => {
 
   const page = Number(searchParams.get('page') || 1);
   const perPage = 30;
+  const ranking = searchParams.get('ranking') === 'female' ? 'female' : 'all';
+  const isFemaleRanking = ranking === 'female';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const province = provinces.includes(searchParams.get('province') as any)
@@ -19,21 +21,47 @@ const OIerList: React.FC = () => {
     : '全国';
   const isWholeCountry = province === '全国';
 
+  const femaleOiers = useMemo(
+    () =>
+      OIerDb.oiers.filter(oier =>
+        oier.records.some(record => record.contest.type === 'NGOI')
+      ),
+    []
+  );
+  const rankingOiers = isFemaleRanking ? femaleOiers : OIerDb.oiers;
   const data = useMemo(
     () =>
       isWholeCountry
-        ? OIerDb.oiers
-        : OIerDb.oiers.filter(oier => oier.provinces.includes(province)),
-    [province]
+        ? rankingOiers
+        : rankingOiers.filter(oier => oier.provinces.includes(province)),
+    [isWholeCountry, rankingOiers, province]
   );
+  const femaleRank = useMemo(
+    () => new Map(femaleOiers.map((oier, index) => [oier.uid, index + 1])),
+    [femaleOiers]
+  );
+  const title = `${isFemaleRanking ? '女生' : ''}${province}信息学奥林匹克竞赛选手排名`;
 
   return (
     <>
       <Helmet>
-        <title>{province}信息学奥林匹克竞赛选手排名</title>
+        <title>{title}</title>
       </Helmet>
 
       <h2 className={styles.header}>
+        <Dropdown
+          floating
+          selection
+          compact
+          value={ranking}
+          options={[
+            { key: 'all', value: 'all', text: '全部选手' },
+            { key: 'female', value: 'female', text: '女生榜' },
+          ]}
+          onChange={(_, { value }) =>
+            setSearchParams({ ranking: value as string, page: '1' })}
+          className={styles.dropdown}
+        />
         <Dropdown
           floating
           selection
@@ -49,7 +77,7 @@ const OIerList: React.FC = () => {
           onChange={(_, { value }) => setSearchParams({ province: value as string, page: '1' })}
           className={styles.dropdown}
         />
-        <div>信息学奥林匹克竞赛选手排名</div>
+        <div>{title}</div>
       </h2>
 
       {import.meta.env.VITE_LOCAL_DATA && (
@@ -89,11 +117,15 @@ const OIerList: React.FC = () => {
               <Table.Row key={oier.uid}>
                 <Table.Cell textAlign="center">
                   {isWholeCountry
-                    ? oier.rank + 1
+                    ? isFemaleRanking
+                      ? femaleRank.get(oier.uid)
+                      : oier.rank + 1
                     : (page - 1) * perPage + index + 1}
                 </Table.Cell>
                 {!isWholeCountry && (
-                  <Table.Cell textAlign="center">{oier.rank + 1}</Table.Cell>
+                  <Table.Cell textAlign="center">
+                    {isFemaleRanking ? femaleRank.get(oier.uid) : oier.rank + 1}
+                  </Table.Cell>
                 )}
                 <Table.Cell>
                   <Link to={'/oier/' + oier.uid}>{oier.name}</Link>
