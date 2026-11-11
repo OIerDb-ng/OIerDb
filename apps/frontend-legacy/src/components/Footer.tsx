@@ -2,7 +2,6 @@ import React from 'react';
 
 // Components
 import { Container, Segment, Icon } from 'semantic-ui-react';
-import { EmojiRenderer } from './EmojiRenderer';
 
 // Styles
 import styles from './Footer.module.less';
@@ -30,31 +29,32 @@ const Footer: React.FC = () => (
           OIerDb LexRank · GitHub Pages 部署版 · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
         </div>
       )}
-      {/* 人员按字典序排列 */}
       <div className={styles.footerText}>
-        Made with &nbsp;
-        <i>
-          <EmojiRenderer>💖</EmojiRenderer>
-        </i>
-        &nbsp; by{' '}
+        上游 OIerDb 作者与贡献者：{' '}
         <a
-          href="https://baoshuo.ren/?utm_source=oier.baoshuo.dev"
+          href="https://baoshuo.ren"
           target="_blank"
           rel="noreferrer"
         >
           Baoshuo
         </a>
-        {', '}
+        {' · '}
         <a href="https://men.ci" target="_blank" rel="noreferrer">
           Menci
         </a>
-        {', '}
+        {' · '}
         <a href="https://bytew.net" target="_blank" rel="noreferrer">
           nocriz
         </a>{' '}
-        and{' '}
+        {' · '}
         <a href="https://github.com/yhx-12243" target="_blank" rel="noreferrer">
           yhx-12243
+        </a>
+      </div>
+      <div className={styles.footerText}>
+        LexRank 二次开发与维护：{' '}
+        <a href="https://github.com/xiangyanhao" target="_blank" rel="noreferrer">
+          Yanhao Xiang
         </a>
       </div>
       <div className={styles.footerMeta}>

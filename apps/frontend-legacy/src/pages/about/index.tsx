@@ -4,7 +4,6 @@ import { Button, Checkbox, Header, Segment } from 'semantic-ui-react';
 import { deleteDB } from 'idb';
 import { useLocalStorage } from 'usehooks-ts';
 import FAQ from '@/components/FAQ';
-import Stats from '@/components/Stats';
 import styles from './index.module.less';
 
 const AboutHeader: React.FC = () => (
@@ -52,11 +51,12 @@ const Developers = () => (
       className={styles.header}
       block
       as="h4"
-      content="开发者"
+      content="作者与维护者"
       attached="top"
       icon="users"
     />
     <Segment attached="bottom">
+      <p>上游 OIerDb 项目的作者与贡献者：</p>
       <ul style={{ marginTop: 0, paddingLeft: 26 }}>
         <li>
           <a href="https://baoshuo.ren">宝硕</a>
@@ -71,7 +71,14 @@ const Developers = () => (
           <a href="https://github.com/yhx-12243">yhx-12243</a>
         </li>
       </ul>
-      <p>以上排名不分先后，感谢他们的贡献。</p>
+      <p>以上排名不分先后，感谢他们对上游项目的贡献。</p>
+      <p>
+        本 fork 的 LexRank 排名机制由{' '}
+        <a href="https://github.com/xiangyanhao" target="_blank" rel="noreferrer">
+          Yanhao Xiang
+        </a>{' '}
+        二次开发和维护。
+      </p>
     </Segment>
   </>
 );
@@ -200,7 +207,6 @@ const About: React.FC = () => (
     <AboutHeader />
     <LocalNotice />
     <FAQ />
-    <Stats />
     <Developers />
     <FriendLinks />
     <Config />
