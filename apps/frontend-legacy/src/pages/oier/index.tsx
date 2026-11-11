@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Dropdown, Table } from 'semantic-ui-react';
+import { Checkbox, Dropdown, Table } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Pagination from '@/components/Pagination';
@@ -14,6 +14,7 @@ const OIerList: React.FC = () => {
   const perPage = 30;
   const ranking = searchParams.get('ranking') === 'female' ? 'female' : 'all';
   const isFemaleRanking = ranking === 'female';
+  const showFemaleRank = searchParams.get('showFemaleRank') === '1';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const province = provinces.includes(searchParams.get('province') as any)
@@ -78,6 +79,12 @@ const OIerList: React.FC = () => {
           onChange={(_, { value }) => setSearchParams({ province: value as string, page: '1' })}
           className={styles.dropdown}
         />
+        <Checkbox
+          checked={showFemaleRank}
+          label="显示女生 LexRank"
+          onChange={(_, { checked }) =>
+            setSearchParams({ showFemaleRank: checked ? '1' : '0' })}
+        />
         <div>{title}</div>
       </h2>
 
@@ -111,9 +118,11 @@ const OIerList: React.FC = () => {
                 全国排名
               </Table.HeaderCell>
             )}
-            <Table.HeaderCell width={2} textAlign="center">
-              女生 LexRank
-            </Table.HeaderCell>
+            {showFemaleRank && (
+              <Table.HeaderCell width={2} textAlign="center">
+                女生 LexRank
+              </Table.HeaderCell>
+            )}
             <Table.HeaderCell>姓名</Table.HeaderCell>
             <Table.HeaderCell width={3}>省份</Table.HeaderCell>
             <Table.HeaderCell width={2}>评分</Table.HeaderCell>
@@ -137,9 +146,11 @@ const OIerList: React.FC = () => {
                     {isFemaleRanking ? femaleRank.get(oier.uid) : oier.rank + 1}
                   </Table.Cell>
                 )}
-                <Table.Cell textAlign="center">
-                  {femaleRank.get(oier.uid) ?? '—'}
-                </Table.Cell>
+                {showFemaleRank && (
+                  <Table.Cell textAlign="center">
+                    {femaleRank.get(oier.uid) ?? '—'}
+                  </Table.Cell>
+                )}
                 <Table.Cell>
                   <Link to={'/oier/' + oier.uid}>{oier.name}</Link>
                 </Table.Cell>

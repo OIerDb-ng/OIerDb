@@ -15,6 +15,16 @@ interface PersonInfoProps {
 
 const PersonInfo: React.FC<PersonInfoProps> = (props) => {
   const { oier } = props;
+  const isFemale
+    = oier.gender === -1
+      || oier.records.some(record => record.contest.type === 'NGOI');
+  const femaleRank = isFemale
+    ? OIerDb.oiers.findIndex(candidate =>
+      (candidate.gender === -1
+        || candidate.records.some(record => record.contest.type === 'NGOI'))
+      && candidate.uid === oier.uid
+    ) + 1
+    : null;
 
   const handleInconsistentGrade = (record: Record) => {
     if (record.enroll_middle.is_stay_down) {
@@ -58,6 +68,15 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
         </Link>
         （{oier.oierdb_score} 分）。
       </p>
+      {femaleRank && (
+        <p>
+          女生 LexRank 排名：
+          <Link to={'/oier?ranking=female&page=' + Math.ceil(femaleRank / 30)}>
+            {femaleRank}
+          </Link>
+          。
+        </p>
+      )}
       <p>CCF 程序设计能力等级：{oier.ccf_level} 级（仅供参考）。</p>
       <h4>获奖信息</h4>
       <Table basic="very" unstackable>
