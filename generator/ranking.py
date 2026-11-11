@@ -185,7 +185,7 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
 
     for name in derived:
         noip_awards = defaultdict(list)
-        noip_third_min = {}
+        noip_min = {}
         for oier in oiers:
             for candidate in oier.records:
                 if (
@@ -199,11 +199,10 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                     )
                     if key[2] is not None:
                         noip_awards[key].append(candidate)
-                        if candidate.level == "三等奖":
-                            threshold_key = key[:2]
-                            current = noip_third_min.get(threshold_key)
-                            if current is None or key[2] < current:
-                                noip_third_min[threshold_key] = key[2]
+                        threshold_key = key[:2]
+                        current = noip_min.get(threshold_key)
+                        if current is None or key[2] < current:
+                            noip_min[threshold_key] = key[2]
 
         for oier, record in groups[name]:
             candidates = [
@@ -221,7 +220,7 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                     _score_key(record.score),
                 )
                 matched = noip_awards.get(key, ())
-                threshold = noip_third_min.get(key[:2])
+                threshold = noip_min.get(key[:2])
                 below_threshold = (
                     threshold is not None
                     and (key[2] is None or key[2] < threshold)
