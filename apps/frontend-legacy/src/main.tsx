@@ -12,10 +12,6 @@ import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import Loading from '@/components/Loading';
 import { initDb } from '@/libs/OIerDb';
-import {
-  enableAutoPageviews,
-  enableAutoTrackMultiDomain,
-} from '@/libs/plausible';
 
 // Pages
 const Home = lazy(() => import('@/pages/index'));
@@ -63,9 +59,6 @@ const App: React.FC = () => {
       }
     })();
   }, []);
-
-  useEffect(() => enableAutoPageviews(), []);
-  useEffect(() => enableAutoTrackMultiDomain(), []);
 
   // 不支持 indexedDB
   if (notSupportIndexedDB) {

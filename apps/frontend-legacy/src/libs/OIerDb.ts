@@ -1,6 +1,5 @@
 import { parseInfo, parseStatic, ResultParser } from '@oierdb/parser';
 import type { DataInfo, ParsedStatic } from '@oierdb/parser';
-import { trackEvent } from '@/libs/plausible';
 import promiseAny from '@/utils/promiseAny';
 import { OIerDbDataBuilder } from './OIerDbDataBuilder';
 import type { OIerDbData } from './OIerDbDataBuilder';
@@ -37,38 +36,16 @@ let __DATA__: OIerDbData = null;
 interface DownloadOptions {
   onProgress?: (receivedBytes: number) => void;
   onAttemptStart?: () => void | Promise<void>;
-  trackLabel?: string;
 }
 
 interface StreamDownloadOptions extends DownloadOptions {
   onChunk: (chunk: Uint8Array) => void | Promise<void>;
 }
 
-const trackDownload = (
-  label: string | undefined,
-  url: string,
-  startTime: number,
-  processTime: number
-) => {
-  if (!label) return;
-
-  const timeUsed = performance.now() - startTime - processTime;
-  trackEvent('Download: ' + label, {
-    props: {
-      url,
-      time:
-        timeUsed < 100
-          ? Math.floor(timeUsed / 25) * 25
-          : Math.floor(timeUsed / 100) * 100,
-    },
-  });
-};
-
 const getTextData = async (
   sources: string | string[],
   options: DownloadOptions
 ): Promise<string> => {
-  const startTime = performance.now();
   const sourceList = Array.isArray(sources) ? sources : [sources];
 
   for (const url of sourceList) {
@@ -93,7 +70,6 @@ const getTextData = async (
 
       const rest = decoder.decode();
       if (rest) buffered.push(rest);
-      trackDownload(options.trackLabel, url, startTime, 0);
       return buffered.join('');
     } catch (error) {
       console.error(error);
@@ -107,7 +83,6 @@ const streamData = async (
   sources: string | string[],
   options: StreamDownloadOptions
 ): Promise<void> => {
-  const startTime = performance.now();
   const sourceList = Array.isArray(sources) ? sources : [sources];
 
   for (const url of sourceList) {
@@ -118,7 +93,6 @@ const streamData = async (
       if (!response.ok || !response.body) continue;
 
       let receivedSize = 0;
-      let chunkProcessTime = 0;
       const reader = response.body.getReader();
 
       while (true) {
@@ -126,13 +100,10 @@ const streamData = async (
         if (done) break;
         receivedSize += value.byteLength;
 
-        const processStartTime = performance.now();
         await options.onChunk(value);
-        chunkProcessTime += performance.now() - processStartTime;
         options.onProgress?.(receivedSize);
       }
 
-      trackDownload(options.trackLabel, url, startTime, chunkProcessTime);
       return;
     } catch (error) {
       console.error(error);
@@ -220,7 +191,6 @@ const downloadAndBuildData = async (
         received.static = 0;
         reportProgress();
       },
-      trackLabel: 'static.json',
     }
   ).then(parseStatic);
 
@@ -264,7 +234,6 @@ const downloadAndBuildData = async (
           const builder = await builderPromise;
           builder.push(parser.push(chunk));
         },
-        trackLabel: 'result.txt',
       }
     );
 

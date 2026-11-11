@@ -2487,7 +2487,6 @@ __metadata:
     idb: "npm:^7.1.1"
     less: "npm:^4.1.2"
     monaco-editor: "npm:^0.52.2"
-    plausible-tracker: "npm:^0.3.8"
     react: "npm:^18.2.0"
     react-chartjs-2: "npm:^4.3.1"
     react-dom: "npm:^18.2.0"
@@ -4084,13 +4083,6 @@ __metadata:
   version: 4.0.1
   resolution: "pify@npm:4.0.1"
   checksum: 10c0/6f9d404b0d47a965437403c9b90eca8bb2536407f03de165940e62e72c8c8b75adda5516c6b9b23675a5877cc0bcac6bdfb0ef0e39414cd2476d5495da40e7cf
-  languageName: node
-  linkType: hard
-
-"plausible-tracker@npm:^0.3.8":
-  version: 0.3.8
-  resolution: "plausible-tracker@npm:0.3.8"
-  checksum: 10c0/e711dac9e07d4d4d6b9fbd4102ff00212e3105ed17f65ea741f1e92df4d0363555fac8856f8f231946a1da3722374f3379a96efe479c70dab5e5accef7878a86
   languageName: node
   linkType: hard
 
