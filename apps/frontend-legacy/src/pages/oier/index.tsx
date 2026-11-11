@@ -24,7 +24,8 @@ const OIerList: React.FC = () => {
   const femaleOiers = useMemo(
     () =>
       OIerDb.oiers.filter(oier =>
-        oier.records.some(record => record.contest.type === 'NGOI')
+        oier.gender === -1
+        || oier.records.some(record => record.contest.type === 'NGOI')
       ),
     []
   );
