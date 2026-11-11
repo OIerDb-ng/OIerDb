@@ -19,11 +19,12 @@ const PersonInfo: React.FC<PersonInfoProps> = (props) => {
     = oier.gender === -1
       || oier.records.some(record => record.contest.type === 'NGOI');
   const femaleRank = isFemale
-    ? OIerDb.oiers.findIndex(candidate =>
-      (candidate.gender === -1
-        || candidate.records.some(record => record.contest.type === 'NGOI'))
-      && candidate.uid === oier.uid
-    ) + 1
+    ? OIerDb.oiers
+      .filter(candidate =>
+        candidate.gender === -1
+        || candidate.records.some(record => record.contest.type === 'NGOI')
+      )
+      .findIndex(candidate => candidate.uid === oier.uid) + 1
     : null;
 
   const handleInconsistentGrade = (record: Record) => {
