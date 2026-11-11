@@ -100,6 +100,28 @@ def is_excluded(record):
     )
 
 
+def derived_scores_match(score, candidate_scores):
+    """判断派生赛事分数是否与任一对应基础赛事分数一致。"""
+
+    if score is None:
+        return False
+    try:
+        target = float(score)
+    except (TypeError, ValueError):
+        return False
+    return any(
+        candidate_score is not None
+        and abs(float(candidate_score) - target) < 1e-9
+        for candidate_score in candidate_scores
+    )
+
+
+def is_derived_contest(sample, same, threshold=1.0, min_samples=10):
+    """判断赛事是否达到自动派生赛事判定阈值。"""
+
+    return sample >= min_samples and same / sample >= threshold
+
+
 last_report = []
 
 
@@ -141,12 +163,11 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
             if not candidates:
                 continue
             sample += 1
-            if any(c.score is not None and record.score is not None
-                   and abs(float(c.score) - float(record.score)) < 1e-9 for c in candidates):
+            if derived_scores_match(record.score, (c.score for c in candidates)):
                 same += 1
         ratio = same / sample if sample else 0.0
         report.append((name, len(items), sample, same, ratio))
-        if sample >= min_samples and ratio >= threshold:
+        if is_derived_contest(sample, same, threshold, min_samples):
             derived.append(name)
 
     for name in derived:

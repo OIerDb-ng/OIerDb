@@ -87,7 +87,7 @@ class Contest:
     def school_year(self):
         "获取该比赛的学年（以秋季学期为准）。"
 
-        return self.year - (0 if self.fall_semester else 1)
+        return util.school_year(self.year, self.fall_semester)
 
     def n_contestants(self):
         "获取该比赛的选手总数。"

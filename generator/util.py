@@ -53,6 +53,12 @@ provinces = [
     "台湾",
 ]
 
+
+def school_year(year, fall_semester):
+    """获取比赛所属学年（以秋季学期为准）。"""
+
+    return year - (0 if fall_semester else 1)
+
 award_levels = [
     "金牌",
     "银牌",

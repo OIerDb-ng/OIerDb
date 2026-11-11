@@ -35,7 +35,7 @@ def load_meta():
     for c in contests:
         cinfo.append([c["name"], util.contest_types.index(c["type"]), c["year"],
                       ranking.tier_for(c["type"], c["year"]),
-                      c["year"] - (0 if c["fall_semester"] else 1)])
+                      util.school_year(c["year"], c["fall_semester"])])
 
     schools = []
     with open(os.path.join(DATA, "school.txt"), encoding="utf-8") as f:
@@ -110,7 +110,7 @@ def main():
                 if META_TYPES[c[1]] == "NGOI" and sc:
                     ngoi_seen[c[0]].append((uid, sc))
 
-    # 派生赛事判定：同卷后的 NGOI 按选手记录去重，缺失 NOIP 的记录保留小额补分
+    # 派生赛事报告：与 ranking.detect_derived_contests 使用相同的判定规则
     def is_noip(cid):
         return META_TYPES[meta["contests"][cid][1]].startswith("NOIP")
 
@@ -125,11 +125,7 @@ def main():
             if not cands:
                 continue
             sample += 1
-            try:
-                target = float(sc)
-            except ValueError:
-                continue
-            if any(abs(float(s) - target) < 1e-9 for _, s in cands):
+            if ranking.derived_scores_match(sc, (s for _, s in cands)):
                 same += 1
         ratio = same / sample if sample else 0.0
         report.append([cname, len(ngoi_seen[cname]), sample, same, round(ratio, 4)])
