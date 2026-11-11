@@ -4,6 +4,12 @@
 
 原项目 OIerDb 可以通过 [oier.baoshuo.dev](https://oier.baoshuo.dev) 在线使用。
 
+> **问题反馈范围**
+>
+> 本仓库只负责 LexRank 排名以及 fork 自身的代码和页面展示。选手、学校和比赛数据的
+> 错误（包括选手信息合并、拆分、学校归并等）由上游 OIerDb 负责处理，请前往
+> [上游仓库](https://github.com/OIerDb-ng/OIerDb) 提交 Issue；请勿在本 fork 提交此类问题。
+
 ## 本仓库：OIerDb LexRank
 
 本仓库在 OIerDb 的基础上，把「累加评分」改成**分层优先排名**：先比最高赛事层级，

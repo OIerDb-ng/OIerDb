@@ -1,1 +1,5 @@
 blank_issues_enabled: true
+contact_links:
+  - name: 上游 OIerDb 数据问题
+    url: https://github.com/OIerDb-ng/OIerDb/issues/new/choose
+    about: 选手、学校、比赛数据及合并拆分问题请在上游仓库反馈。

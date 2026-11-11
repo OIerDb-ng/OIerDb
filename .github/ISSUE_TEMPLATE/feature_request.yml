@@ -1,5 +1,5 @@
 name: 功能请求 / Feature Request
-description: 为 OIerDb NG 提出新功能建议。
+description: 为 OIerDb LexRank 提出新功能建议。
 labels: ['enhancement']
 assignees: []
 body:
@@ -8,7 +8,9 @@ body:
       value: |
         感谢您的建议！请在提交前仔细填写以下内容。
 
-        欢迎您在 [项目主页](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
+        本模板仅接受与 LexRank 排名或本 fork 独有的代码、页面功能相关的建议。
+        选手、学校、比赛数据问题请前往
+        [上游仓库](https://github.com/OIerDb-ng/OIerDb) 提交 Issue。
   - type: textarea
     id: background
     attributes:

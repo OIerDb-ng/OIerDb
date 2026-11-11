@@ -1,5 +1,5 @@
 name: 错误报告 / Bug Report
-description: 帮助我们修复 OIerDb NG 的问题。
+description: 帮助我们修复 OIerDb LexRank 的问题。
 labels: ['bug']
 assignees: []
 body:
@@ -8,7 +8,9 @@ body:
       value: |
         感谢您的反馈！请在提交前仔细填写以下内容。
 
-        欢迎您在 [项目主页](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
+        本模板仅用于反馈 LexRank fork 自身的代码或页面问题。选手、学校、比赛数据的
+        错误（包括选手信息合并、拆分等）不由本 fork 处理，请前往
+        [上游仓库](https://github.com/OIerDb-ng/OIerDb) 提交 Issue。
   - type: textarea
     id: description
     attributes:
