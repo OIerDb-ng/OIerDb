@@ -111,6 +111,9 @@ const OIerList: React.FC = () => {
                 全国排名
               </Table.HeaderCell>
             )}
+            <Table.HeaderCell width={2} textAlign="center">
+              女生 LexRank
+            </Table.HeaderCell>
             <Table.HeaderCell>姓名</Table.HeaderCell>
             <Table.HeaderCell width={3}>省份</Table.HeaderCell>
             <Table.HeaderCell width={2}>评分</Table.HeaderCell>
@@ -134,6 +137,9 @@ const OIerList: React.FC = () => {
                     {isFemaleRanking ? femaleRank.get(oier.uid) : oier.rank + 1}
                   </Table.Cell>
                 )}
+                <Table.Cell textAlign="center">
+                  {femaleRank.get(oier.uid) ?? '—'}
+                </Table.Cell>
                 <Table.Cell>
                   <Link to={'/oier/' + oier.uid}>{oier.name}</Link>
                 </Table.Cell>
