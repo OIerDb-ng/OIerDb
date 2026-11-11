@@ -81,6 +81,12 @@ const OIerList: React.FC = () => {
         <div>{title}</div>
       </h2>
 
+      {isFemaleRanking && (
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
+          女生榜按记录判定：有 NGOI 记录，或 NOI 获奖公示中的性别为女。
+        </p>
+      )}
+
       {import.meta.env.VITE_LOCAL_DATA && (
         <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
           本站静态数据 · 分层优先排名：先比最高赛事层级，再比该层级上的最高奖项，最后看其余成绩。
