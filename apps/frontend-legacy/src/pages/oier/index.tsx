@@ -79,13 +79,15 @@ const OIerList: React.FC = () => {
           onChange={(_, { value }) => setSearchParams({ province: value as string, page: '1' })}
           className={styles.dropdown}
         />
-        <Checkbox
-          checked={showFemaleRank}
-          label="显示女生 LexRank"
-          onChange={(_, { checked }) =>
-            setSearchParams({ showFemaleRank: checked ? '1' : '0' })}
-        />
-        <div>{title}</div>
+        <div>
+          {title}
+          <Checkbox
+            checked={showFemaleRank}
+            label="显示女生 LexRank"
+            onChange={(_, { checked }) =>
+              setSearchParams({ showFemaleRank: checked ? '1' : '0' })}
+          />
+        </div>
       </h2>
 
       {isFemaleRanking && (
