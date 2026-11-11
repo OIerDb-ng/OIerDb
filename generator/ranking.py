@@ -185,6 +185,7 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
 
     for name in derived:
         noip_awards = defaultdict(list)
+        noip_third_min = {}
         for oier in oiers:
             for candidate in oier.records:
                 if (
@@ -198,6 +199,11 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                     )
                     if key[2] is not None:
                         noip_awards[key].append(candidate)
+                        if candidate.level == "三等奖":
+                            threshold_key = key[:2]
+                            current = noip_third_min.get(threshold_key)
+                            if current is None or key[2] < current:
+                                noip_third_min[threshold_key] = key[2]
 
         for oier, record in groups[name]:
             candidates = [
@@ -215,7 +221,14 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                     _score_key(record.score),
                 )
                 matched = noip_awards.get(key, ())
-                if not matched and key[2] is not None:
+                threshold = noip_third_min.get(key[:2])
+                below_threshold = (
+                    threshold is not None
+                    and (key[2] is None or key[2] < threshold)
+                )
+                if below_threshold:
+                    matched = ()
+                if not matched and key[2] is not None and not below_threshold:
                     higher_scores = [
                         score
                         for (school_year, province, score) in noip_awards
@@ -224,9 +237,11 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                         and score > key[2]
                     ]
                     if higher_scores:
-                        matched = noip_awards[
-                            (key[0], key[1], min(higher_scores))
-                        ]
+                        mapped_score = min(higher_scores)
+                        if threshold is None or mapped_score >= threshold:
+                            matched = noip_awards[
+                                (key[0], key[1], mapped_score)
+                            ]
                 if matched:
                     _DERIVED_MISSING_NOIP_AWARDS[record.id] = max(
                         matched,
@@ -254,6 +269,11 @@ def best_of(oier):
         elif (t, a) == best[:2] and best[2] is not None:
             if rank_fraction(record) > rank_fraction(best[2]):
                 best = (t, a, record)
+    virtual = _virtual_noip(oier)
+    if virtual is not None:
+        virtual_tier, virtual_award, source = virtual
+        if _ordered(virtual_tier, virtual_award, order) > _ordered(*best[:2], order):
+            best = (virtual_tier, virtual_award, source)
     return best
 
 
@@ -261,6 +281,38 @@ def _ordered(t, a, order=None):
     "按配置的主键顺序返回比较元组。"
     order = order or _RULES.get("primary_order", ["tier", "award"])
     return (t, a) if order[0] == "tier" else (a, t)
+
+
+def _actual_best(oier):
+    """Return the best primary tuple from non-derived records."""
+    order = _RULES.get("primary_order", ["tier", "award"])
+    best = (0, 0)
+    for record in oier.records:
+        if is_excluded(record):
+            continue
+        candidate = (tier(record.contest), award(record.level))
+        if _ordered(*candidate, order) > _ordered(*best, order):
+            best = candidate
+    return best
+
+
+def _virtual_noip(oier):
+    """Return a mapped NOIP primary candidate, if it reaches the top bucket."""
+    mapped = [
+        (record, _DERIVED_MISSING_NOIP_AWARDS[record.id])
+        for record in oier.records
+        if record.id in _DERIVED_MISSING_NOIP_AWARDS
+    ]
+    if not mapped:
+        return None
+    record, source = max(
+        mapped,
+        key=lambda item: (tier(item[1].contest), award(item[1].level)),
+    )
+    virtual = (tier(source.contest), award(source.level))
+    if _ordered(*virtual) < _ordered(*_actual_best(oier)):
+        return None
+    return (*virtual, record)
 
 
 def rank_fraction(record):
@@ -284,6 +336,7 @@ def secondary(oier, ref_year=None):
     per_year = float(cfg["decay_per_year"])
     min_decay = float(cfg["min_decay"])
     ratio = float(cfg["diminishing"])
+    virtual_primary = _virtual_noip(oier) is not None
 
     best = {}
     for record in oier.records:
@@ -300,6 +353,8 @@ def secondary(oier, ref_year=None):
 
     for record in oier.records:
         if record.id in _DERIVED_MISSING_RECORD_IDS:
+            if virtual_primary:
+                continue
             noip_record = _DERIVED_MISSING_NOIP_AWARDS.get(record.id)
             if noip_record is None:
                 continue
