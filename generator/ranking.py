@@ -215,6 +215,18 @@ def detect_derived_contests(oiers, derived_type="NGOI", base_prefix="NOIP",
                     _score_key(record.score),
                 )
                 matched = noip_awards.get(key, ())
+                if not matched and key[2] is not None:
+                    higher_scores = [
+                        score
+                        for (school_year, province, score) in noip_awards
+                        if school_year == key[0]
+                        and province == key[1]
+                        and score > key[2]
+                    ]
+                    if higher_scores:
+                        matched = noip_awards[
+                            (key[0], key[1], min(higher_scores))
+                        ]
                 if matched:
                     _DERIVED_MISSING_NOIP_AWARDS[record.id] = max(
                         matched,
