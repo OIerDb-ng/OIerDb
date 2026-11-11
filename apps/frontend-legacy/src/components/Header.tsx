@@ -58,7 +58,7 @@ const Header: React.FC = () => {
               <span className={styles.brandMark}>
                 OIerDb<span className={styles.brandAccent}>LexRank</span>
               </span>
-              {localPreview && <span className={styles.brandBadge}>本地预览</span>}
+              {localPreview && <span className={styles.brandBadge}>GitHub Pages</span>}
             </span>
           </Menu.Item>
           {(wide
@@ -95,7 +95,7 @@ const Header: React.FC = () => {
               <span className={styles.brandMark}>
                 OIerDb<span className={styles.brandAccent}>LexRank</span>
               </span>
-              {localPreview && <span className={styles.brandBadge}>本地预览</span>}
+              {localPreview && <span className={styles.brandBadge}>GitHub Pages</span>}
             </span>
             </Menu.Item>
             {headerButtons.map(button => (

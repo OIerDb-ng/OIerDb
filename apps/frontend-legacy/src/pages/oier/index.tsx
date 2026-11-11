@@ -54,7 +54,7 @@ const OIerList: React.FC = () => {
 
       {import.meta.env.VITE_LOCAL_DATA && (
         <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
-          本地数据 · 分层优先排名：先比最高赛事层级，再比该层级上的最高奖项，最后看其余成绩。
+          本站静态数据 · 分层优先排名：先比最高赛事层级，再比该层级上的最高奖项，最后看其余成绩。
           「评分」列为该排序的合成分（层级 × 1000 + 奖项 × 100 + 其余成绩）。
           <br />
           NGOI 的处理按年份区分：NGOI2022、NGOI2023 作为独立赛事计入；与 NOIP 同卷之后，

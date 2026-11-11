@@ -27,7 +27,7 @@ const Footer: React.FC = () => (
       </div>
       {import.meta.env.VITE_LOCAL_PREVIEW === 'true' && (
         <div style={{ marginTop: '.5rem', color: '#14b8a6', fontSize: '.8em' }}>
-          OIerDb LexRank · 本地预览构建 · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
+          OIerDb LexRank · GitHub Pages 部署版 · 分层优先排名由 Yanhao Xiang 二次开发 · AGPL-3.0
         </div>
       )}
       {/* 人员按字典序排列 */}

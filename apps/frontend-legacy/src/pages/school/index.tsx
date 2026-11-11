@@ -55,7 +55,7 @@ const SchoolList: React.FC = () => {
 
       {import.meta.env.VITE_LOCAL_DATA && (
         <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
-          本地数据 · 学校排名使用学生聚合的分层优先排名：先按学校内最高排名学生的赛事层级和奖项排序，
+          本站静态数据 · 学校排名使用学生聚合的分层优先排名：先按学校内最高排名学生的赛事层级和奖项排序，
           再以其余学生的 LexRank 成绩作为衰减补充。同一学生在同一学校的多条比赛记录只计一次。
           <br />
           「评分」列为学校聚合分，排名机制由 Yanhao Xiang 二次开发，依原项目 AGPL-3.0 许可发布。

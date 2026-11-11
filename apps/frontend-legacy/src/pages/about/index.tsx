@@ -24,7 +24,7 @@ const AboutHeader: React.FC = () => (
             verticalAlign: 'middle',
           }}
         >
-          本地预览
+          GitHub Pages
         </span>
       )}
     </h1>
@@ -175,7 +175,7 @@ const LocalNotice: React.FC = () => {
     <Segment>
       <Header as="h3">本部署的修改说明</Header>
       <p>
-        本页面使用本地生成的数据，展示的是「分层优先排名」：先比较选手参加过的最高赛事层级，
+        本页面使用随 GitHub Pages 部署的静态数据，展示的是「分层优先排名」：先比较选手参加过的最高赛事层级，
         再比较该层级上取得的最高奖项，最后才看其余成绩。
       </p>
       <p>

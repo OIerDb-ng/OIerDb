@@ -16,7 +16,7 @@ const FAQ: React.FC = () => {
       <Segment attached="bottom">
         <h5>这是什么网站？</h5>
         <p>
-          这是 <b>OIerDb LexRank</b>——一个 <b>本地构建的二次开发版本</b>，用来查看「分层优先排名」的效果。
+          这是 <b>OIerDb LexRank</b>——一个在线部署的二次开发版本，用来查看「分层优先排名」的效果。
           数据来自开源项目 OIerDb，排名算法经过改写，因此这里的名次与
           <a href="https://oier.baoshuo.dev" target="_blank" rel="noreferrer noopener">
             官方站点
