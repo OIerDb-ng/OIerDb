@@ -145,7 +145,7 @@ class Record:
                     return inf
 
                 # 在同一学年中出现就读学校不一致、年级不一致的情况，不合并
-                if a.contest.school_year == b.contest.school_year and a.school != b.school:
+                if a.contest.school_year() == b.contest.school_year() and a.school != b.school:
                     return inf
 
                 if a.contest.school_year() == b.contest.school_year():
