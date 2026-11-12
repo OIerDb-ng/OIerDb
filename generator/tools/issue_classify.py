@@ -84,7 +84,7 @@ def allowed_image_url(value, *, redirect=False):
             "release-assets.githubusercontent.com",
         } or bool(
             re.fullmatch(
-                r"github-production-user-asset-\d+\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com", url.hostname or ""
+                r"github-production-user-asset-[0-9a-f]+\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com", url.hostname or ""
             )
         )
     return False

@@ -13,25 +13,28 @@ from school import School
 REPO_DIR = Path(__file__).resolve().parent.parent
 
 
+def _git(*args):
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=REPO_DIR,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def _source(raw_file, school_file):
-    commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_DIR,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
-    dirty = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=normal", "--", "data", "generator"],
-        cwd=REPO_DIR,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
+    commit = _git("rev-parse", "HEAD") if (REPO_DIR / ".git").exists() else None
+    status = (
+        _git("status", "--porcelain", "--untracked-files=normal", "--", "data", "generator") if commit else None
+    )
     return {
         "kind": "repository",
         "commit": commit,
-        "working_tree_dirty": bool(dirty),
+        "working_tree_dirty": bool(status) if status is not None else None,
         "sha256": {
             "raw": hashlib.sha256(Path(raw_file).read_bytes()).hexdigest(),
             "school": hashlib.sha256(Path(school_file).read_bytes()).hexdigest(),
@@ -100,10 +103,11 @@ def lookup_oiers(uids=(), names=(), *, raw_file=DEFAULT_RAW_FILE, school_file=DE
     requested_uids = set(uids)
     seed_names = {}
     # 先由 UID 定位姓名，再用该姓名的全部记录分组。
-    for _, valid, parsed, _ in _records(raw_file):
-        if valid in requested_uids:
-            seed_names[valid] = parsed.name
-            target_names.add(parsed.name)
+    if requested_uids:
+        for _, valid, parsed, _ in _records(raw_file):
+            if valid in requested_uids:
+                seed_names[valid] = parsed.name
+                target_names.add(parsed.name)
     by_name = defaultdict(list)
     for physical, valid, parsed, fallback in _records(raw_file):
         if parsed.name in target_names:
