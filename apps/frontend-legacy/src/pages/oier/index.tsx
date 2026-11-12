@@ -93,6 +93,7 @@ const OIerList: React.FC = () => {
       {isFemaleRanking && (
         <p style={{ color: '#6b7280', fontSize: 13, margin: '-4px 0 14px' }}>
           女生榜按记录判定：有 NGOI 记录，或 NOI 获奖公示中的性别为女。
+          选择省份后，表格中的“全国女生排名”仍按全国女生榜计算。
         </p>
       )}
 
@@ -117,7 +118,7 @@ const OIerList: React.FC = () => {
             </Table.HeaderCell>
             {!isWholeCountry && (
               <Table.HeaderCell width={2} textAlign="center">
-                全国排名
+                {isFemaleRanking ? '全国女生排名' : '全国排名'}
               </Table.HeaderCell>
             )}
             {showFemaleRank && (
