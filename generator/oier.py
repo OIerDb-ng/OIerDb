@@ -5,6 +5,7 @@ import gc
 import re
 import util
 from fractions import Fraction as R
+from record import Record
 
 __re_identifier_with_initials__ = re.compile(r"<(\w+)>")
 
@@ -15,6 +16,8 @@ __clscr2lvl__ = [(1000, 10), (500, 9), (250, 8)]
 
 
 class OIer:
+    MERGE_THRESHOLD = 240
+
     __all_oiers_list__ = []
     __all_oiers_map__ = {}
 
@@ -48,6 +51,47 @@ class OIer:
         oier = OIer(name, identifier, gender, em, uid)
         OIer.__all_oiers_map__[key] = oier
         return oier
+
+    @staticmethod
+    def group_records(records, threshold=MERGE_THRESHOLD):
+        """分组时原地设置留级标记，重复模拟时须重建记录。"""
+        by_identity = {}
+        for record in records:
+            key = (record.oier.name, record.oier.identifier)
+            by_identity.setdefault(key, []).append(record)
+        groups = []
+        for (_, identifier), same_identity in by_identity.items():
+            if identifier:
+                groups.append(same_identity)
+                continue
+            candidates = [[record] for record in same_identity]
+            while True:
+                n, best, bi, bj = len(candidates), threshold + 1, -1, -1
+                for i in range(n):
+                    for j in range(i):
+                        distance = Record.distance(candidates[j], candidates[i], threshold + 1)
+                        if distance < best:
+                            best, bi, bj = distance, j, i
+                if best > threshold:
+                    break
+                stay_down = Record.check_stay_down(candidates[bi], candidates[bj])
+                if stay_down == 1:
+                    for record in candidates[bi]:
+                        record.keep_grade()
+                elif stay_down == -1:
+                    for record in candidates[bj]:
+                        record.keep_grade()
+                else:
+                    assert stay_down == 0
+                candidates[bi].extend(candidates[bj])
+                del candidates[bj]
+            groups.extend(candidates)
+        return groups
+
+    @staticmethod
+    def enrollment_year(records):
+        ems = [record.ems for record in records if not record.is_keep_grade()]
+        return util.get_weighted_mode(ems or [record.ems for record in records])[0]
 
     @staticmethod
     def clear():

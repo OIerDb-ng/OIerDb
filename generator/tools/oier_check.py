@@ -25,29 +25,25 @@ simulate 选项:
 说明:
     · 有效行号 = 跳过注释和空行后的行号，与网站链接里的 OIer uid 一致；物理行号是 grep -n 看到的行号。
     · “已高中毕业”按“初中入学年份 + 6 年、6 月毕业”估算，仅供参考，展示时附上估算依据。
-    · 分组模拟复用生成器（record.Record.distance / check_stay_down，阈值 240）的贪心合并逻辑。
     · 退出码: 0 = 校验通过（或未做校验）；1 = 校验不通过或运行出错。
 """
 
 import os
 import sys
+import json
+from pathlib import Path
+from urllib.parse import urlparse
 
 __generator_dir__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, __generator_dir__)
-os.chdir(__generator_dir__)  # util 等模块按 ../data 相对路径读取数据
 
 import argparse  # noqa: E402
-import re  # noqa: E402
 from datetime import date  # noqa: E402
 
 import util  # noqa: E402  导入即加载 data/*.json
-from contest import Contest  # noqa: E402
 from oier import OIer  # noqa: E402
-from record import Record  # noqa: E402
-from school import School  # noqa: E402
-
-THRESHOLD = 240  # 与 main.attempt_merge 的默认阈值一致
-__re_score_with_rank__ = re.compile(r"^(\d+\.?\d*)\(rk(\d+)\)$")
+from loader import DEFAULT_RAW_FILE, DEFAULT_SCHOOL_FILE, iter_data_lines, load_schools, parse_raw_line  # noqa: E402
+from query import lookup_oiers  # noqa: E402
 
 
 class LineRecord:
@@ -57,64 +53,18 @@ class LineRecord:
         self.phys_line = phys_line
         self.valid_line = valid_line
         self.raw = line
-        li = line.split(",")
-        if len(li) != 9:
-            raise ValueError(f"字段数不是 9（{len(li)}）")
-        (
-            contest_name,
-            level,
-            name,
-            grade_name,
-            school_name,
-            score,
-            province,
-            gender_name,
-            identifier,
-        ) = li
-        if name == "":
-            raise ValueError("姓名为空")
-        if province not in util.provinces:
-            raise ValueError(f"未知省份 '{province}'")
-        if level not in util.award_levels:
-            raise ValueError(f"未知奖项 '{level}'")
-        self.contest = Contest.by_name(contest_name)  # 未知的比赛会抛 UnknownReferenceError
-        try:
-            self.school = School.by_name_in_province(school_name, province)
-        except ValueError:
-            self.school = School.by_name(school_name)  # 与 main.py 一致：回退到全局查找
-        grades = util.get_grades(grade_name)
-        gender = {"男": 1, "女": -1}.get(gender_name, 0)
-        # 分数只用于展示，不参与分组，这里仅做格式检查
-        if m := re.match(__re_score_with_rank__, score):
-            self.score = m.group(1)
-        elif score == "" or score.replace(".", "").isnumeric():
-            self.score = score
-        else:
-            raise ValueError(f"无法识别的分数 '{score}'")
-        self.level = level
-        self.grade_name = grade_name
-        self.gender_name = gender_name
-        self.identifier = identifier
-        oier = OIer.of(name, "")  # 占位用，分组逻辑不依赖具体的 OIer
-        self.record = Record(oier, self.contest, None, 0, level, grades, self.school, province, gender)
+        parsed = parse_raw_line(line)
+        self.contest = parsed.contest
+        self.school = parsed.school
+        self.score = parsed.score
+        self.level = parsed.level
+        self.grade_name = parsed.grade_name
+        self.gender_name = parsed.gender_name
+        self.identifier = parsed.identifier
+        self.record = parsed.to_record(OIer.of(parsed.name, parsed.identifier))
 
     def clone(self):
         return LineRecord(self.phys_line, self.valid_line, self.raw)
-
-
-def load_schools():
-    """加载 data/school.txt 到 School 注册表（分组距离计算依赖学校与地区）。"""
-
-    with open("../data/school.txt", encoding="utf-8") as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped == "" or stripped.startswith("#"):
-                continue
-            li = stripped.split(",")
-            if len(li) < 3:
-                continue
-            province, city, name, *aliases = li
-            School.create(name, province, city, aliases)
 
 
 def load_name(name):
@@ -122,22 +72,14 @@ def load_name(name):
 
     records = []
     malformed = []
-    phys_line = 0
-    valid_line = 0
-    with open("../data/raw.txt", encoding="utf-8") as f:
-        for line in f:
-            phys_line += 1
-            stripped = line.strip()
-            if stripped == "" or stripped.startswith("#"):
-                continue
-            valid_line += 1
-            fields = stripped.split(",")
-            if len(fields) != 9 or fields[2] != name:
-                continue
-            try:
-                records.append(LineRecord(phys_line, valid_line, stripped))
-            except ValueError as e:
-                malformed.append((phys_line, stripped, str(e)))
+    for phys_line, valid_line, line in iter_data_lines(DEFAULT_RAW_FILE):
+        fields = line.split(",")
+        if len(fields) < 3 or fields[2] != name:
+            continue
+        try:
+            records.append(LineRecord(phys_line, valid_line, line))
+        except ValueError as e:
+            malformed.append((phys_line, line, str(e)))
     return records, malformed
 
 
@@ -147,54 +89,16 @@ def sort_key(lr):
     return (lr.contest.year, 1 if lr.contest.fall_semester else 0)
 
 
-def simulate_groups(line_records, threshold=THRESHOLD):
-    """按生成器的逻辑把记录分组成“人”。
-
-    有标识符的记录按键锁定为一人；空标识符的记录进入自动合并池，
-    用与 main.attempt_merge 相同的贪心过程聚类。
-    """
-
-    locked = {}
-    pool = []
+def simulate_groups(line_records, threshold=OIer.MERGE_THRESHOLD):
+    by_record = {}
     for lr in line_records:
-        if lr.identifier:
-            locked.setdefault(lr.identifier, []).append(lr)
-        else:
-            pool.append(lr)
-
-    a = [[lr] for lr in pool]
-    while True:
-        n, best, bi, bj = len(a), threshold + 1, -1, -1
-        for i in range(n):
-            for j in range(i):
-                dist = Record.distance(
-                    [x.record for x in a[j]],
-                    [x.record for x in a[i]],
-                    threshold + 1,
-                )
-                if dist < best:
-                    best, bi, bj = dist, j, i
-        if best <= threshold:
-            stay_down = Record.check_stay_down(
-                [x.record for x in a[bi]], [x.record for x in a[bj]]
-            )
-            if stay_down == 1:
-                for x in a[bi]:
-                    x.record.keep_grade()
-            elif stay_down == -1:
-                for x in a[bj]:
-                    x.record.keep_grade()
-            else:
-                assert stay_down == 0
-            a[bi].extend(a[bj])
-            del a[bj]
-        else:
-            break
-
-    groups = [list(v) for v in locked.values()] + a
-    for g in groups:
-        g.sort(key=lambda lr: (sort_key(lr), lr.valid_line))
-    return groups
+        lr.record.oier = OIer.of(lr.record.oier.name, lr.identifier)
+        by_record[id(lr.record)] = lr
+    groups = OIer.group_records([lr.record for lr in line_records], threshold)
+    return [
+        sorted((by_record[id(record)] for record in group), key=lambda lr: (sort_key(lr), lr.valid_line))
+        for group in groups
+    ]
 
 
 def dedupe_consecutive(items):
@@ -208,10 +112,7 @@ def dedupe_consecutive(items):
 def person_facts(group):
     """计算一个人的摘要信息：初中入学年份（估）、毕业年份、是否已毕业、最近参赛。"""
 
-    ems = [lr.record.ems for lr in group if not lr.record.is_keep_grade()]
-    if not ems:
-        ems = [lr.record.ems for lr in group]
-    em = util.get_weighted_mode(ems)[0]
+    em = OIer.enrollment_year([lr.record for lr in group])
     grad_year = em + 6
     today = date.today()
     graduated = (today.year, today.month) > (grad_year, 6)
@@ -626,7 +527,33 @@ def main():
     p_sim.add_argument("--strip", action="store_true", help="去掉全部标识符后模拟")
     p_sim.add_argument("--assign", default="", help="覆盖若干行的标识符后模拟")
     p_sim.add_argument("--expect", default="", help="期望的分组，用于校验与给建议")
+    p_show = sub.add_parser("show", help="查询选手")
+    p_show.add_argument("target", help="UID 或 /oier/<UID> 链接")
+    p_show.add_argument("--json", action="store_true", help="输出 JSON")
+    p_show.add_argument("--raw-file", type=Path, default=DEFAULT_RAW_FILE)
+    p_show.add_argument("--school-file", type=Path, default=DEFAULT_SCHOOL_FILE)
+    p_show.add_argument("--limit", type=int, default=100)
     args = parser.parse_args()
+
+    if args.command == "show":
+        try:
+            target = urlparse(args.target).path.rstrip("/").removeprefix("/oier/") if "://" in args.target else args.target
+            result = lookup_oiers([int(target)], raw_file=args.raw_file, school_file=args.school_file, limit=args.limit)
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                for person in result["matches"]:
+                    print(f"UID {person['uid']}: {person['name']}（{'、'.join(person['provinces'])}）")
+                    print(f"  {person['record_count']} 条记录；初中入学年份（估）：{person['estimated_enrollment_year']}")
+                    for record in person["records"]:
+                        print(f"  [物理行 {record['physical_line']}，有效行 {record['valid_line']}] "
+                              f"{record['contest']} {record['province']} {record['original_school_name']} {record['grade']}")
+                if not result["matches"]:
+                    print(f"当前仓库无法确认 UID {target}：{result['requests'][0]['status']}")
+            return 0 if result["matches"] else 1
+        except (ValueError, OSError) as error:
+            print(f"错误：{error}", file=sys.stderr)
+            return 1
 
     load_schools()
 
@@ -636,4 +563,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
