@@ -1039,5 +1039,13 @@
     "name": "IOI2026",
     "type": "IOI",
     "year": 2026
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2026提高",
+    "type": "CSP提高",
+    "year": 2026,
+    "capacity": 32643
   }
 ]
