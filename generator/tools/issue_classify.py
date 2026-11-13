@@ -148,11 +148,12 @@ class GitHub:
             raise ClassificationError("请通过 --repository 或 GITHUB_REPOSITORY 指定 owner/repo")
         self.client = Github(
             auth=Auth.Token(token) if token else None,
+            lazy=True,
             timeout=30,
             retry=1,
             api_version="2022-11-28",
         )
-        self.repository = self.client.get_repo(repository, lazy=True)
+        self.repository = self.client.get_repo(repository)
         self.current_issue = None
 
     def get_issue(self, number):

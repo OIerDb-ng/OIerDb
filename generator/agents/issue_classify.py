@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
 from query import lookup_oiers, lookup_schools, search_schools  # noqa: E402
 
+MODEL = "openai/gpt-6-luna"
 MAX_AGENT_TURNS = 16
 AGENT_TIMEOUT = 240
 
@@ -144,9 +145,8 @@ async def _infer(api_key, issue, context, images):
         agent = Agent[QueryContext](
             name="OIerDb issue classification",
             instructions=SYSTEM_PROMPT,
-            model=OpenAIChatCompletionsModel(model="openai/gpt-6-luna", openai_client=client),
+            model=OpenAIChatCompletionsModel(model=MODEL, openai_client=client),
             model_settings=ModelSettings(
-                parallel_tool_calls=False,
                 max_tokens=4096,
                 reasoning=Reasoning(effort="low"),
                 extra_body={"provider": {"require_parameters": True}},
@@ -170,9 +170,14 @@ def _run_inference(api_key, issue, context, images):
     except MaxTurnsExceeded:
         raise ClassificationError(f"Agent 超过 {MAX_AGENT_TURNS} 轮") from None
     except APIError as error:
-        raise ClassificationError(
-            f"OpenRouter 请求失败：{getattr(error, 'status_code', None) or type(error).__name__}"
-        ) from None
+        status = getattr(error, "status_code", None)
+        if status == 404 and isinstance(error.body, dict):
+            message = error.body.get("message")
+            if isinstance(message, str) and message.startswith(
+                "No endpoints found that can handle the requested parameters"
+            ):
+                raise ClassificationError(f"OpenRouter HTTP 404：{MODEL} 没有支持当前请求参数的端点") from None
+        raise ClassificationError(f"OpenRouter 请求失败（{MODEL}）：{status or type(error).__name__}") from None
     except (AgentsException, ValidationError) as error:
         raise ClassificationError(f"Agent 未返回有效结果：{type(error).__name__}") from None
 
