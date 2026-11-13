@@ -8,19 +8,13 @@ from collections import Counter, defaultdict
 from contextlib import redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
-from urllib.parse import urlparse
 
-GENERATOR_DIR = Path(__file__).resolve().parents[1]
-INVOCATION_DIR = Path.cwd()
-sys.path.insert(0, str(GENERATOR_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from loader import iter_data_lines, load_schools, parse_raw_line  # noqa: E402
+from loader import DEFAULT_RAW_FILE, DEFAULT_SCHOOL_FILE, iter_data_lines, load_schools, parse_raw_line  # noqa: E402
 from oier import OIer  # noqa: E402
 from school import School  # noqa: E402
 from query import lookup_schools  # noqa: E402
-
-DEFAULT_SCHOOL_FILE = GENERATOR_DIR.parent / "data/school.txt"
-DEFAULT_RAW_FILE = GENERATOR_DIR.parent / "data/raw.txt"
 
 
 def load_table(path):
@@ -65,38 +59,32 @@ def layout_errors(before, after):
     return errors
 
 
-def parsed_records(path):
-    for phys, valid, text in iter_data_lines(path):
+def parsed_records(raw_file):
+    for phys, _, text in iter_data_lines(raw_file):
         try:
-            yield phys, valid, text, parse_raw_line(text)
+            yield phys, text, parse_raw_line(text)
         except ValueError as error:
-            raise ValueError(f"{path}:{phys}: {error}") from error
+            raise ValueError(f"{raw_file}:{phys}: {error}") from error
 
 
 def signature(school):
     return school.id, school.name, school.province, school.city
 
 
-def print_school(row):
-    phys, _, text, school = row
-    print(f"学校 ID {school.id}，物理行 {phys}: {text}")
-    if text == ",,":
-        print("  已作废的占位行")
-    else:
-        print(f"  正式名称：{school.name}；地区：{school.province}/{school.city}")
-        print("  别名：" + ("、".join(school.aliases) or "无"))
-
-
-def show(rows, target, raw_file, limit, *, school_file=DEFAULT_SCHOOL_FILE, json_output=False):
-    result = lookup_schools([target], raw_file=raw_file, school_file=school_file, limit=limit)
+def show(school_id, json_output, raw_file, school_file):
+    result = lookup_schools(ids=[school_id], raw_file=raw_file, school_file=school_file)
     if json_output:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     if not result["matches"]:
-        raise ValueError(f"未知学校 ID {target}")
+        raise ValueError(f"未知学校 ID {school_id}")
     if json_output:
-        return
-    print_school(rows[target])
+        return 0
     profile = result["matches"][0]
+    name = profile["name"] or "已作废的占位行"
+    print(f"学校 ID {school_id}，物理行 {profile['physical_line']}：{name}")
+    if not profile["placeholder"]:
+        print(f"  地区：{profile['province']}/{profile['city']}")
+        print("  别名：" + ("、".join(profile["aliases"]) or "无"))
     print(f"  关联获奖记录：{profile['record_count']} 条；涉及姓名：{profile['member_count']} 个")
     for count in profile["record_counts"]:
         print(f"    {count['province']}/{count['original_school_name']}: {count['count']} 条")
@@ -104,7 +92,8 @@ def show(rows, target, raw_file, limit, *, school_file=DEFAULT_SCHOOL_FILE, json
         print(f"    [物理行 {record['physical_line']}，有效行 {record['valid_line']}] "
               f"{record['raw']}")
     if profile["records_truncated"]:
-        print(f"  仅显示前 {limit} 条记录")
+        print(f"  仅显示前 {len(profile['records'])} 条记录")
+    return 0
 
 
 def check(rows, raw_file):
@@ -113,7 +102,7 @@ def check(rows, raw_file):
         print(f"错误：{error}", file=sys.stderr)
     fallback = Counter()
     count = 0
-    for _, _, _, parsed in parsed_records(raw_file):
+    for _, _, parsed in parsed_records(raw_file):
         count += 1
         try:
             School.by_name_in_province(parsed.school_name, parsed.province)
@@ -125,7 +114,7 @@ def check(rows, raw_file):
     return 1 if errors else 0
 
 
-def collect_groups(raw_file, names):
+def collect_groups(names, raw_file):
     records = []
     source_lines = {}
     for phys, _, text in iter_data_lines(raw_file):
@@ -143,12 +132,12 @@ def collect_groups(raw_file, names):
     return groups
 
 
-def simulate(before_file, candidate_file, raw_file, limit):
-    before = load_table(before_file)
+def simulate(candidate_file, raw_file, school_file):
+    before = load_table(school_file)
     for error in table_errors(before):
         print(f"原学校表问题：{error}", file=sys.stderr)
     original = {}
-    for _, _, _, parsed in parsed_records(raw_file):
+    for _, _, parsed in parsed_records(raw_file):
         original[(parsed.province, parsed.school_name)] = signature(parsed.school)
 
     after = load_table(candidate_file)
@@ -158,19 +147,18 @@ def simulate(before_file, candidate_file, raw_file, limit):
     transitions = Counter()
     affected_names = set()
     examples = []
-    affected_records = 0
-    for phys, _, text, parsed in parsed_records(raw_file):
+    for phys, text, parsed in parsed_records(raw_file):
         previous = original[(parsed.province, parsed.school_name)]
         current = signature(parsed.school)
         if previous == current:
             continue
-        affected_records += 1
         transitions[(previous, current)] += 1
         affected_names.add(parsed.name)
-        if len(examples) < limit:
+        if len(examples) < 20:
             examples.append((phys, previous[0], current[0], text))
 
     changed_rows = sum(old[2] != new[2] for old, new in zip(before, after)) + abs(len(after) - len(before))
+    affected_records = transitions.total()
     print(f"候选表：修改 {changed_rows} 个有效行，条目数 {len(before)} → {len(after)}（含占位）")
     print(f"学校归属或属性变化：{affected_records} 条记录，涉及 {len(affected_names)} 个姓名")
     for (previous, current), count in sorted(transitions.items()):
@@ -178,14 +166,14 @@ def simulate(before_file, candidate_file, raw_file, limit):
               f"{current[0]} {current[1]} ({current[2]}/{current[3]}): {count} 条")
     for phys, previous, current, text in examples:
         print(f"  [物理行 {phys}] 学校 ID {previous} → {current}: {text}")
-    if affected_records > limit:
-        print(f"  仅显示前 {limit} 条记录")
+    if affected_records > len(examples):
+        print(f"  仅显示前 {len(examples)} 条记录")
     if not affected_names:
         return 0
 
-    after_groups = collect_groups(raw_file, affected_names)
-    load_table(before_file)
-    before_groups = collect_groups(raw_file, affected_names)
+    after_groups = collect_groups(affected_names, raw_file)
+    load_table(school_file)
+    before_groups = collect_groups(affected_names, raw_file)
     changed_names = [name for name in sorted(affected_names) if before_groups[name] != after_groups[name]]
     print(f"选手分组变化：{len(changed_names)} 个姓名")
     for name in changed_names:
@@ -200,72 +188,37 @@ def format_groups(groups):
     )
 
 
-def school_id(value):
-    if "://" in value:
-        value = urlparse(value).path.rstrip("/").removeprefix("/school/")
-    try:
-        result = int(value)
-        if result < 0:
-            raise ValueError
-        return result
-    except ValueError:
-        raise argparse.ArgumentTypeError("请提供非负学校 ID 或 /school/<ID> 链接")
-
-
-def nonnegative(value):
-    result = int(value)
-    if result < 0:
-        raise argparse.ArgumentTypeError("不能为负数")
-    return result
-
-
-def input_path(value):
-    path = Path(value).expanduser()
-    return path if path.is_absolute() else INVOCATION_DIR / path
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     lines = commands.add_parser("lines", help="按正式名称或别名搜索学校")
     lines.add_argument("name")
-    lines.add_argument("--exact", action="store_true", help="按完整名称匹配")
-    lines.add_argument("--province", help="仅搜索指定省份")
-    info = commands.add_parser("show", help="按学校 ID 或链接查询")
-    info.add_argument("target", type=school_id)
+    info = commands.add_parser("show", help="按学校 ID 查询")
+    info.add_argument("school_id", type=int)
     info.add_argument("--json", action="store_true", help="输出 JSON")
     verify = commands.add_parser("check", help="校验学校表和获奖记录")
     preview = commands.add_parser("simulate", help="预览候选学校表的影响")
-    preview.add_argument("candidate_file", type=input_path)
+    preview.add_argument("candidate_file", type=Path)
     for command in (lines, info, verify, preview):
-        command.add_argument("--school-file", type=input_path, default=DEFAULT_SCHOOL_FILE, help="当前学校表")
-        command.add_argument("--raw-file", type=input_path, default=DEFAULT_RAW_FILE, help="获奖记录表")
-    for command in (info, preview):
-        command.add_argument("--limit", type=nonnegative, default=20, help="记录展示上限（默认 20）")
+        command.add_argument("--school-file", type=Path, default=DEFAULT_SCHOOL_FILE, help="学校表")
+    for command in (info, verify, preview):
+        command.add_argument("--raw-file", type=Path, default=DEFAULT_RAW_FILE, help="获奖记录文件")
     args = parser.parse_args()
     try:
         if args.command == "simulate":
-            return simulate(args.school_file, args.candidate_file, args.raw_file, args.limit)
+            return simulate(args.candidate_file.expanduser(), args.raw_file, args.school_file)
+        if args.command == "show":
+            return show(args.school_id, args.json, args.raw_file, args.school_file)
         rows = load_table(args.school_file)
         if args.command == "check":
             return check(rows, args.raw_file)
-        errors = table_errors(rows)
-        for error in errors:
-            print(f"错误：{error}", file=sys.stderr)
-        if args.command == "show":
-            show(rows, args.target, args.raw_file, args.limit,
-                 school_file=args.school_file, json_output=args.json)
-            return 1 if errors else 0
-        matches = [
-            row for row in rows
-            if (not args.province or row[3].province == args.province)
-            and any(args.name == name if args.exact else args.name in name
-                    for name in [row[3].name, *row[3].aliases])
-        ]
-        for row in matches:
-            print_school(row)
-        print(f"匹配 {len(matches)} 个条目")
-        return 0 if matches and not errors else 1
+        count = 0
+        for phys, _, text, school in rows:
+            if any(args.name in name for name in (school.name, *school.aliases)):
+                print(f"学校 ID {school.id}，物理行 {phys}: {text}")
+                count += 1
+        print(f"匹配 {count} 个条目")
+        return 0 if count else 1
     except (ValueError, OSError) as error:
         print(f"错误：{error}", file=sys.stderr)
         return 1
