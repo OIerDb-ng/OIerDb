@@ -8,7 +8,12 @@ body:
       value: |
         感谢您的反馈！如果情况允许，您也可以直接发起 Pull Request 进行更正。
 
-        欢迎您在 [项目主页](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
+        > **特别说明**
+        >
+        > 1. 对于学校的更名、合并等情况，请提供可靠的、能够公开查询的证明材料（如百度百科页面、官网公告等），以便我们核实。
+        > 2. 对于集团校、分校等情况，请提供明确的区分信息，以便我们准确识别各个学校。理论上具有独立法人资格的分校应被视为独立学校，不应与集团总校合并。
+
+        欢迎您在 [github.com/OIerDb-ng/OIerDb](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
 
   - type: input
     id: contact
@@ -24,11 +29,11 @@ body:
       label: 错误类别
       description: 这个学校的信息出现了什么问题？
       options:
-        - 名称有误
-        - 地区有误
-        - 错误合并
-        - 错误拆分
-        - 其他
+        - 学校名称有误
+        - 地区信息有误
+        - 与其他学校错误合并
+        - 被错误拆分成了多个学校
+        - 其他（在错误详情中说明）
     validations:
       required: true
 

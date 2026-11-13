@@ -10,10 +10,10 @@ body:
 
         > **特别说明**
         >
-        > 1. 由于 CCF 在奖项公示时并未公布小学选手的年级信息，为保证 OIerDb 的客观中立性，我们不会对这些选手的年级信息做出特别修改。在初中参赛后，年级信息会被自动修正，敬请谅解。
+        > 1. 由于 CCF 在奖项公示时并未公布小学选手的实际年级信息，为保证 OIerDb 的客观中立性，我们不会对这些选手的年级信息做出特别修改。在初中参赛后，这些选手的年级信息会被自动修正，敬请谅解。
         > 2. 对于留级的选手，我们会在 OIerDb 页面上作出推测性的提示。OIerDb 的数据以 CCF 官网公示为准，不接受任何消除此类提示的请求。
 
-        欢迎您在 [项目主页](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
+        欢迎您在 [github.com/OIerDb-ng/OIerDb](https://github.com/OIerDb-ng/OIerDb) 的右上方为我们点亮 Star，感谢支持！
 
   - type: input
     id: contact
@@ -29,10 +29,10 @@ body:
       label: 错误类别
       description: 这名选手的信息出现了什么问题？
       options:
-        - 错误合并
-        - 错误拆分
+        - 与其他选手错误合并
+        - 被错误拆分成了多个选手
         - 年级、学校信息有误
-        - 其他
+        - 其他（在错误详情中说明）
     validations:
       required: true
 
@@ -40,7 +40,8 @@ body:
     id: what-happened
     attributes:
       label: 错误详情
-      description: 请具体描述这名选手的信息出现了什么错误，并附上有助于识别该选手的信息（如省份、就读学校列表、年级等，UID 在某些情况下可能会发生变化）。
+      description: |
+        请具体描述这名选手的信息出现了什么问题，并附上有助于识别该选手的信息（如省份、就读学校列表、年级、获过什么奖项等）。
     validations:
       required: false
 
