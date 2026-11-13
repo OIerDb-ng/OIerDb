@@ -84,6 +84,17 @@ class School:
         raise ValueError(f"未知的学校名：\x1b[32m'{name}'\x1b[0m（省份：{province}）")
 
     @staticmethod
+    def resolve(name, province, *, allow_fallback=True, on_fallback=None):
+        try:
+            return School.by_name_in_province(name, province)
+        except ValueError:
+            if not allow_fallback:
+                raise
+        if on_fallback is not None:
+            on_fallback(name, province)
+        return School.by_name(name)
+
+    @staticmethod
     def find_candidate(name, province):
         """根据名称返回已有学校中最有可能者。
 
@@ -133,6 +144,13 @@ class School:
         "获取当前学校总数。"
 
         return len(School.__all_school_list__)
+
+    @staticmethod
+    def clear():
+        School.__all_school_list__ = []
+        School.__school_name_map__ = {}
+        School.__school_name_map_by_province__ = {}
+        School.__schools_by_pc__ = {}
 
     @staticmethod
     def get_all():
