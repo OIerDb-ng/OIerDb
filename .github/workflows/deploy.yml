@@ -160,6 +160,18 @@ jobs:
           path: apps/frontend-legacy/dist/
           retention-days: 1
 
+      # Upload the Pages artifact in the build job (not the deploy job).
+      # deploy-pages looks up "github-pages" by name; if upload and deploy
+      # share one job, that lookup can race the artifact API and fail with
+      # "No artifacts named github-pages were found" even after a successful
+      # upload. Separating the jobs (needs:) gives the artifact time to become
+      # visible, which is the layout GitHub's Pages starters use.
+      - name: Upload Pages Artifact
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/frontend-legacy/dist
+
   deploy-pages:
     name: Deploy to GitHub Pages
     needs: build-frontend
@@ -169,20 +181,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download Site
-        uses: actions/download-artifact@v8
-        with:
-          name: frontend-legacy-dist
-          path: dist
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
       - name: Deploy Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   sync-cdn:
     name: Sync to CDN
