@@ -1047,5 +1047,13 @@
     "type": "CSP提高",
     "year": 2026,
     "capacity": 32643
+  },
+  {
+    "fall_semester": true,
+    "full_score": 400,
+    "name": "CSP2026入门",
+    "type": "CSP入门",
+    "year": 2026,
+    "capacity": 43864
   }
 ]
