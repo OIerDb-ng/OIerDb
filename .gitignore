@@ -13,3 +13,4 @@ dist-ssr
 !.yarn/versions
 
 .zcode/
+tmp/
