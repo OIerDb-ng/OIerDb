@@ -25,29 +25,20 @@ simulate 选项:
 说明:
     · 有效行号 = 跳过注释和空行后的行号，与网站链接里的 OIer uid 一致；物理行号是 grep -n 看到的行号。
     · “已高中毕业”按“初中入学年份 + 6 年、6 月毕业”估算，仅供参考，展示时附上估算依据。
-    · 分组模拟复用生成器（record.Record.distance / check_stay_down，阈值 240）的贪心合并逻辑。
     · 退出码: 0 = 校验通过（或未做校验）；1 = 校验不通过或运行出错。
 """
 
-import os
+import argparse
+import json
 import sys
+from datetime import date
+from pathlib import Path
 
-__generator_dir__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, __generator_dir__)
-os.chdir(__generator_dir__)  # util 等模块按 ../data 相对路径读取数据
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import argparse  # noqa: E402
-import re  # noqa: E402
-from datetime import date  # noqa: E402
-
-import util  # noqa: E402  导入即加载 data/*.json
-from contest import Contest  # noqa: E402
 from oier import OIer  # noqa: E402
-from record import Record  # noqa: E402
-from school import School  # noqa: E402
-
-THRESHOLD = 240  # 与 main.attempt_merge 的默认阈值一致
-__re_score_with_rank__ = re.compile(r"^(\d+\.?\d*)\(rk(\d+)\)$")
+from loader import DEFAULT_RAW_FILE, DEFAULT_SCHOOL_FILE, iter_data_lines, load_schools, parse_raw_line  # noqa: E402
+from query import lookup_oiers  # noqa: E402
 
 
 class LineRecord:
@@ -57,87 +48,31 @@ class LineRecord:
         self.phys_line = phys_line
         self.valid_line = valid_line
         self.raw = line
-        li = line.split(",")
-        if len(li) != 9:
-            raise ValueError(f"字段数不是 9（{len(li)}）")
-        (
-            contest_name,
-            level,
-            name,
-            grade_name,
-            school_name,
-            score,
-            province,
-            gender_name,
-            identifier,
-        ) = li
-        if name == "":
-            raise ValueError("姓名为空")
-        if province not in util.provinces:
-            raise ValueError(f"未知省份 '{province}'")
-        if level not in util.award_levels:
-            raise ValueError(f"未知奖项 '{level}'")
-        self.contest = Contest.by_name(contest_name)  # 未知的比赛会抛 UnknownReferenceError
-        try:
-            self.school = School.by_name_in_province(school_name, province)
-        except ValueError:
-            self.school = School.by_name(school_name)  # 与 main.py 一致：回退到全局查找
-        grades = util.get_grades(grade_name)
-        gender = {"男": 1, "女": -1}.get(gender_name, 0)
-        # 分数只用于展示，不参与分组，这里仅做格式检查
-        if m := re.match(__re_score_with_rank__, score):
-            self.score = m.group(1)
-        elif score == "" or score.replace(".", "").isnumeric():
-            self.score = score
-        else:
-            raise ValueError(f"无法识别的分数 '{score}'")
-        self.level = level
-        self.grade_name = grade_name
-        self.gender_name = gender_name
-        self.identifier = identifier
-        oier = OIer.of(name, "")  # 占位用，分组逻辑不依赖具体的 OIer
-        self.record = Record(oier, self.contest, None, 0, level, grades, self.school, province, gender)
+        parsed = parse_raw_line(line)
+        self.contest = parsed.contest
+        self.school = parsed.school
+        self.score = parsed.score
+        self.level = parsed.level
+        self.grade_name = parsed.grade_name
+        self.gender_name = parsed.gender_name
+        self.identifier = parsed.identifier
+        self.record = parsed.to_record(OIer.of(parsed.name, parsed.identifier))
 
     def clone(self):
         return LineRecord(self.phys_line, self.valid_line, self.raw)
 
 
-def load_schools():
-    """加载 data/school.txt 到 School 注册表（分组距离计算依赖学校与地区）。"""
-
-    with open("../data/school.txt", encoding="utf-8") as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped == "" or stripped.startswith("#"):
-                continue
-            li = stripped.split(",")
-            if len(li) < 3:
-                continue
-            province, city, name, *aliases = li
-            School.create(name, province, city, aliases)
-
-
-def load_name(name):
-    """读取 data/raw.txt，返回 (该姓名的 LineRecord 列表, 无法解析的行列表)。"""
-
+def load_name(name, raw_file):
     records = []
     malformed = []
-    phys_line = 0
-    valid_line = 0
-    with open("../data/raw.txt", encoding="utf-8") as f:
-        for line in f:
-            phys_line += 1
-            stripped = line.strip()
-            if stripped == "" or stripped.startswith("#"):
-                continue
-            valid_line += 1
-            fields = stripped.split(",")
-            if len(fields) != 9 or fields[2] != name:
-                continue
-            try:
-                records.append(LineRecord(phys_line, valid_line, stripped))
-            except ValueError as e:
-                malformed.append((phys_line, stripped, str(e)))
+    for phys_line, valid_line, line in iter_data_lines(raw_file):
+        fields = line.split(",")
+        if len(fields) < 3 or fields[2] != name:
+            continue
+        try:
+            records.append(LineRecord(phys_line, valid_line, line))
+        except ValueError as e:
+            malformed.append((phys_line, line, str(e)))
     return records, malformed
 
 
@@ -147,54 +82,16 @@ def sort_key(lr):
     return (lr.contest.year, 1 if lr.contest.fall_semester else 0)
 
 
-def simulate_groups(line_records, threshold=THRESHOLD):
-    """按生成器的逻辑把记录分组成“人”。
-
-    有标识符的记录按键锁定为一人；空标识符的记录进入自动合并池，
-    用与 main.attempt_merge 相同的贪心过程聚类。
-    """
-
-    locked = {}
-    pool = []
+def simulate_groups(line_records):
+    by_record = {}
     for lr in line_records:
-        if lr.identifier:
-            locked.setdefault(lr.identifier, []).append(lr)
-        else:
-            pool.append(lr)
-
-    a = [[lr] for lr in pool]
-    while True:
-        n, best, bi, bj = len(a), threshold + 1, -1, -1
-        for i in range(n):
-            for j in range(i):
-                dist = Record.distance(
-                    [x.record for x in a[j]],
-                    [x.record for x in a[i]],
-                    threshold + 1,
-                )
-                if dist < best:
-                    best, bi, bj = dist, j, i
-        if best <= threshold:
-            stay_down = Record.check_stay_down(
-                [x.record for x in a[bi]], [x.record for x in a[bj]]
-            )
-            if stay_down == 1:
-                for x in a[bi]:
-                    x.record.keep_grade()
-            elif stay_down == -1:
-                for x in a[bj]:
-                    x.record.keep_grade()
-            else:
-                assert stay_down == 0
-            a[bi].extend(a[bj])
-            del a[bj]
-        else:
-            break
-
-    groups = [list(v) for v in locked.values()] + a
-    for g in groups:
-        g.sort(key=lambda lr: (sort_key(lr), lr.valid_line))
-    return groups
+        lr.record.oier = OIer.of(lr.record.oier.name, lr.identifier)
+        by_record[id(lr.record)] = lr
+    groups = OIer.group_records([lr.record for lr in line_records])
+    return [
+        sorted((by_record[id(record)] for record in group), key=lambda lr: (sort_key(lr), lr.valid_line))
+        for group in groups
+    ]
 
 
 def dedupe_consecutive(items):
@@ -208,10 +105,7 @@ def dedupe_consecutive(items):
 def person_facts(group):
     """计算一个人的摘要信息：初中入学年份（估）、毕业年份、是否已毕业、最近参赛。"""
 
-    ems = [lr.record.ems for lr in group if not lr.record.is_keep_grade()]
-    if not ems:
-        ems = [lr.record.ems for lr in group]
-    em = util.get_weighted_mode(ems)[0]
+    em = OIer.enrollment_year([lr.record for lr in group])
     grad_year = em + 6
     today = date.today()
     graduated = (today.year, today.month) > (grad_year, 6)
@@ -219,19 +113,12 @@ def person_facts(group):
     return {"em": em, "grad_year": grad_year, "graduated": graduated, "latest": latest}
 
 
-def identifier_label(group):
-    idents = sorted({lr.identifier for lr in group})
-    if len(idents) == 1:
-        return repr(idents[0]) if idents[0] else "（空）"
-    return "混合(" + "/".join(repr(i) if i else "空" for i in idents) + ")"
-
-
-def print_person(index, group):
-    lrs = sorted(group, key=lambda lr: (sort_key(lr), lr.valid_line))
+def print_person(index, lrs):
     uid = min(lr.valid_line for lr in lrs)
     facts = person_facts(lrs)
     latest = facts["latest"]
-    print(f"◆ 人物 {index}：uid={uid}，标识符={identifier_label(lrs)}，共 {len(lrs)} 条记录")
+    group_identifier = repr(lrs[0].identifier) if lrs[0].identifier else "（空）"
+    print(f"◆ 人物 {index}：uid={uid}，标识符={group_identifier}，共 {len(lrs)} 条记录")
     for lr in lrs:
         gender = lr.gender_name or "？"
         identifier = repr(lr.identifier) if lr.identifier else "空"
@@ -328,7 +215,6 @@ class Expectation:
         for i, s in enumerate(sets):
             for ln in s:
                 self.index[ln] = i
-        self.records = records
         # 未列入期望的行：它们混进某个期望组时同样说明分组不对，必须被检出
         self.unlisted = sorted(lr.phys_line for lr in records if lr.phys_line not in self.index)
 
@@ -374,7 +260,7 @@ class Expectation:
         return "\n".join(lines)
 
 
-def suggest_identifiers(records, expectation):
+def suggest_identifiers(records, exp, strip_groups):
     """给出最小的标识符修改建议，返回 (改动列表, 分组说明, {行号: 建议标识符})。
 
     原则（与 SKILL.md 一致）:
@@ -382,12 +268,6 @@ def suggest_identifiers(records, expectation):
     · 需要标识符才能分开/合并的组 → 已毕业者优先拿标识符；都未毕业时，
       最近参赛记录最久远者优先拿标识符；空标识符留给最可能继续参赛的人。
     """
-
-    lrs_strip = [lr.clone() for lr in records]
-    for lr in lrs_strip:
-        lr.identifier = ""
-    strip_groups = simulate_groups(lrs_strip)
-    exp = expectation
 
     # 每个期望组被哪些“去掉标识符后的人”触碰
     touch = [[] for _ in exp.sets]
@@ -419,9 +299,8 @@ def suggest_identifiers(records, expectation):
     for i in range(len(exp.sets)):
         clusters.setdefault(find(i), []).append(i)
 
-    facts = []
-    for s in exp.sets:
-        facts.append(person_facts([lr for lr in lrs_strip if lr.phys_line in s]))
+    stripped = {lr.phys_line: lr for group in strip_groups for lr in group}
+    facts = [person_facts([stripped[ln] for ln in rows]) for rows in exp.sets]
 
     # 需要标识符的组：自己的行被拆散（触碰多个人），或与他人同簇（会被并成一人）
     need_id = set()
@@ -509,15 +388,14 @@ def suggest_identifiers(records, expectation):
 def apply_and_simulate(records, suggestion):
     lrs = [lr.clone() for lr in records]
     for lr in lrs:
-        if lr.phys_line in suggestion:
-            lr.identifier = suggestion[lr.phys_line]
+        lr.identifier = suggestion.get(lr.phys_line, lr.identifier)
     return simulate_groups(lrs)
 
 
-def cmd_lines(name):
-    records, malformed = load_name(name)
+def cmd_lines(name, raw_file):
+    records, malformed = load_name(name, raw_file)
     if not records and not malformed:
-        print(f"raw.txt 中没有姓名「{name}」的记录")
+        print(f"{raw_file.name} 中没有姓名「{name}」的记录")
         return 1
     print(f"姓名「{name}」共 {len(records)} 条记录；标识符分布：{identifier_distribution(records)}")
     for lr in sorted(records, key=lambda lr: lr.phys_line):
@@ -527,32 +405,23 @@ def cmd_lines(name):
     return 0
 
 
-def cmd_simulate(name, strip, assign, expect):
-    records, malformed = load_name(name)
+def cmd_simulate(name, strip, assign, expect, raw_file):
+    records, malformed = load_name(name, raw_file)
     if not records:
-        print(f"raw.txt 中没有姓名「{name}」的可解析记录")
+        print(f"{raw_file.name} 中没有姓名「{name}」的可解析记录")
         return 1
     print(f"姓名「{name}」共 {len(records)} 条记录；当前标识符分布：{identifier_distribution(records)}")
     for phys, raw, err in malformed:
         print(f"警告：行 {phys} 无法解析（{err}）：{raw}")
 
-    overrides = parse_assign(assign, records) if assign else {}
-    if strip and overrides:
-        print("--strip 与 --assign 不要同时使用")
-        return 1
-
-    def hypothetical_records():
-        lrs = [lr.clone() for lr in records]
-        for lr in lrs:
-            if strip:
-                lr.identifier = ""
-            elif lr.phys_line in overrides:
-                lr.identifier = overrides[lr.phys_line]
-        return lrs
+    if strip:
+        overrides = {lr.phys_line: "" for lr in records}
+    else:
+        overrides = parse_assign(assign, records) if assign else {}
+    mode = "去掉全部标识符后" if strip else ("按 --assign 假设" if overrides else "当前状态")
 
     if not expect:
-        mode = "去掉全部标识符后" if strip else ("按 --assign 假设" if overrides else "当前状态")
-        print_groups(f"{mode}的模拟分组", simulate_groups(hypothetical_records()))
+        print_groups(f"{mode}的模拟分组", apply_and_simulate(records, overrides))
         return 0
 
     expectation = Expectation(parse_expect(expect, records), records)
@@ -563,14 +432,13 @@ def cmd_simulate(name, strip, assign, expect):
             "它们混入期望分组时会被标记为 ✗；建议把该姓名的全部记录都列入期望。"
         )
 
-    current_groups = simulate_groups([lr.clone() for lr in records])
+    current_groups = apply_and_simulate(records, {})
     print_groups("当前状态的模拟分组", current_groups)
     print("\n—— 与期望分组的对比（当前状态）——")
     print(expectation.describe(current_groups))
 
-    if strip or overrides:
-        hypo_groups = simulate_groups(hypothetical_records())
-        mode = "去掉全部标识符后" if strip else "按 --assign 假设"
+    if overrides:
+        hypo_groups = apply_and_simulate(records, overrides)
         print_groups(f"{mode}的模拟分组", hypo_groups)
         print(f"\n—— 与期望分组的对比（{mode}）——")
         print(expectation.describe(hypo_groups))
@@ -578,10 +446,7 @@ def cmd_simulate(name, strip, assign, expect):
         print("\n校验结果：" + ("与期望一致 ✓" if ok else "与期望不一致 ✗"))
         return 0 if ok else 1
 
-    stripped = [lr.clone() for lr in records]
-    for lr in stripped:
-        lr.identifier = ""
-    strip_groups = simulate_groups(stripped)
+    strip_groups = apply_and_simulate(records, {lr.phys_line: "" for lr in records})
     print_groups("去掉全部标识符后的模拟分组", strip_groups)
     print("\n—— 与期望分组的对比（去掉全部标识符）——")
     print(expectation.describe(strip_groups))
@@ -597,7 +462,7 @@ def cmd_simulate(name, strip, assign, expect):
         print("\n按建议修改后的模拟：与期望一致 ✓")
         return 0
 
-    changes, notes, suggestion = suggest_identifiers(records, expectation)
+    changes, notes, suggestion = suggest_identifiers(records, expectation, strip_groups)
     print(
         "\n结论：仅靠自动合并无法得到期望分组，需要调整标识符。"
         "建议（已毕业者优先拿标识符；都未毕业时最近参赛最久远者先拿；空标识符留给最可能继续参赛的人）："
@@ -623,17 +488,42 @@ def main():
     p_lines.add_argument("name")
     p_sim = sub.add_parser("simulate", help="模拟该姓名的合并分组")
     p_sim.add_argument("name")
-    p_sim.add_argument("--strip", action="store_true", help="去掉全部标识符后模拟")
-    p_sim.add_argument("--assign", default="", help="覆盖若干行的标识符后模拟")
+    overrides = p_sim.add_mutually_exclusive_group()
+    overrides.add_argument("--strip", action="store_true", help="去掉全部标识符后模拟")
+    overrides.add_argument("--assign", default="", help="覆盖若干行的标识符后模拟")
     p_sim.add_argument("--expect", default="", help="期望的分组，用于校验与给建议")
+    p_show = sub.add_parser("show", help="按 UID 查询选手")
+    p_show.add_argument("uid", type=int)
+    p_show.add_argument("--json", action="store_true", help="输出 JSON")
+    for command in (p_lines, p_sim, p_show):
+        command.add_argument("--raw-file", type=Path, default=DEFAULT_RAW_FILE, help="获奖记录文件")
+        command.add_argument("--school-file", type=Path, default=DEFAULT_SCHOOL_FILE, help="学校表")
     args = parser.parse_args()
 
-    load_schools()
+    try:
+        if args.command == "show":
+            result = lookup_oiers(uids=[args.uid], raw_file=args.raw_file, school_file=args.school_file)
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                for person in result["matches"]:
+                    print(f"UID {person['uid']}: {person['name']}（{'、'.join(person['provinces'])}）")
+                    print(f"  {person['record_count']} 条记录；初中入学年份（估）：{person['estimated_enrollment_year']}")
+                    for record in person["records"]:
+                        print(f"  [物理行 {record['physical_line']}，有效行 {record['valid_line']}] "
+                              f"{record['contest']} {record['province']} {record['original_school_name']} {record['grade']}")
+                if not result["matches"]:
+                    print(f"无法确认 UID {args.uid}：{result['requests'][0]['status']}")
+            return 0 if result["matches"] else 1
 
-    if args.command == "lines":
-        sys.exit(cmd_lines(args.name))
-    sys.exit(cmd_simulate(args.name, args.strip, args.assign, args.expect))
+        load_schools(args.school_file)
+        if args.command == "lines":
+            return cmd_lines(args.name, args.raw_file)
+        return cmd_simulate(args.name, args.strip, args.assign, args.expect, args.raw_file)
+    except (ValueError, OSError) as error:
+        print(f"错误：{error}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -12,7 +12,7 @@ import os
 import util
 from contest import Contest
 from oier import OIer
-from record import Record
+from loader import parse_raw_line, parse_school_line
 from school import School
 from sys import argv, stderr, executable
 from tqdm import tqdm
@@ -20,25 +20,7 @@ import subprocess
 
 
 def __main__():
-    gender_map = {"男": 1, "女": -1}
     new_schools = []
-
-    def parse_school_line(line):
-        """解析 school.txt 文件的一行。
-
-        line: 一行。
-        """
-
-        if line.startswith("#"):  # 注释
-            return
-        li = line.split(",")
-        if len(li) < 3:
-            raise ValueError("格式错误")
-        province, city, name, *aliases = li
-        # 全空的废弃条目（,,）仅用于占位以保持 ID 对齐，不校验省份
-        if (province or city or name) and province not in util.provinces:
-            raise util.UnknownReferenceError(f"未知的省级行政区：\x1b[32m'{province}'\x1b[0m")
-        School.create(name, province, city, aliases)
 
     def parse_school():
         "解析 school.txt 文件。"
@@ -74,50 +56,26 @@ def __main__():
             print("=" * 60, file=stderr)
             raise ValueError("数据验证失败，school.txt 中存在未知的省级行政区，无法生成最终结果")
 
-    def parse_raw_line(line):
-        """解析 raw.txt 文件的一行。
+    def warn_school_fallback(name, province):
+        print(
+            f"\x1b[33mwarning: \x1b[0;37m无法识别学校名 \x1b[35m'{name}'\x1b[0m 在省份 \x1b[35m'{province}'\x1b[0m 中，回退到全局查找\x1b[0m",
+            file=stderr,
+        )
 
-        line: 一行。
-        """
-
-        if line.startswith("#"):  # 注释
+    def add_raw_line(line):
+        parsed = parse_raw_line(
+            line,
+            allow_school_fallback="--disable-school-fallback" not in argv,
+            on_school_fallback=warn_school_fallback,
+            on_unknown_school=lambda province, name: new_schools.append((province, name)),
+        )
+        if parsed is None:
             return
-        li = line.split(",")
-        if len(li) != 9:
-            raise ValueError("格式错误")
-        contest_name, level, name, grade_name, school_name, score, province, gender_name, identifier = li
-        if name == "":
-            raise ValueError("姓名不能为空")
-        if province not in util.provinces:
-            raise util.UnknownReferenceError(f"未知的省级行政区：\x1b[32m'{province}'\x1b[0m")
-        if level not in util.award_levels:
-            raise util.UnknownReferenceError(f"未知的奖项名称：\x1b[32m'{level}'\x1b[0m")
-        contest = Contest.by_name(contest_name)
-
-        try:
-            school = School.by_name_in_province(school_name, province)
-        except ValueError as e:
-            if '--disable-school-fallback' in argv:
-                new_schools.append((province, school_name))
-                raise e
-            else:
-                try:
-                    print(
-                        f"\x1b[33mwarning: \x1b[0;37m无法识别学校名 \x1b[35m'{school_name}'\x1b[0m 在省份 \x1b[35m'{province}'\x1b[0m 中，回退到全局查找\x1b[0m",
-                        file=stderr,
-                    )
-                    school = School.by_name(school_name)
-                except ValueError as e:
-                    new_schools.append((province, school_name))
-                    raise e
-
-        grades = util.get_grades(grade_name)
-        gender = gender_map.get(gender_name, 0)
-        if not Contest.is_score_valid(score):
-            raise ValueError(f"无法识别的分数：\x1b[032m'{score}'\x1b[0m")
-        # 开始创建数据
-        oier = OIer.of(name, identifier)
-        record = contest.add_contestant(oier, score, level, grades, school, province, gender)
+        oier = OIer.of(parsed.name, parsed.identifier)
+        record = parsed.contest.add_contestant(
+            oier, parsed.score, parsed.level, parsed.grades,
+            parsed.school, parsed.province, parsed.gender,
+        )
         oier.add_record(record)
 
     def parse_raw():
@@ -128,7 +86,7 @@ def __main__():
         unknown_references = 0
         for idx, line in tqdm(enumerate(raw_data), total=len(raw_data)):
             try:
-                parse_raw_line(line.strip())
+                add_raw_line(line.strip())
             except util.UnknownReferenceError as e:
                 # 未知的省份/奖项/比赛必须中止生成（继续会在 result.txt 中
                 # 写入未经索引的原始字符串，破坏前端解析约定），先收集全部再退出
@@ -155,43 +113,17 @@ def __main__():
             print("=" * 60, file=stderr)
             raise ValueError("数据验证失败，存在未知的省份/奖项/比赛，无法生成最终结果")
 
-    def attempt_merge(threshold=240):
+    def attempt_merge(threshold=OIer.MERGE_THRESHOLD):
         """尝试合并信息。
 
         threshold: 距离阈值。
         """
 
         recordseqs = []
-        length = OIer.count_all()
-        for idx, oier in tqdm(enumerate(OIer.get_all()), total=OIer.count_all()):
-            # tqdm
-            # 手动合并的无需拆分
-            if oier.identifier:
-                recordseqs.append(oier.records)
-                continue
+        for oier in tqdm(OIer.get_all()):
             original_length = len(oier.records)
-            a = [[record] for record in oier.records]
-            while True:
-                n, best, bi, bj = len(a), threshold + 1, -1, -1
-                for i in range(n):
-                    for j in range(i):
-                        if (dist := Record.distance(a[j], a[i], threshold + 1)) < best:
-                            best, bi, bj = dist, j, i
-                if best <= threshold:
-                    stay_down = Record.check_stay_down(a[bi], a[bj])
-                    if stay_down == 1:
-                        for record in a[bi]:
-                            record.keep_grade()
-                    elif stay_down == -1:
-                        for record in a[bj]:
-                            record.keep_grade()
-                    else:
-                        assert stay_down == 0
-                    a[bi].extend(a[bj])
-                    del a[bj]
-                else:
-                    break
-            if "--show-incomplete-merge" in argv and len(a) != 1:
+            a = OIer.group_records(oier.records, threshold)
+            if "--show-incomplete-merge" in argv and not oier.identifier and len(a) != 1:
                 print(
                     f"\x1b[01;33mwarning: \x1b[0;32m'{oier.name}'\x1b[0m 未完全合并，合并进度为 \x1b[32m{original_length}\x1b[0m → \x1b[32m{len(a)}\x1b[0m",
                     file=stderr,
@@ -203,7 +135,7 @@ def __main__():
             # UID 定为该 OIer 首次出现的<b>有效</b>行号
             uid = min(recordseq, key=lambda record: record.id).id
             # 入学年份取众数，相同的话取最早的
-            em = util.get_weighted_mode([record.ems for record in recordseq if not record.is_keep_grade()])[0]
+            em = OIer.enrollment_year(recordseq)
             # 性别如果唯一则取之，空或不唯一置空（如跨性别）
             gender = set(record.gender for record in recordseq if record.gender)
             gender = gender.pop() if len(gender) == 1 else 0
