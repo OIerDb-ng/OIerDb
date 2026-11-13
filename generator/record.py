@@ -128,9 +128,11 @@ class Record:
                 if abs(a.gender - b.gender) == 2:
                     return inf
 
+                a_year, b_year = a.contest.school_year(), b.contest.school_year()
+
                 # 如果存在第一年初一，第二年直升高一的情况，不合并
                 if (
-                    abs(a.contest.school_year() - b.contest.school_year()) == 1
+                    abs(a_year - b_year) == 1
                     and a.grades == __grades_range__["junior"][0]
                     and b.grades == __grades_range__["senior"][0]
                 ):
@@ -144,11 +146,21 @@ class Record:
                 ) and a.province != b.province:
                     return inf
 
+                # 跨省时，若初中年级推算的入学年份与先前的「小学/无」记录不相容，不合并
+                if a.province != b.province and a_year != b_year:
+                    earlier, later = (a, b) if a_year < b_year else (b, a)
+                    if (
+                        earlier.grades == 4290837504  # 小学/无
+                        and later.grades in __grades_range__["junior"]
+                        and earlier.ems.keys().isdisjoint(later.ems)
+                    ):
+                        return inf
+
                 # 在同一学年中出现就读学校不一致、年级不一致的情况，不合并
-                if a.contest.school_year() == b.contest.school_year() and a.school != b.school:
+                if a_year == b_year and a.school != b.school:
                     return inf
 
-                if a.contest.school_year() == b.contest.school_year():
+                if a_year == b_year:
                     if len(set(a.ems) & set(b.ems)) == 0:
                         return inf
 
@@ -163,7 +175,7 @@ class Record:
 
                 # 在高中毕业后又有小学记录的情况下，不应该合并
                 if (
-                    a.contest.school_year() < b.contest.school_year()
+                    a_year < b_year
                     and any(level in a.school.name for level in ["高中", "中学", "高级"])
                     and "小学" not in a.school.name
                     and "小学" in b.school.name
