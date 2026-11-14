@@ -633,6 +633,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@oierdb/adapter-idb@workspace:packages/adapter-idb":
+  version: 0.0.0-use.local
+  resolution: "@oierdb/adapter-idb@workspace:packages/adapter-idb"
+  dependencies:
+    "@oierdb/core": "workspace:*"
+    "@oierdb/parser": "workspace:*"
+    dexie: "npm:^4.2.1"
+    typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
+
 "@oierdb/core@workspace:*, @oierdb/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@oierdb/core@workspace:packages/core"
@@ -1580,6 +1591,13 @@ __metadata:
     has-property-descriptors: "npm:^1.0.0"
     object-keys: "npm:^1.1.1"
   checksum: 10c0/88a152319ffe1396ccc6ded510a3896e77efac7a1bfbaa174a7b00414a1747377e0bb525d303794a47cf30e805c2ec84e575758512c6e44a993076d29fd4e6c3
+  languageName: node
+  linkType: hard
+
+"dexie@npm:^4.2.1":
+  version: 4.4.5
+  resolution: "dexie@npm:4.4.5"
+  checksum: 10c0/a88439b82842b27929fb5e883944ff9a739f1b713382b1eb09745166cad41ce83ca443aa850ae185e9f75569f643aa8efb4126e52971db2b8c9ca27eab1afce2
   languageName: node
   linkType: hard
 

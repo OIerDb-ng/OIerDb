@@ -81,6 +81,7 @@ export interface SearchOIersResult extends ResultBase, PaginationInfo {
 
 export interface GetSchoolResult extends ResultBase, PaginationInfo {
   school: DbSchool;
+  records: DbRecord[];
   membersMap: Record<number, DbOIer>;
   contestsMap: Record<number, DbContest>;
 }
