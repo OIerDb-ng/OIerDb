@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""整理 issue 的标题和标签。"""
+"""整理 issue 的标题和标签，按需生成修复方案。"""
 
 import argparse
 import base64
@@ -14,17 +14,24 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from github import Auth, Github, GithubException
+from github.Issue import Issue
 
 GENERATOR_DIR = Path(__file__).resolve().parents[1]
 # generator/agents 使用命名空间包，避免遮蔽第三方 agents SDK。
 sys.path[:0] = [str(GENERATOR_DIR.parent), str(GENERATOR_DIR)]
-from generator.agents.issue_classify import ClassificationError, QueryContext, infer  # noqa: E402
+from generator.agents.issue_classify import ClassificationResult  # noqa: E402
+from generator.agents.issue_queries import QueryContext  # noqa: E402
+from generator.agents.issue_repair import Comparison, ComparisonEntry, RepairSkill, SKILL_NAMES  # noqa: E402
+from generator.agents.issue_runner import IssueAgentError, IssueInput, run_classification, run_repair  # noqa: E402
 
 SUBJECT_LABELS = {"oier": "选手信息错误", "school": "学校信息错误"}
 LABEL_COLORS = {"oier": "1d76db", "school": "0e8a16"}
-MANAGED_LABELS = {*SUBJECT_LABELS.values(), "bug", "enhancement"}
+MANAGED_LABELS = {label.casefold() for label in (*SUBJECT_LABELS.values(), "bug", "enhancement")}
 MAX_IMAGES = 4
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
+REPAIR_COMMENT_MARKER = "<!-- oierdb-repair-plan -->"
+MARKDOWN_ENTITIES = str.maketrans({char: f"&#{ord(char)};" for char in "\\`*_{}[]<>&@#~|!:.+-"})
+WORKFLOW_ERRORS = (IssueAgentError, GithubException, requests.RequestException, OSError, ValueError)
 
 
 def label_names(issue):
@@ -97,33 +104,33 @@ def image_mime(data):
         return "image/jpeg"
     if data.startswith(b"RIFF") and data[8:12] == b"WEBP":
         return "image/webp"
-    raise ClassificationError("图片格式不是 PNG、JPEG 或 WebP")
+    raise ValueError("图片格式不是 PNG、JPEG 或 WebP")
 
 
 def download_image(session, url):
     for attempt in range(4):
         if not allowed_image_url(url, redirect=attempt > 0):
-            raise ClassificationError("图片地址或重定向不在 GitHub 托管来源内")
+            raise ValueError("图片地址或重定向不在 GitHub 托管来源内")
         with session.get(url, stream=True, allow_redirects=False, timeout=(10, 15)) as response:
             if response.status_code in (301, 302, 303, 307, 308):
                 url = urljoin(url, response.headers.get("Location", ""))
                 continue
             if response.status_code != 200:
-                raise ClassificationError(f"图片下载 HTTP {response.status_code}")
+                raise ValueError(f"图片下载 HTTP {response.status_code}")
             if int(response.headers.get("Content-Length", "0")) > MAX_IMAGE_BYTES:
-                raise ClassificationError("图片超过 5 MiB")
+                raise ValueError("图片超过 5 MiB")
             data = bytearray()
             for chunk in response.iter_content(65536):
                 data.extend(chunk)
                 if len(data) > MAX_IMAGE_BYTES:
-                    raise ClassificationError("图片超过 5 MiB")
+                    raise ValueError("图片超过 5 MiB")
             mime = image_mime(data)
             return {
                 "type": "input_image",
                 "image_url": f"data:{mime};base64,{base64.b64encode(data).decode()}",
                 "detail": "auto",
             }
-    raise ClassificationError("图片重定向次数过多")
+    raise ValueError("图片重定向次数过多")
 
 
 def collect_images(body):
@@ -135,7 +142,7 @@ def collect_images(body):
         for index, url in enumerate(urls[:MAX_IMAGES], 1):
             try:
                 images.append(download_image(session, url))
-            except (requests.RequestException, ClassificationError, ValueError):
+            except (requests.RequestException, ValueError):
                 warnings.append(f"第 {index} 张截图不可用。")
     if len(urls) > MAX_IMAGES:
         warnings.append(f"截图共 {len(urls)} 张，仅读取前 {MAX_IMAGES} 张。")
@@ -145,7 +152,7 @@ def collect_images(body):
 class GitHub:
     def __init__(self, repository, token=""):
         if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
-            raise ClassificationError("请通过 --repository 或 GITHUB_REPOSITORY 指定 owner/repo")
+            raise ValueError("请通过 --repository 或 GITHUB_REPOSITORY 指定 owner/repo")
         self.client = Github(
             auth=Auth.Token(token) if token else None,
             lazy=True,
@@ -153,12 +160,11 @@ class GitHub:
             retry=1,
             api_version="2022-11-28",
         )
+        self.repository_name = repository
         self.repository = self.client.get_repo(repository)
-        self.current_issue = None
 
-    def get_issue(self, number):
-        self.current_issue = self.repository.get_issue(number)
-        return self.current_issue.raw_data
+    def get_issue(self, number: int) -> Issue:
+        return self.repository.get_issue(number)
 
     def ensure_label(self, subject):
         name = SUBJECT_LABELS[subject]
@@ -176,18 +182,148 @@ class GitHub:
             # 并发创建同名标签时，确认标签已存在。
             self.repository.get_label(name)
 
-    def update_issue(self, number, title, labels):
-        issue = self.current_issue
-        if issue is None or issue.number != number:
-            issue = self.repository.get_issue(number)
-        issue.edit(title=title, labels=labels)
+    def upsert_repair_comment(self, number, body, expected_issue):
+        issue = self.get_issue(number)
+        author = (
+            "github-actions[bot]" if os.environ.get("GITHUB_ACTIONS") == "true" else self.client.get_user().login
+        )
+        existing = next(
+            (
+                comment
+                for comment in issue.get_comments()
+                if comment.user.login == author and (comment.body or "").startswith(REPAIR_COMMENT_MARKER + "\n")
+            ),
+            None,
+        )
+        current = self.get_issue(number)
+        if snapshot(current.raw_data) != snapshot(expected_issue):
+            return {"status": "skipped", "summary": "生成方案期间 issue 已发生变化，跳过评论。"}
+        if existing is None:
+            comment = current.create_comment(body)
+            return {"status": "comment_created", "comment_url": comment.html_url}
+        if existing.body == body:
+            return {"status": "unchanged", "comment_url": existing.html_url}
+        existing.edit(body)
+        return {"status": "comment_updated", "comment_url": existing.html_url}
 
     def close(self):
         self.client.close()
 
 
-def classify_issue(client, number, api_key, *, apply=False, opened_issue=None):
-    issue = client.get_issue(number)
+def _markdown_text(value: str) -> str:
+    return " ".join(value.splitlines()).translate(MARKDOWN_ENTITIES)
+
+
+def _format_entries(entries: list[ComparisonEntry]) -> str:
+    lines = []
+    for entry in entries:
+        lines.append(f"- {_markdown_text(entry['label'] or '(空)')}")
+        lines.extend(f"  - {_markdown_text(item)}" for item in entry["items"])
+    return "\n".join(lines)
+
+
+def format_repair_comment(
+    comparisons: list[tuple[RepairSkill, Comparison]], commit: str, repository: str
+) -> str | None:
+    if not comparisons:
+        return None
+    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", commit):
+        raise ValueError("缺少方案所基于的仓库提交")
+    parts = [REPAIR_COMMENT_MARKER, "**预期处理前后对比**"]
+    for skill, comparison in comparisons:
+        if len(comparisons) > 1:
+            target = comparison["target"]
+            title = SKILL_NAMES[skill] + (f"「{_markdown_text(target)}」" if target else "")
+            parts.append(f"**{title}**")
+        before, after = comparison["before"], comparison["after"]
+        current = "当前为单一条目：" if len(before) == 1 else f"当前为 {len(before)} 个条目："
+        direction = "合并" if skill.startswith("merge-") else "拆分"
+        parts.extend((current, _format_entries(before), f"应作如下{direction}：", _format_entries(after)))
+    parts.extend((
+        "<hr />",
+        f"<small>基于提交 [`{commit[:7]}`](https://github.com/{repository}/tree/{commit})，"
+        "此回复为 AI 生成，不保证准确性。</small>",
+    ))
+    body = "\n\n".join(parts)
+    if len(body) > 60000:
+        raise ValueError("修复方案超出评论长度限制")
+    return body
+
+
+def plan_issue_repair(
+    client: GitHub,
+    expected_issue: dict,
+    api_key: str,
+    issue: IssueInput,
+    skills: list[RepairSkill],
+    *,
+    apply: bool,
+    warnings: list[str],
+) -> dict:
+    context = QueryContext(warnings=warnings.copy())
+    try:
+        plan = run_repair(api_key, issue, context, skills)
+        source = context.data_sources.get("repository", {})
+        commit = source.get("commit") or os.environ.get("GITHUB_SHA", "")
+        body = format_repair_comment(plan.comparisons, commit, client.repository_name)
+        if body is None:
+            result = {"status": "skipped", "summary": "没有可展示的处理前后对比。"}
+        elif apply:
+            result = client.upsert_repair_comment(expected_issue["number"], body, expected_issue)
+        else:
+            result = {"status": "preview", "comment_body": body}
+        if plan.unplanned:
+            result["unplanned"] = plan.unplanned
+    except WORKFLOW_ERRORS as error:
+        result = {"status": "failed", "summary": error_summary(error)}
+    return dict(result, warnings=context.warnings, data_sources=context.data_sources, queries=context.queries)
+
+
+def classified_issue(issue: dict, classification: ClassificationResult) -> dict:
+    labels = sorted({
+        *(label for label in label_names(issue) if label.casefold() not in MANAGED_LABELS),
+        *(SUBJECT_LABELS[subject] for subject in classification.subjects),
+    })
+    return dict(issue, title=classification.title or issue["title"], labels=labels)
+
+
+def update_classification(
+    client: GitHub, issue: dict, desired: dict, subjects: list[str], *, apply: bool
+) -> dict:
+    old_title, title = issue["title"], desired["title"]
+    old_labels, labels = label_names(issue), desired["labels"]
+    report = {
+        "old_title": old_title,
+        "new_title": title,
+        "labels_added": sorted(set(labels) - set(old_labels)),
+        "labels_removed": sorted(set(old_labels) - set(labels)),
+    }
+
+    if title == old_title and labels == old_labels:
+        return dict(report, status="unchanged")
+
+    number = issue["number"]
+    current = client.get_issue(number)
+    if snapshot(current.raw_data) != snapshot(issue):
+        return dict(report, status="skipped", summary="分析期间 issue 已发生变化，跳过写回。")
+    if not apply:
+        return dict(report, status="preview")
+
+    if subjects:
+        for subject in subjects:
+            client.ensure_label(subject)
+        current = client.get_issue(number)
+        if snapshot(current.raw_data) != snapshot(issue):
+            return dict(report, status="skipped", summary="写回前 issue 已发生变化，跳过写回。")
+
+    current.edit(title=title, labels=labels)
+    return dict(report, status="updated")
+
+
+def classify_issue(
+    client: GitHub, number: int, api_key: str, *, apply=False, opened_issue: dict | None = None, plan_repair=False
+) -> dict:
+    issue = client.get_issue(number).raw_data
     report = {
         "issue_number": number,
         "mode": "apply" if apply else "dry_run",
@@ -196,56 +332,48 @@ def classify_issue(client, number, api_key, *, apply=False, opened_issue=None):
     }
     author = issue.get("user") or {}
     if (
-        issue.get("state") != "open"
+        issue["state"] != "open"
         or "pull_request" in issue
         or author.get("type") == "Bot"
         or author.get("login", "").endswith("[bot]")
     ):
-        report["summary"] = "跳过已关闭的 issue、Pull Request 或机器人提交。"
-        return report
+        return dict(report, summary="跳过已关闭的 issue、Pull Request 或机器人提交。")
     if opened_issue is not None and snapshot(issue) != snapshot(opened_issue):
-        report["summary"] = "issue 自创建事件后已发生变化，保留人工修改。"
-        return report
+        return dict(report, summary="issue 自创建事件后已发生变化，保留人工修改。")
     if not api_key:
-        raise ClassificationError("缺少 OPENROUTER_API_KEY")
-    context = QueryContext()
-    images, image_warnings = collect_images(issue.get("body"))
-    context.warnings.extend(image_warnings)
-    result = infer(api_key, issue, context, images)
-    report.update(warnings=context.warnings, data_sources=context.data_sources, queries=context.queries)
-    report["summary"] = result["summary"]
-    if not result["applicable"]:
-        return report
-    old_labels = label_names(issue)
-    preserved = [
-        label for label in old_labels if label.casefold() not in {name.casefold() for name in MANAGED_LABELS}
-    ]
-    labels = sorted({*preserved, *(SUBJECT_LABELS[subject] for subject in result["subjects"])})
-    title = result["title"] if result["title"] is not None else issue["title"]
+        raise ValueError("缺少 OPENROUTER_API_KEY")
+
+    body = issue.get("body") or ""
+    images, image_warnings = collect_images(body)
+    agent_input = IssueInput(issue["title"], body, label_names(issue), images)
+    context = QueryContext(warnings=image_warnings.copy())
+    classification = run_classification(api_key, agent_input, context)
     report.update(
-        {
-            "old_title": issue["title"],
-            "new_title": title,
-            "labels_added": sorted(set(labels) - set(old_labels)),
-            "labels_removed": sorted(set(old_labels) - set(labels)),
-        }
+        summary=classification.summary,
+        warnings=context.warnings,
+        data_sources=context.data_sources,
+        queries=context.queries,
     )
-    if title == issue["title"] and labels == old_labels:
-        report["status"] = "unchanged"
+    if not classification.applicable:
         return report
-    if snapshot(client.get_issue(number)) != snapshot(issue):
-        report["summary"] = "分析期间 issue 已发生变化，跳过写回。"
+
+    report["skills"] = classification.skills
+    desired = classified_issue(issue, classification)
+    report.update(update_classification(client, issue, desired, classification.subjects, apply=apply))
+    if not plan_repair or not classification.skills or report["status"] == "skipped":
         return report
-    if not apply:
-        report["status"] = "preview"
-        return report
-    for subject in result["subjects"]:
-        client.ensure_label(subject)
-    if snapshot(client.get_issue(number)) != snapshot(issue):
-        report["summary"] = "写回前 issue 已发生变化，跳过写回。"
-        return report
-    client.update_issue(number, title, labels)
-    report["status"] = "updated"
+
+    expected_issue = issue
+    if report["status"] == "updated":
+        expected_issue = client.get_issue(number).raw_data
+        edited_issue = dict(desired, updated_at=expected_issue["updated_at"])
+        if snapshot(expected_issue) != snapshot(edited_issue):
+            report["repair_plan"] = {"status": "skipped", "summary": "分类后 issue 已发生变化，跳过方案。"}
+            return report
+
+    report["repair_plan"] = plan_issue_repair(
+        client, expected_issue, api_key, agent_input, classification.skills, apply=apply, warnings=image_warnings,
+    )
     return report
 
 
@@ -257,11 +385,21 @@ def emit_report(report):
             output.write(f"## Issue classification\n\n<pre>{escape(rendered)}</pre>\n")
 
 
+def error_summary(error):
+    # 外部异常可能包含签名 URL 或响应正文。
+    if isinstance(error, (IssueAgentError, ValueError)):
+        return str(error)
+    if isinstance(error, GithubException):
+        return f"GitHub HTTP {error.status}"
+    return type(error).__name__
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--issue-number", type=int)
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", "OIerDb-ng/OIerDb"))
     parser.add_argument("--apply", action="store_true", help="写回 GitHub，默认仅预览")
+    parser.add_argument("--plan-repair", action="store_true", help="分类后为匹配的修复技能生成方案")
     args = parser.parse_args()
     client = None
     try:
@@ -273,10 +411,10 @@ def main():
             return 0
         number = args.issue_number if args.issue_number is not None else event.get("issue", {}).get("number")
         if type(number) is not int or number < 1:
-            raise ClassificationError("issue_number 必须为正整数")
+            raise ValueError("issue_number 必须为正整数")
         token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
         if args.apply and not token:
-            raise ClassificationError("写回需要 GITHUB_TOKEN 或 GH_TOKEN")
+            raise ValueError("写回需要 GITHUB_TOKEN 或 GH_TOKEN")
         client = GitHub(args.repository, token)
         report = classify_issue(
             client,
@@ -284,19 +422,12 @@ def main():
             os.environ.get("OPENROUTER_API_KEY", ""),
             apply=args.apply,
             opened_issue=event.get("issue") if event.get("action") == "opened" else None,
+            plan_repair=args.plan_repair,
         )
         emit_report(report)
-        return 0
-    except (ClassificationError, GithubException, requests.RequestException, OSError, ValueError) as error:
-        # 外部异常可能包含签名 URL 或响应正文。
-        message = (
-            str(error)
-            if isinstance(error, ClassificationError)
-            else (
-                f"GitHub HTTP {error.status}" if isinstance(error, GithubException) else type(error).__name__
-            )
-        )
-        emit_report({"status": "failed", "summary": message})
+        return int(report.get("repair_plan", {}).get("status") == "failed")
+    except WORKFLOW_ERRORS as error:
+        emit_report({"status": "failed", "summary": error_summary(error)})
         return 1
     finally:
         if client is not None:
