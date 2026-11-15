@@ -38,16 +38,6 @@ def label_names(issue):
     return sorted(label["name"] if isinstance(label, dict) else label for label in issue.get("labels", []))
 
 
-def snapshot(issue):
-    return (
-        issue.get("title"),
-        issue.get("body"),
-        label_names(issue),
-        issue.get("state"),
-        issue.get("updated_at"),
-    )
-
-
 class ImageParser(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -182,8 +172,7 @@ class GitHub:
             # 并发创建同名标签时，确认标签已存在。
             self.repository.get_label(name)
 
-    def upsert_repair_comment(self, number, body, expected_issue):
-        issue = self.get_issue(number)
+    def upsert_repair_comment(self, issue: Issue, body: str) -> dict:
         author = (
             "github-actions[bot]" if os.environ.get("GITHUB_ACTIONS") == "true" else self.client.get_user().login
         )
@@ -195,11 +184,8 @@ class GitHub:
             ),
             None,
         )
-        current = self.get_issue(number)
-        if snapshot(current.raw_data) != snapshot(expected_issue):
-            return {"status": "skipped", "summary": "生成方案期间 issue 已发生变化，跳过评论。"}
         if existing is None:
-            comment = current.create_comment(body)
+            comment = issue.create_comment(body)
             return {"status": "comment_created", "comment_url": comment.html_url}
         if existing.body == body:
             return {"status": "unchanged", "comment_url": existing.html_url}
@@ -252,9 +238,9 @@ def format_repair_comment(
 
 def plan_issue_repair(
     client: GitHub,
-    expected_issue: dict,
+    issue: Issue,
     api_key: str,
-    issue: IssueInput,
+    agent_input: IssueInput,
     skills: list[RepairSkill],
     *,
     apply: bool,
@@ -262,14 +248,14 @@ def plan_issue_repair(
 ) -> dict:
     context = QueryContext(warnings=warnings.copy())
     try:
-        plan = run_repair(api_key, issue, context, skills)
+        plan = run_repair(api_key, agent_input, context, skills)
         source = context.data_sources.get("repository", {})
         commit = source.get("commit") or os.environ.get("GITHUB_SHA", "")
         body = format_repair_comment(plan.comparisons, commit, client.repository_name)
         if body is None:
             result = {"status": "skipped", "summary": "没有可展示的处理前后对比。"}
         elif apply:
-            result = client.upsert_repair_comment(expected_issue["number"], body, expected_issue)
+            result = client.upsert_repair_comment(issue, body)
         else:
             result = {"status": "preview", "comment_body": body}
         if plan.unplanned:
@@ -279,19 +265,17 @@ def plan_issue_repair(
     return dict(result, warnings=context.warnings, data_sources=context.data_sources, queries=context.queries)
 
 
-def classified_issue(issue: dict, classification: ClassificationResult) -> dict:
+def update_classification(
+    client: GitHub, issue: Issue, classification: ClassificationResult, *, apply: bool
+) -> dict:
+    data = issue.raw_data
+    old_title = data["title"]
+    old_labels = label_names(data)
+    title = classification.title or old_title
     labels = sorted({
-        *(label for label in label_names(issue) if label.casefold() not in MANAGED_LABELS),
+        *(label for label in old_labels if label.casefold() not in MANAGED_LABELS),
         *(SUBJECT_LABELS[subject] for subject in classification.subjects),
     })
-    return dict(issue, title=classification.title or issue["title"], labels=labels)
-
-
-def update_classification(
-    client: GitHub, issue: dict, desired: dict, subjects: list[str], *, apply: bool
-) -> dict:
-    old_title, title = issue["title"], desired["title"]
-    old_labels, labels = label_names(issue), desired["labels"]
     report = {
         "old_title": old_title,
         "new_title": title,
@@ -302,50 +286,40 @@ def update_classification(
     if title == old_title and labels == old_labels:
         return dict(report, status="unchanged")
 
-    number = issue["number"]
-    current = client.get_issue(number)
-    if snapshot(current.raw_data) != snapshot(issue):
-        return dict(report, status="skipped", summary="分析期间 issue 已发生变化，跳过写回。")
     if not apply:
         return dict(report, status="preview")
 
-    if subjects:
-        for subject in subjects:
-            client.ensure_label(subject)
-        current = client.get_issue(number)
-        if snapshot(current.raw_data) != snapshot(issue):
-            return dict(report, status="skipped", summary="写回前 issue 已发生变化，跳过写回。")
-
-    current.edit(title=title, labels=labels)
+    for subject in classification.subjects:
+        client.ensure_label(subject)
+    issue.edit(title=title, labels=labels)
     return dict(report, status="updated")
 
 
 def classify_issue(
-    client: GitHub, number: int, api_key: str, *, apply=False, opened_issue: dict | None = None, plan_repair=False
+    client: GitHub, number: int, api_key: str, *, apply=False, plan_repair=False
 ) -> dict:
-    issue = client.get_issue(number).raw_data
+    issue = client.get_issue(number)
+    data = issue.raw_data
     report = {
         "issue_number": number,
         "mode": "apply" if apply else "dry_run",
         "status": "skipped",
         "warnings": [],
     }
-    author = issue.get("user") or {}
+    author = data.get("user") or {}
     if (
-        issue["state"] != "open"
-        or "pull_request" in issue
+        data["state"] != "open"
+        or "pull_request" in data
         or author.get("type") == "Bot"
         or author.get("login", "").endswith("[bot]")
     ):
         return dict(report, summary="跳过已关闭的 issue、Pull Request 或机器人提交。")
-    if opened_issue is not None and snapshot(issue) != snapshot(opened_issue):
-        return dict(report, summary="issue 自创建事件后已发生变化，保留人工修改。")
     if not api_key:
         raise ValueError("缺少 OPENROUTER_API_KEY")
 
-    body = issue.get("body") or ""
+    body = data.get("body") or ""
     images, image_warnings = collect_images(body)
-    agent_input = IssueInput(issue["title"], body, label_names(issue), images)
+    agent_input = IssueInput(data["title"], body, label_names(data), images)
     context = QueryContext(warnings=image_warnings.copy())
     classification = run_classification(api_key, agent_input, context)
     report.update(
@@ -358,22 +332,11 @@ def classify_issue(
         return report
 
     report["skills"] = classification.skills
-    desired = classified_issue(issue, classification)
-    report.update(update_classification(client, issue, desired, classification.subjects, apply=apply))
-    if not plan_repair or not classification.skills or report["status"] == "skipped":
-        return report
-
-    expected_issue = issue
-    if report["status"] == "updated":
-        expected_issue = client.get_issue(number).raw_data
-        edited_issue = dict(desired, updated_at=expected_issue["updated_at"])
-        if snapshot(expected_issue) != snapshot(edited_issue):
-            report["repair_plan"] = {"status": "skipped", "summary": "分类后 issue 已发生变化，跳过方案。"}
-            return report
-
-    report["repair_plan"] = plan_issue_repair(
-        client, expected_issue, api_key, agent_input, classification.skills, apply=apply, warnings=image_warnings,
-    )
+    report.update(update_classification(client, issue, classification, apply=apply))
+    if plan_repair and classification.skills:
+        report["repair_plan"] = plan_issue_repair(
+            client, issue, api_key, agent_input, classification.skills, apply=apply, warnings=image_warnings,
+        )
     return report
 
 
@@ -421,7 +384,6 @@ def main():
             number,
             os.environ.get("OPENROUTER_API_KEY", ""),
             apply=args.apply,
-            opened_issue=event.get("issue") if event.get("action") == "opened" else None,
             plan_repair=args.plan_repair,
         )
         emit_report(report)
