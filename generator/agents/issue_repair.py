@@ -38,7 +38,7 @@ class RepairSection(BaseModel):
     @model_validator(mode="after")
     def consistent_comparison(self):
         if bool(self.simulation_ids) == bool(self.reason):
-            raise ValueError("请提供通过的模拟，或说明无法生成对比的原因")
+            raise ValueError("请引用有结论的检查，或说明无法确定处理方案的原因")
         return self
 
 
@@ -63,6 +63,7 @@ class Comparison(TypedDict):
 @dataclass
 class ResolvedRepair:
     comparisons: list[tuple[RepairSkill, Comparison]] = field(default_factory=list)
+    already_correct: list[RepairSkill] = field(default_factory=list)
     unplanned: dict[RepairSkill, str] = field(default_factory=dict)
 
 
@@ -74,6 +75,9 @@ def _record_simulation(context: QueryContext, tool: str, simulate: Callable[...,
         trace["comparison"] = comparison
         result["simulation_id"] = len(context.queries)
         result["directions"] = comparison["directions"]
+    elif result.get("already_correct"):
+        trace["already_correct"] = True
+        result["simulation_id"] = len(context.queries)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -119,7 +123,7 @@ def _simulate_oier_groups(name: str, expected_groups: list[list[int]]) -> dict:
     current_groups = oier_check.apply_and_simulate(records, {})
     result = {"current_groups": [[row.phys_line for row in group] for group in current_groups]}
     if expectation.all_ok(current_groups):
-        return dict(result, verified=True, changes=[], notes="当前分组已符合期望")
+        return dict(result, verified=True, already_correct=True, changes=[], notes="当前分组已符合期望")
 
     current_sets = {frozenset(group) for group in result["current_groups"]}
     changed_groups = [group for group in expected_sets if group not in current_sets]
@@ -180,6 +184,34 @@ class SchoolChange(BaseModel):
     physical_line: LineNumber
     before: SchoolRow
     after: SchoolRow
+
+
+def _check_school_groups(expected_groups: list[list[str]]) -> dict:
+    names = [name for group in expected_groups for name in group]
+    matches = {name: set() for name in names}
+    if len(matches) < 2 or len(matches) != len(names) or not all(expected_groups):
+        raise ValueError("请提供至少两个已定位的校名，每个名称只填写一次")
+
+    for _, _, _, school in school_check.load_table(DEFAULT_SCHOOL_FILE):
+        for name in matches.keys() & {school.name, *school.aliases}:
+            matches[name].add(school.id)
+    if any(len(ids) != 1 for ids in matches.values()):
+        return {"already_correct": False, "notes": "有名称无法唯一对应学校条目"}
+
+    groups = [set().union(*(matches[name] for name in group)) for group in expected_groups]
+    already_correct = all(len(ids) == 1 for ids in groups) and len(set().union(*groups)) == len(groups)
+    notes = "当前学校条目已符合期望" if already_correct else "当前学校条目与期望分组不同"
+    return {"already_correct": already_correct, "notes": notes}
+
+
+@function_tool
+async def check_school_groups(
+    ctx: RunContextWrapper[QueryContext], expected_groups: list[list[str]]
+) -> str:
+    """核对学校目前的分组。每组填写应属于同一条目的精确校名或别名。"""
+    return _record_simulation(
+        ctx.context, "check_school_groups", _check_school_groups, expected_groups=expected_groups
+    )
 
 
 def _school_entries(rows):
@@ -270,29 +302,35 @@ def repair_agent_config(skills: list[RepairSkill]):
     if any(skill.endswith("-oier") for skill in skills):
         tools.append(simulate_oier_groups)
     if any(skill.endswith("-school") for skill in skills):
-        tools.extend((find_school_placeholder, simulate_school_changes))
+        tools.extend((check_school_groups, find_school_placeholder, simulate_school_changes))
     return "\n\n".join(instructions), tools
 
 
-def _select_comparisons(section: RepairSection, queries: list[dict]) -> list[Comparison]:
+def _select_comparisons(section: RepairSection, queries: list[dict]) -> tuple[list[Comparison], bool]:
     direction, subject = section.skill.split("-", 1)
-    tool = "simulate_oier_groups" if subject == "oier" else "simulate_school_changes"
+    tools = {"simulate_oier_groups"} if subject == "oier" else {"check_school_groups", "simulate_school_changes"}
     rows = {}
     comparisons = []
+    already_correct = bool(section.simulation_ids)
     for number in dict.fromkeys(section.simulation_ids):
         if number > len(queries):
             raise ValueError(f"模拟 {number} 不存在")
         query = queries[number - 1]
         comparison = query.get("comparison")
-        if query.get("tool") != tool or not comparison:
-            raise ValueError(f"模拟 {number} 未产生适用的对比")
+        if query["tool"] not in tools:
+            raise ValueError(f"检查 {number} 与所选技能不匹配")
+        if query.get("already_correct"):
+            continue
+        already_correct = False
+        if not comparison:
+            raise ValueError(f"检查 {number} 未得出结论")
         if direction not in comparison["directions"]:
             continue
         for line, before, after in query["verified_changes"]:
             if rows.setdefault(line, (before, after)) != (before, after):
                 raise ValueError("拟议修改中的模拟对同一行给出了不同建议")
         comparisons.append(comparison)
-    return comparisons
+    return comparisons, already_correct
 
 
 def resolve_plan(plan: RepairPlan, skills: list[RepairSkill], queries: list[dict]) -> ResolvedRepair:
@@ -301,9 +339,11 @@ def resolve_plan(plan: RepairPlan, skills: list[RepairSkill], queries: list[dict
 
     result = ResolvedRepair()
     for section in plan.sections:
-        comparisons = _select_comparisons(section, queries)
+        comparisons, already_correct = _select_comparisons(section, queries)
         if comparisons:
             result.comparisons.extend((section.skill, comparison) for comparison in comparisons)
+        elif already_correct:
+            result.already_correct.append(section.skill)
         else:
             result.unplanned[section.skill] = section.reason or "模拟变更与所选技能的方向不一致"
     return result

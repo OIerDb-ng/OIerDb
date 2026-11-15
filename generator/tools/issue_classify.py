@@ -30,6 +30,7 @@ MANAGED_LABELS = {label.casefold() for label in (*SUBJECT_LABELS.values(), "bug"
 MAX_IMAGES = 4
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 REPAIR_COMMENT_MARKER = "<!-- oierdb-repair-plan -->"
+NO_ISSUE_MESSAGE = "经初步自动化分析发现目前 issue 中提到的问题在检查时已不存在，请检查问题描述是否正确"
 MARKDOWN_ENTITIES = str.maketrans({char: f"&#{ord(char)};" for char in "\\`*_{}[]<>&@#~|!:.+-"})
 WORKFLOW_ERRORS = (IssueAgentError, GithubException, requests.RequestException, OSError, ValueError)
 
@@ -249,9 +250,12 @@ def plan_issue_repair(
     context = QueryContext(warnings=warnings.copy())
     try:
         plan = run_repair(api_key, agent_input, context, skills)
-        source = context.data_sources.get("repository", {})
-        commit = source.get("commit") or os.environ.get("GITHUB_SHA", "")
-        body = format_repair_comment(plan.comparisons, commit, client.repository_name)
+        if plan.already_correct and not plan.comparisons and not plan.unplanned:
+            body = f"{REPAIR_COMMENT_MARKER}\n\n{NO_ISSUE_MESSAGE}"
+        else:
+            source = context.data_sources.get("repository", {})
+            commit = source.get("commit") or os.environ.get("GITHUB_SHA", "")
+            body = format_repair_comment(plan.comparisons, commit, client.repository_name)
         if body is None:
             result = {"status": "skipped", "summary": "没有可展示的处理前后对比。"}
         elif apply:
@@ -260,6 +264,8 @@ def plan_issue_repair(
             result = {"status": "preview", "comment_body": body}
         if plan.unplanned:
             result["unplanned"] = plan.unplanned
+        if plan.already_correct:
+            result["already_correct"] = plan.already_correct
     except WORKFLOW_ERRORS as error:
         result = {"status": "failed", "summary": error_summary(error)}
     return dict(result, warnings=context.warnings, data_sources=context.data_sources, queries=context.queries)
