@@ -1,4 +1,4 @@
-# OIerDb NG Data Generator
+# OIerDb Data Generator
 
 本目录中的代码迁移自 [OIerDb-ng/OIerDb-data-generator](https://github.com/OIerDb-ng/OIerDb-data-generator) 仓库。
 
@@ -20,7 +20,7 @@ python main.py
 
 ## Author
 
-**OIerDb NG Data Generator** © [Baoshuo](https://github.com/renbaoshuo), Released under the [AGPL-3.0](./LICENSE) License.<br>
+**OIerDb Data Generator** © [Baoshuo](https://github.com/renbaoshuo), Released under the [AGPL-3.0](./LICENSE) License.<br>
 Authored and maintained by Baoshuo with help from [OIerDb-ng/OIer](https://github.com/OIerDb-ng/OIer) and [contributors](https://github.com/OIerDb-ng/OIerDb/contributors).
 
 > [Personal Website](https://baoshuo.ren) · [Blog](https://blog.baoshuo.ren) · GitHub [@renbaoshuo](https://github.com/renbaoshuo) · Twitter [@renbaoshuo](https://twitter.com/renbaoshuo)

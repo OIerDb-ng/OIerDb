@@ -105,7 +105,7 @@ const App: React.FC = () => {
 const rootElement = document.getElementById('app');
 createRoot(rootElement).render(
   <BrowserRouter>
-    <Helmet defaultTitle="OIerDb NG" titleTemplate="%s - OIerDb NG" />
+    <Helmet defaultTitle="OIerDb | 信息学竞赛选手数据库" titleTemplate="%s - OIerDb" />
     <Header />
     <Container className={styles.container}>
       <App />

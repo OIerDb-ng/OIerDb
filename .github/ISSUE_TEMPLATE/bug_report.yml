@@ -1,5 +1,5 @@
 name: 错误报告 / Bug Report
-description: 帮助我们修复 OIerDb NG 的问题。
+description: 帮助我们修复 OIerDb 的问题。
 labels: ['bug']
 assignees: []
 body:
@@ -69,7 +69,7 @@ body:
   - type: input
     id: oierdb_version
     attributes:
-      label: OIerDb NG 版本
+      label: OIerDb 版本
       description: 在页脚处会显示一段长度为 7 的 16 进制数字。
       placeholder: ex. 364e508
     validations:
