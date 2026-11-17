@@ -3,6 +3,8 @@ name: Classify issue
 on:
   issues:
     types: [opened]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -27,7 +29,11 @@ jobs:
   classify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'workflow_dispatch' || (github.event.issue.state == 'open' && github.event.issue.user.type != 'Bot')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.state == 'open' && github.event.issue.user.type != 'Bot' &&
+      !github.event.issue.pull_request &&
+      (github.event_name == 'issues' || github.event.comment.user.type == 'User'))
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,7 +50,7 @@ jobs:
 
       - name: Create oierdb-bot installation token
         id: oierdb-bot-token
-        if: github.event_name == 'issues' || !inputs.dry_run
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
@@ -58,7 +64,7 @@ jobs:
           OIERDB_BOT_SLUG: ${{ steps.oierdb-bot-token.outputs.app-slug }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
-          APPLY: ${{ github.event_name == 'issues' || !inputs.dry_run }}
+          APPLY: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         run: |
           args=(--issue-number "$ISSUE_NUMBER" --plan-repair)
           if [ "$APPLY" = "true" ]; then
