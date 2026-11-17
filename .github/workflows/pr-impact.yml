@@ -37,6 +37,7 @@ jobs:
           client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
           private-key: ${{ secrets.OIERDB_BOT_PRIVATE_KEY }}
           permission-issues: write
+          permission-pull-requests: write
 
       - name: Report PR data impact
         env:
