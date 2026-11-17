@@ -11,11 +11,6 @@ on:
         description: Issue number to review
         required: true
         type: string
-      dry_run:
-        description: Preview classification and repair plan without writing to GitHub
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -50,7 +45,6 @@ jobs:
 
       - name: Create oierdb-bot installation token
         id: oierdb-bot-token
-        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
@@ -64,11 +58,6 @@ jobs:
           OIERDB_BOT_SLUG: ${{ steps.oierdb-bot-token.outputs.app-slug }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
-          APPLY: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         run: |
-          args=(--issue-number "$ISSUE_NUMBER" --plan-repair)
-          if [ "$APPLY" = "true" ]; then
-            : "${OIERDB_BOT_TOKEN:?Missing oierdb-bot installation token}"
-            args+=(--apply)
-          fi
-          python generator/tools/issue_classify.py "${args[@]}"
+          : "${OIERDB_BOT_TOKEN:?Missing oierdb-bot installation token}"
+          python generator/tools/issue_classify.py --issue-number "$ISSUE_NUMBER" --plan-repair
