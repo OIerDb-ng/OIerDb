@@ -129,6 +129,8 @@ class Record:
                     return inf
 
                 a_year, b_year = a.contest.school_year(), b.contest.school_year()
+                # 粤港澳之间往返就读很常见，按同一片就读区域处理，不算「跨省」
+                same_region = util.schooling_region(a.province) == util.schooling_region(b.province)
 
                 # 如果存在第一年初一，第二年直升高一的情况，不合并
                 if (
@@ -143,11 +145,11 @@ class Record:
                     (a.grades in __grades_range__["primary"] and b.grades in __grades_range__["primary"])
                     or (a.grades in __grades_range__["junior"] and b.grades in __grades_range__["junior"])
                     or (a.grades in __grades_range__["senior"] and b.grades in __grades_range__["senior"])
-                ) and a.province != b.province:
+                ) and not same_region:
                     return inf
 
                 # 跨省时，若初中年级推算的入学年份与先前的「小学/无」记录不相容，不合并
-                if a.province != b.province and a_year != b_year:
+                if not same_region and a_year != b_year:
                     earlier, later = (a, b) if a_year < b_year else (b, a)
                     if (
                         earlier.grades == 4290837504  # 小学/无
@@ -188,7 +190,7 @@ class Record:
                         (a.grades == __grades_range__["senior"][2] and b.grades == __grades_range__["junior"][0])
                         or (a.grades == __grades_range__["junior"][0] and b.grades == __grades_range__["senior"][2])
                     )
-                    and a.province != b.province
+                    and not same_region
                 ):
                     coeff = max(coeff , 3) # Tentative
 
@@ -209,7 +211,8 @@ class Record:
         
         schools = set(record.school.id for record in chain(A, B))
         locations = set(record.school.location() for record in chain(A, B))
-        provinces = set(record.province for record in chain(A, B))
+        # 粤港澳合计一片就读区域，往返就读不计入跨省惩罚
+        regions = set(util.schooling_region(record.province) for record in chain(A, B))
         aem = util.get_mode([record.ems for record in A])
         bem = util.get_mode([record.ems for record in B])
         diff = min(abs(i - j) for i in aem for j in bem)
@@ -243,7 +246,7 @@ class Record:
         
         return (
             (__school_penalty__.get(len(schools), 600)
-            + 80 * (len(locations) + len(provinces) - 3)
+            + 80 * (len(locations) + len(regions) - 3)
             + 100 * diff)
             * coeff
         )
@@ -275,8 +278,8 @@ class Record:
 
         schools = set(record.school.id for record in chain(A, B))
         locations = set(record.school.location() for record in chain(A, B))
-        provinces = set(record.province for record in chain(A, B))
-        penalty = __school_penalty__.get(len(schools), 600) + 80 * (len(locations) + len(provinces) - 3)
+        regions = set(util.schooling_region(record.province) for record in chain(A, B))
+        penalty = __school_penalty__.get(len(schools), 600) + 80 * (len(locations) + len(regions) - 3)
         if penalty >= 100:
             return 0
 

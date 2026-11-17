@@ -57,6 +57,16 @@ provinces = [
     "台湾",
 ]
 
+# 粤港澳之间往返就读很常见（内地学籍 + 港澳学校，或反之），合并记录时按同一片就读区域看待，
+# 不参与「跨省即不同人」的判定，也不计入跨省惩罚。
+schooling_regions = {"广东": "粤港澳", "香港": "粤港澳", "澳门": "粤港澳"}
+
+
+def schooling_region(province):
+    """返回省份所属的就读区域，没有归并的省份原样返回。"""
+
+    return schooling_regions.get(province, province)
+
 award_levels = [
     "金牌",
     "银牌",

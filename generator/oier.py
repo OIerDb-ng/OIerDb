@@ -102,22 +102,22 @@ class OIer:
         return groups
 
     @staticmethod
-    def share_province(A, B):
-        """两个记录组是否在同一个省级行政区出现过。
+    def share_region(A, B):
+        """两个记录组是否在同一片就读区域出现过（粤港澳之间的往返就读算同一片）。"""
 
-        姓名写法不同多半来自不同来源（例如港澳的名单用繁体），只有同省出现过才当作同一个人。
-        """
-
-        return bool({record.province for record in A} & {record.province for record in B})
+        return bool(
+            {util.schooling_region(record.province) for record in A}
+            & {util.schooling_region(record.province) for record in B}
+        )
 
     @staticmethod
     def can_merge_variants(A, B):
-        """繁简/异体姓名合并的附加校验：标识符不同则不合并，其余要求同省。"""
+        """繁简/异体姓名合并的附加校验：标识符不同则不合并，其余要求同一片就读区域。"""
 
         a, b = A[0].oier.identifier, B[0].oier.identifier
         if a and b and a != b:
             return False
-        return OIer.share_province(A, B)
+        return OIer.share_region(A, B)
 
     @staticmethod
     def variant_groups(recordseqs):

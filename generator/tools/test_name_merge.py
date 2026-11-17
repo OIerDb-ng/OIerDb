@@ -5,7 +5,7 @@
 
 在临时目录里用十几条记录的极小数据跑一遍完整生成流程，覆盖：同校繁简写法合并、
 同学段跨省不合并、只有繁体时保留原写法、记录数相同时取简体、姓名取最后一次参赛的写法、
-跨省不合并、相同标识符强制合并。用法：
+粤港澳往返就读可合并、相同标识符强制合并。用法：
 
     python generator/tools/test_name_merge.py [--keep]
 
@@ -29,6 +29,7 @@ SCHOOLS = [
     "香港,香港,香港培正中学",
     "香港,香港,皇仁书院",
     "北京,北京,北京市第一中学",
+    "广东,深圳市,深圳中学",
 ]
 
 # 比赛名, 奖项, 姓名, 年级, 学校, 分数, 省份, 性别, 标识符
@@ -47,6 +48,9 @@ RAW = [
     "CSP2020入门,一等奖,李思遠,初二,拔萃男书院,300,香港,男,",
     "CSP2022提高,一等奖,王思远,高一,北京市第一中学,300,北京,男,A",
     "CSP2020入门,一等奖,王思遠,初二,拔萃男书院,300,香港,男,A",
+    # 粤港澳往返就读：跨省但同一片就读区域，应当合并
+    "CSP2024入门,一等奖,陈小明,初一,深圳中学,300,广东,男,",
+    "CSP2025入门,一等奖,陳小明,初二,皇仁书院,320,香港,男,",
 ]
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
@@ -188,8 +192,15 @@ def main():
         else:
             check(False, "结果中缺少 王思远")
 
-        # 8. 人数与 --show-name-merges 不影响结果
-        check(len(people) == 9, f"合并后应有 9 人，实际 {len(people)} 人: {sorted(by_name)}")
+        # 8. 粤港澳往返就读：跨省但同一片就读区域，可以合并（显示名取最后一次）
+        check("陈小明" not in by_name, "陈小明 应被合并进 陳小明（粤港澳同区）")
+        if "陳小明" in by_name:
+            check(len(by_name["陳小明"][0]["records"]) == 2, "陳小明 应合并 2 条记录")
+        else:
+            check(False, "结果中缺少 陳小明")
+
+        # 9. 人数与 --show-name-merges 不影响结果
+        check(len(people) == 10, f"合并后应有 10 人，实际 {len(people)} 人: {sorted(by_name)}")
         check(plain_result == verbose_result, "--show-name-merges 不应改变生成的数据")
 
         if failures:
@@ -197,7 +208,7 @@ def main():
             for message in failures:
                 print("  -", message, file=sys.stderr)
             return 1
-        print("繁简姓名合并测试通过（7 组用例 + 输出一致性）")
+        print("繁简姓名合并测试通过（8 组用例 + 输出一致性）")
         return 0
     finally:
         if keep:
