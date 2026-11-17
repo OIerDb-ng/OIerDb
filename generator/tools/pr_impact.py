@@ -2,6 +2,7 @@
 """指定两个提交可预览数据影响，无参数时读取 GitHub Actions 事件并更新 PR 评论。"""
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -18,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "generator")]
 
 import util
-from generator.tools.comment import read_github_event, upsert_pr_comment
+from generator.tools.comment import github_client, upsert_bot_comment
 from loader import iter_data_lines, load_schools, parse_raw_line
 from oier import OIer
 from school import School
@@ -293,15 +294,27 @@ def main():
         parser.error("本地预览需要传入两个提交")
 
     try:
-        pr = read_github_event().get("pull_request")
+        event_path = os.environ.get("GITHUB_EVENT_PATH")
+        if not event_path:
+            raise ValueError("需要 GITHUB_EVENT_PATH")
+        pr = json.loads(Path(event_path).read_text(encoding="utf-8")).get("pull_request")
         if not pr:
             raise ValueError("GitHub 事件中缺少 PR")
+
         base, head = pr["base"]["sha"], pr["head"]["sha"]
         git("fetch", "--no-tags", "--", "origin", base, head, check=True)
         before = git("merge-base", "--", base, head, check=True, capture_output=True, text=True).stdout.strip()
         body = build_report(before, head)
-        result = upsert_pr_comment(os.environ["GITHUB_REPOSITORY"], pr, body, MARKER)
-        print(result["comment_url"] if result else "PR 已更新或关闭，跳过评论。")
+
+        repository = os.environ["GITHUB_REPOSITORY"]
+        number = pr["number"]
+        with github_client(os.environ["GITHUB_TOKEN"]) as github:
+            current = github.get_repo(repository).get_pull(number)
+            if current.state != "open" or current.head.sha != head or current.base.ref != pr["base"]["ref"]:
+                print("PR 已更新或关闭，跳过评论。")
+                return
+        result = upsert_bot_comment(repository, number, body, MARKER)
+        print(result["comment_url"])
     except GithubException as error:
         raise SystemExit(f"GitHub HTTP {error.status}") from None
     except ValueError as error:

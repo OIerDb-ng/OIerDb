@@ -169,15 +169,6 @@ class GitHub:
             # 并发创建同名标签时，确认标签已存在。
             self.repository.get_label(name)
 
-    def upsert_repair_comment(self, issue: Issue, body: str) -> dict:
-        if os.environ.get("OIERDB_BOT_TOKEN"):
-            return upsert_bot_comment(self.repository_name, issue.number, body, REPAIR_COMMENT_MARKER)
-
-        author = (
-            "github-actions[bot]" if os.environ.get("GITHUB_ACTIONS") == "true" else self.client.get_user().login
-        )
-        return upsert_comment(issue, body, author, REPAIR_COMMENT_MARKER)
-
     def close(self):
         self.client.close()
 
@@ -245,10 +236,16 @@ def plan_issue_repair(
         )
         if body is None:
             result = {"status": "skipped", "summary": "没有可展示的处理前后对比。"}
-        elif apply:
-            result = client.upsert_repair_comment(issue, body)
-        else:
+        elif not apply:
             result = {"status": "preview", "comment_body": body}
+        elif os.environ.get("OIERDB_BOT_TOKEN"):
+            result = upsert_bot_comment(client.repository_name, issue.number, body, REPAIR_COMMENT_MARKER)
+        else:
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                author = "github-actions[bot]"
+            else:
+                author = client.client.get_user().login
+            result = upsert_comment(issue, body, author, REPAIR_COMMENT_MARKER)
         if plan.unplanned:
             result["unplanned"] = plan.unplanned
         if plan.already_correct:
