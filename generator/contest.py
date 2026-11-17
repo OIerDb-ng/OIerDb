@@ -66,6 +66,11 @@ class Contest:
         return Contest.__all_contests_list__
 
     @staticmethod
+    def clear():
+        Contest.__all_contests_list__ = []
+        Contest.__all_contests_map__ = {}
+
+    @staticmethod
     def is_score_valid(score):
         """判断分值字段是否符合格式。
 

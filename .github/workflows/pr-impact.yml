@@ -1,0 +1,47 @@
+name: PR data impact
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  report:
+    if: github.event.action != 'edited' || github.event.changes.base.ref.from
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: pr-impact-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        working-directory: generator
+        run: pip install -r requirements.txt
+
+      - name: Create oierdb-bot installation token
+        id: oierdb-bot-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.OIERDB_BOT_PRIVATE_KEY }}
+          permission-issues: write
+
+      - name: Report PR data impact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          OIERDB_BOT_TOKEN: ${{ steps.oierdb-bot-token.outputs.token }}
+          OIERDB_BOT_SLUG: ${{ steps.oierdb-bot-token.outputs.app-slug }}
+        run: python generator/tools/pr_impact.py

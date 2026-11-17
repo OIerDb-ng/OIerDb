@@ -89,30 +89,32 @@ contest_types = [
 ]
 
 
-def __main__():
+def load_data(data_dir=DATA_DIR):
+    """载入指定快照的比赛、年级等配置。"""
     import json
     import pypinyin
     from contest import Contest
 
     global add_contestant, contests, contest_type_coefficient, decay_coefficient, enrollment_middle, get_contest_id, get_grades, get_initials, get_mode, get_weighted_mode, lcs, rank_coefficient
 
-    with open(DATA_DIR / "contests.json", encoding="utf-8") as f:
+    Contest.clear()
+    with open(data_dir / "contests.json", encoding="utf-8") as f:
         for contest in json.load(f):
             Contest.create(contest)
 
-    with open(DATA_DIR / "grades.json", encoding="utf-8") as f:
+    with open(data_dir / "grades.json", encoding="utf-8") as f:
         g_ = json.load(f)
     g_initial = g_["initial"]
     g_element = g_["element"]
     g_special = g_["special"]
 
-    with open(DATA_DIR / "surnames.json", encoding="utf-8") as f:
+    with open(data_dir / "surnames.json", encoding="utf-8") as f:
         surnames = json.load(f)
 
-    with open(DATA_DIR / "scoring.json", encoding="utf-8") as f:
+    with open(data_dir / "scoring.json", encoding="utf-8") as f:
         scoring = json.load(f)
 
-    with open(DATA_DIR / "name_exceptions.json", encoding="utf-8") as f:
+    with open(data_dir / "name_exceptions.json", encoding="utf-8") as f:
         name_exceptions = json.load(f)
 
     pypinyin.load_single_dict({ ord(k): v for k, v in name_exceptions.items() })
@@ -269,4 +271,4 @@ def __main__():
         return f[n][m]
 
 
-__main__()
+load_data()

@@ -14,7 +14,7 @@ import sys
 from urllib.parse import urljoin, urlparse
 
 import requests
-from github import Auth, Github, GithubException
+from github import GithubException
 from github.Issue import Issue
 
 GENERATOR_DIR = Path(__file__).resolve().parents[1]
@@ -24,6 +24,7 @@ from generator.agents.issue_classify import ClassificationResult  # noqa: E402
 from generator.agents.issue_queries import QueryContext  # noqa: E402
 from generator.agents.issue_repair import Comparison, ComparisonEntry, RepairSkill, SKILL_NAMES  # noqa: E402
 from generator.agents.issue_runner import IssueAgentError, IssueInput, run_classification, run_repair  # noqa: E402
+from generator.tools.comment import github_client, upsert_bot_comment, upsert_comment  # noqa: E402
 
 SUBJECT_LABELS = {"oier": "选手信息错误", "school": "学校信息错误"}
 LABEL_COLORS = {"oier": "1d76db", "school": "0e8a16"}
@@ -145,13 +146,7 @@ class GitHub:
     def __init__(self, repository, token=""):
         if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
             raise ValueError("请通过 --repository 或 GITHUB_REPOSITORY 指定 owner/repo")
-        self.client = Github(
-            auth=Auth.Token(token) if token else None,
-            lazy=True,
-            timeout=30,
-            retry=1,
-            api_version="2022-11-28",
-        )
+        self.client = github_client(token)
         self.repository_name = repository
         self.repository = self.client.get_repo(repository)
 
@@ -175,38 +170,13 @@ class GitHub:
             self.repository.get_label(name)
 
     def upsert_repair_comment(self, issue: Issue, body: str) -> dict:
-        if app_token := os.environ.get("OIERDB_BOT_TOKEN"):
-            app_slug = os.environ.get("OIERDB_BOT_SLUG")
-            if not app_slug:
-                raise ValueError("缺少 OIERDB_BOT_SLUG")
-            commenter = GitHub(self.repository_name, app_token)
-            try:
-                return self._upsert_repair_comment(commenter.get_issue(issue.number), body, f"{app_slug}[bot]")
-            finally:
-                commenter.close()
+        if os.environ.get("OIERDB_BOT_TOKEN"):
+            return upsert_bot_comment(self.repository_name, issue.number, body, REPAIR_COMMENT_MARKER)
 
         author = (
             "github-actions[bot]" if os.environ.get("GITHUB_ACTIONS") == "true" else self.client.get_user().login
         )
-        return self._upsert_repair_comment(issue, body, author)
-
-    @staticmethod
-    def _upsert_repair_comment(issue: Issue, body: str, author: str) -> dict:
-        existing = next(
-            (
-                comment
-                for comment in issue.get_comments()
-                if comment.user.login == author and (comment.body or "").startswith(REPAIR_COMMENT_MARKER + "\n")
-            ),
-            None,
-        )
-        if existing is None:
-            comment = issue.create_comment(body)
-            return {"status": "comment_created", "comment_url": comment.html_url}
-        if existing.body == body:
-            return {"status": "unchanged", "comment_url": existing.html_url}
-        existing.edit(body)
-        return {"status": "comment_updated", "comment_url": existing.html_url}
+        return upsert_comment(issue, body, author, REPAIR_COMMENT_MARKER)
 
     def close(self):
         self.client.close()
