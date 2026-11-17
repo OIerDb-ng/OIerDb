@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from loader import DEFAULT_RAW_FILE, DEFAULT_SCHOOL_FILE, iter_data_lines, load_schools, parse_raw_line
 from oier import OIer
 from school import School
+import util
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 
@@ -99,7 +100,8 @@ def lookup_oiers(uids=(), names=(), *, raw_file=DEFAULT_RAW_FILE, school_file=DE
         raise ValueError("UID 必须为正整数，limit 必须非负")
     _table(school_file)
     source = _source(raw_file, school_file)
-    target_names = set(names)
+    # 与生成器一致：按姓名的简体形式归一化，否则繁简两种写法会查成分开的两个人。
+    target_variants = {util.to_simplified(name) for name in names}
     requested_uids = set(uids)
     seed_names = {}
     # 先由 UID 定位姓名，再用该姓名的全部记录分组。
@@ -107,26 +109,28 @@ def lookup_oiers(uids=(), names=(), *, raw_file=DEFAULT_RAW_FILE, school_file=DE
         for _, valid, parsed, _ in _records(raw_file):
             if valid in requested_uids:
                 seed_names[valid] = parsed.name
-                target_names.add(parsed.name)
-    by_name = defaultdict(list)
+                target_variants.add(util.to_simplified(parsed.name))
+    by_variant = defaultdict(list)
     for physical, valid, parsed, fallback in _records(raw_file):
-        if parsed.name in target_names:
-            by_name[parsed.name].append((physical, valid, parsed, fallback))
+        variant = util.to_simplified(parsed.name)
+        if variant in target_variants:
+            by_variant[variant].append((physical, valid, parsed, fallback))
     profiles = {}
-    for name, rows in by_name.items():
+    for rows in by_variant.values():
         originals = {}
         records = []
         for row in rows:
             parsed = row[2]
-            record = parsed.to_record(SimpleNamespace(name=name, identifier=parsed.identifier))
+            record = parsed.to_record(SimpleNamespace(name=parsed.name, identifier=parsed.identifier))
             originals[id(record)] = row
             records.append(record)
-        for group in OIer.group_records(records):
+        for group in OIer.group_variants(OIer.group_records(records)):
             group_rows = sorted((originals[id(record)] for record in group), key=lambda row: row[1])
             uid = min(row[1] for row in group_rows)
             profiles[uid] = {
                 "uid": uid,
-                "name": name,
+                "name": OIer.choose_name(group),
+                "variant_names": sorted({row[2].name for row in group_rows}),
                 "provinces": sorted({row[2].province for row in group_rows}),
                 "schools": sorted({row[2].school_name for row in group_rows}),
                 "estimated_enrollment_year": OIer.enrollment_year(group),
@@ -148,7 +152,8 @@ def lookup_oiers(uids=(), names=(), *, raw_file=DEFAULT_RAW_FILE, school_file=DE
         )
         selected.update(found)
     for name in names:
-        found = sorted(uid for uid, profile in profiles.items() if profile["name"] == name)
+        variant = util.to_simplified(name)
+        found = sorted(uid for uid, profile in profiles.items() if util.to_simplified(profile["name"]) == variant)
         requests.append(
             {
                 "kind": "name",

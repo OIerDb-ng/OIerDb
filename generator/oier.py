@@ -53,6 +53,40 @@ class OIer:
         return oier
 
     @staticmethod
+    def merge_record_groups(groups, threshold=MERGE_THRESHOLD, allow=None):
+        """按距离把若干记录组贪心合并，可能原地设置记录的留级标记。
+
+        groups: 记录组（Record 的列表）的列表。
+        threshold: 距离阈值。
+        allow: 额外校验，返回两个记录组是否允许合并。
+        """
+
+        candidates = [group[:] for group in groups]
+        while len(candidates) > 1:
+            n, best, bi, bj = len(candidates), threshold + 1, -1, -1
+            for i in range(n):
+                for j in range(i):
+                    if allow is not None and not allow(candidates[j], candidates[i]):
+                        continue
+                    distance = Record.distance(candidates[j], candidates[i], threshold + 1)
+                    if distance < best:
+                        best, bi, bj = distance, j, i
+            if best > threshold:
+                break
+            stay_down = Record.check_stay_down(candidates[bi], candidates[bj])
+            if stay_down == 1:
+                for record in candidates[bi]:
+                    record.keep_grade()
+            elif stay_down == -1:
+                for record in candidates[bj]:
+                    record.keep_grade()
+            else:
+                assert stay_down == 0
+            candidates[bi].extend(candidates[bj])
+            del candidates[bj]
+        return candidates
+
+    @staticmethod
     def group_records(records, threshold=MERGE_THRESHOLD):
         """分组时原地设置留级标记，重复模拟时须重建记录。"""
         by_identity = {}
@@ -64,29 +98,81 @@ class OIer:
             if identifier:
                 groups.append(same_identity)
                 continue
-            candidates = [[record] for record in same_identity]
-            while True:
-                n, best, bi, bj = len(candidates), threshold + 1, -1, -1
-                for i in range(n):
-                    for j in range(i):
-                        distance = Record.distance(candidates[j], candidates[i], threshold + 1)
-                        if distance < best:
-                            best, bi, bj = distance, j, i
-                if best > threshold:
-                    break
-                stay_down = Record.check_stay_down(candidates[bi], candidates[bj])
-                if stay_down == 1:
-                    for record in candidates[bi]:
-                        record.keep_grade()
-                elif stay_down == -1:
-                    for record in candidates[bj]:
-                        record.keep_grade()
-                else:
-                    assert stay_down == 0
-                candidates[bi].extend(candidates[bj])
-                del candidates[bj]
-            groups.extend(candidates)
+            groups.extend(OIer.merge_record_groups([[record] for record in same_identity], threshold))
         return groups
+
+    @staticmethod
+    def share_province(A, B):
+        """两个记录组是否在同一个省级行政区出现过。
+
+        姓名写法不同多半来自不同来源（例如港澳的名单用繁体），只有同省出现过才当作同一个人。
+        """
+
+        return bool({record.province for record in A} & {record.province for record in B})
+
+    @staticmethod
+    def can_merge_variants(A, B):
+        """繁简/异体姓名合并的附加校验：标识符不同则不合并，其余要求同省。"""
+
+        a, b = A[0].oier.identifier, B[0].oier.identifier
+        if a and b and a != b:
+            return False
+        return OIer.share_province(A, B)
+
+    @staticmethod
+    def variant_groups(recordseqs):
+        """按姓名的简体形式分组，只返回包含多种写法的组。"""
+
+        by_variant = {}
+        for recordseq in recordseqs:
+            by_variant.setdefault(util.to_simplified(recordseq[0].oier.name), []).append(recordseq)
+        return [group for group in by_variant.values() if len({recordseq[0].oier.name for recordseq in group}) > 1]
+
+    @staticmethod
+    def group_variants(recordseqs, threshold=MERGE_THRESHOLD):
+        """合并同一姓名在繁简、异体上的不同写法。
+
+        姓名写法不同就进不了同名合并，所以把简体形式相同的记录组放到一起，用同一套距离规则
+        再合并一次；人工填了相同标识符的直接合并。
+        """
+
+        by_variant = {}
+        for recordseq in recordseqs:
+            by_variant.setdefault(util.to_simplified(recordseq[0].oier.name), []).append(recordseq)
+        groups = []
+        for same_variant in by_variant.values():
+            if len({recordseq[0].oier.name for recordseq in same_variant}) == 1:
+                groups.extend(same_variant)
+                continue
+            locked = {}
+            candidates = []
+            for recordseq in same_variant:
+                identifier = recordseq[0].oier.identifier
+                if identifier:
+                    locked.setdefault(identifier, []).extend(recordseq)
+                else:
+                    candidates.append(recordseq)
+            candidates.extend(locked.values())
+            groups.extend(OIer.merge_record_groups(candidates, threshold, allow=OIer.can_merge_variants))
+        return groups
+
+    @staticmethod
+    def choose_name(recordseq):
+        """从合并后的记录组中选出显示姓名：取最后一次获奖记录里的写法。"""
+
+        return max(recordseq, key=lambda record: (record.contest.id, record.id)).oier.name
+
+    @staticmethod
+    def choose_identifier(recordseq, name):
+        """从合并后的记录组中选出与显示姓名对应的标识符，没有则为空字符串。"""
+
+        for record in recordseq:
+            if record.oier.name == name and record.oier.identifier:
+                return record.oier.identifier
+        for record in recordseq:
+            if record.oier.identifier:
+                return record.oier.identifier
+        return ""
 
     @staticmethod
     def enrollment_year(records):
