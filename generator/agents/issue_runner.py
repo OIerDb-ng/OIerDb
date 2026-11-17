@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunConfig, Runner
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunConfig, RunHooks, Runner
 from agents.exceptions import AgentsException, MaxTurnsExceeded
 from openai import APIError, AsyncOpenAI
 from openai.types.shared import Reasoning
@@ -35,6 +35,29 @@ class IssueAgentError(RuntimeError):
     pass
 
 
+def log_progress(message: str) -> None:
+    print(f"[issue-classify] {message}", file=sys.stderr, flush=True)
+
+
+class _ProgressHooks(RunHooks[QueryContext]):
+    def __init__(self):
+        self.turn = 0
+
+    async def on_llm_start(self, context, agent, system_prompt, input_items):
+        self.turn += 1
+        log_progress(f"模型请求第 {self.turn} 轮（{MODEL}）")
+
+    async def on_llm_end(self, context, agent, response):
+        usage = response.usage
+        log_progress(f"模型已响应第 {self.turn} 轮（输入 {usage.input_tokens} / 输出 {usage.output_tokens} token）")
+
+    async def on_tool_start(self, context, agent, tool):
+        log_progress(f"调用工具 {tool.name}")
+
+    async def on_tool_end(self, context, agent, tool, result):
+        log_progress(f"工具 {tool.name} 已返回")
+
+
 @dataclass
 class IssueInput:
     title: str
@@ -60,18 +83,20 @@ def run_repair(
 
 
 def _run_worker(api_key, issue, context, skills):
+    phase = "分类" if skills is None else "修复方案"
     request = {
         "api_key": api_key,
         "issue": asdict(issue),
         "warnings": context.warnings,
         "skills": skills,
     }
-    # 数据查询是同步的，由父进程限制整个 Agent 的运行时间。
+    log_progress(f"启动{phase} Agent")
+    # 父进程限制 Agent 运行时间。只捕获 stdout 上的 JSON，stderr 直接输出运行进度。
     try:
         completed = subprocess.run(
             [sys.executable, Path(__file__).resolve()],
             input=json.dumps(request),
-            capture_output=True,
+            stdout=subprocess.PIPE,
             encoding="utf-8",
             timeout=AGENT_TIMEOUT,
             check=True,
@@ -87,6 +112,7 @@ def _run_worker(api_key, issue, context, skills):
     context.queries = response["context"]["queries"]
     if "error" in response:
         raise IssueAgentError(response["error"])
+    log_progress(f"{phase} Agent 已返回")
     return response["result"]
 
 
@@ -140,6 +166,7 @@ async def _infer(api_key, issue, context, skills):
             [{"role": "user", "content": content}],
             context=context,
             max_turns=MAX_AGENT_TURNS,
+            hooks=_ProgressHooks(),
             run_config=RunConfig(tracing_disabled=True),
         )
     return completed.final_output.model_dump()

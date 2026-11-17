@@ -293,6 +293,7 @@ def main():
     if args.commits:
         parser.error("本地预览需要传入两个提交")
 
+    github_operation = "读取 PR"
     try:
         event_path = os.environ.get("GITHUB_EVENT_PATH")
         if not event_path:
@@ -313,10 +314,11 @@ def main():
             if current.state != "open" or current.head.sha != head or current.base.ref != pr["base"]["ref"]:
                 print("PR 已更新或关闭，跳过评论。")
                 return
+        github_operation = "更新 PR 评论"
         result = upsert_bot_comment(repository, number, body, MARKER)
         print(result["comment_url"])
     except GithubException as error:
-        raise SystemExit(f"GitHub HTTP {error.status}") from None
+        raise SystemExit(f"{github_operation}失败（GitHub HTTP {error.status}）") from None
     except ValueError as error:
         raise SystemExit(str(error)) from None
 

@@ -23,7 +23,13 @@ sys.path[:0] = [str(GENERATOR_DIR.parent), str(GENERATOR_DIR)]
 from generator.agents.issue_classify import ClassificationResult  # noqa: E402
 from generator.agents.issue_queries import QueryContext  # noqa: E402
 from generator.agents.issue_repair import Comparison, ComparisonEntry, RepairSkill, SKILL_NAMES  # noqa: E402
-from generator.agents.issue_runner import IssueAgentError, IssueInput, run_classification, run_repair  # noqa: E402
+from generator.agents.issue_runner import (  # noqa: E402
+    IssueAgentError,
+    IssueInput,
+    log_progress,
+    run_classification,
+    run_repair,
+)
 from generator.tools.comment import github_client, upsert_bot_comment, upsert_comment  # noqa: E402
 
 SUBJECT_LABELS = {"oier": "选手信息错误", "school": "学校信息错误"}
@@ -222,7 +228,6 @@ def plan_issue_repair(
     agent_input: IssueInput,
     skills: list[RepairSkill],
     *,
-    apply: bool,
     warnings: list[str],
 ) -> dict:
     context = QueryContext(warnings=warnings.copy())
@@ -236,16 +241,16 @@ def plan_issue_repair(
         )
         if body is None:
             result = {"status": "skipped", "summary": "没有可展示的处理前后对比。"}
-        elif not apply:
-            result = {"status": "preview", "comment_body": body}
-        elif os.environ.get("OIERDB_BOT_TOKEN"):
-            result = upsert_bot_comment(client.repository_name, issue.number, body, REPAIR_COMMENT_MARKER)
         else:
-            if os.environ.get("GITHUB_ACTIONS") == "true":
-                author = "github-actions[bot]"
+            log_progress("写入修复方案评论")
+            if os.environ.get("OIERDB_BOT_TOKEN"):
+                result = upsert_bot_comment(client.repository_name, issue.number, body, REPAIR_COMMENT_MARKER)
             else:
-                author = client.client.get_user().login
-            result = upsert_comment(issue, body, author, REPAIR_COMMENT_MARKER)
+                if os.environ.get("GITHUB_ACTIONS") == "true":
+                    author = "github-actions[bot]"
+                else:
+                    author = client.client.get_user().login
+                result = upsert_comment(issue, body, author, REPAIR_COMMENT_MARKER)
         if plan.unplanned:
             result["unplanned"] = plan.unplanned
         if plan.already_correct:
@@ -255,9 +260,7 @@ def plan_issue_repair(
     return dict(result, warnings=context.warnings, data_sources=context.data_sources, queries=context.queries)
 
 
-def update_classification(
-    client: GitHub, issue: Issue, classification: ClassificationResult, *, apply: bool
-) -> dict:
+def update_classification(client: GitHub, issue: Issue, classification: ClassificationResult) -> dict:
     data = issue.raw_data
     old_title = data["title"]
     old_labels = label_names(data)
@@ -276,23 +279,18 @@ def update_classification(
     if title == old_title and labels == old_labels:
         return dict(report, status="unchanged")
 
-    if not apply:
-        return dict(report, status="preview")
-
+    log_progress("更新 issue 标题和标签")
     for subject in classification.subjects:
         client.ensure_label(subject)
     issue.edit(title=title, labels=labels)
     return dict(report, status="updated")
 
 
-def classify_issue(
-    client: GitHub, number: int, api_key: str, *, apply=False, plan_repair=False
-) -> dict:
+def classify_issue(client: GitHub, number: int, api_key: str, *, plan_repair=False) -> dict:
     issue = client.get_issue(number)
     data = issue.raw_data
     report = {
         "issue_number": number,
-        "mode": "apply" if apply else "dry_run",
         "status": "skipped",
         "warnings": [],
     }
@@ -314,6 +312,7 @@ def classify_issue(
         if comment.user and comment.user.type == "User" and (comment.body or "").strip()
     ]
     images, image_warnings = collect_images(body, *(comment["body"] for comment in comments))
+    log_progress(f"已读取 {len(comments)} 条评论和 {len(images)} 张截图")
     agent_input = IssueInput(data["title"], body, label_names(data), images, comments=comments)
     context = QueryContext(warnings=image_warnings.copy())
     classification = run_classification(api_key, agent_input, context)
@@ -327,10 +326,10 @@ def classify_issue(
         return report
 
     report["skills"] = classification.skills
-    report.update(update_classification(client, issue, classification, apply=apply))
+    report.update(update_classification(client, issue, classification))
     if plan_repair and classification.skills:
         report["repair_plan"] = plan_issue_repair(
-            client, issue, api_key, agent_input, classification.skills, apply=apply, warnings=image_warnings,
+            client, issue, api_key, agent_input, classification.skills, warnings=image_warnings,
         )
     return report
 
@@ -356,7 +355,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--issue-number", type=int)
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", "OIerDb-ng/OIerDb"))
-    parser.add_argument("--apply", action="store_true", help="写回 GitHub，默认仅预览")
     parser.add_argument("--plan-repair", action="store_true", help="分类后为匹配的修复技能生成方案")
     args = parser.parse_args()
     client = None
@@ -373,14 +371,14 @@ def main():
         if type(number) is not int or number < 1:
             raise ValueError("issue_number 必须为正整数")
         token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-        if args.apply and not token:
+        if not token:
             raise ValueError("写回需要 GITHUB_TOKEN 或 GH_TOKEN")
+        log_progress(f"开始处理 issue #{number}")
         client = GitHub(args.repository, token)
         report = classify_issue(
             client,
             number,
             os.environ.get("OPENROUTER_API_KEY", ""),
-            apply=args.apply,
             plan_repair=args.plan_repair,
         )
         emit_report(report)
