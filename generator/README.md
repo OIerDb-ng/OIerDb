@@ -10,7 +10,7 @@
 pip install -r requirements.txt
 ```
 
-生成数据（在 `generator` 目录下执行，或在仓库根目录运行 `npm run generate`）：
+生成数据（在 `generator` 目录下，或在仓库根目录执行 `python main.py`、`npm run generate` 均可）：
 
 ```bash
 python main.py

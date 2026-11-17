@@ -19,6 +19,9 @@ __inf__ = 2147483647
 
 
 def __main__():
+    # 生成器用 ../data、dist/ 等相对路径，先切到脚本所在目录，避免从别处启动时读错。
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     new_schools = []
 
     def parse_school():
