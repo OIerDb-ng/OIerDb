@@ -16,13 +16,19 @@ def github_client(token=""):
     )
 
 
-def upsert_comment(issue: Issue, body: str, author: str, marker: str) -> dict:
+def upsert_comment(issue: Issue, body: str | None, author: str, marker: str) -> dict:
+    """同步作者和标记匹配的评论，body 为 None 时撤回旧评论。"""
     for comment in issue.get_comments():
-        if comment.user.login == author and (comment.body or "").startswith(marker + "\n"):
+        if comment.user and comment.user.login == author and (comment.body or "").startswith(marker + "\n"):
+            if body is None:
+                comment.delete()
+                return {"status": "comment_deleted"}
             if comment.body == body:
                 return {"status": "unchanged", "comment_url": comment.html_url}
             comment.edit(body)
             return {"status": "comment_updated", "comment_url": comment.html_url}
+    if body is None:
+        return {"status": "unchanged"}
     comment = issue.create_comment(body)
     return {"status": "comment_created", "comment_url": comment.html_url}
 

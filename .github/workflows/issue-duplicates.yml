@@ -1,0 +1,58 @@
+name: Check duplicate issues
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to check
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: issue-duplicates-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.state == 'open' && github.event.issue.user.type != 'Bot' &&
+      github.event.sender.type != 'Bot' && !github.event.issue.pull_request)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: generator/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r generator/requirements.txt
+
+      - name: Create oierdb-bot installation token
+        id: oierdb-bot-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.OIERDB_BOT_PRIVATE_KEY }}
+          permission-issues: write
+
+      - name: Check for duplicate issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          OIERDB_BOT_TOKEN: ${{ steps.oierdb-bot-token.outputs.token }}
+          OIERDB_BOT_SLUG: ${{ steps.oierdb-bot-token.outputs.app-slug }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+        run: python generator/tools/issue_duplicates.py --issue-number "$ISSUE_NUMBER"
