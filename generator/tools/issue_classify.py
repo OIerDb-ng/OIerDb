@@ -174,9 +174,23 @@ class GitHub:
             self.repository.get_label(name)
 
     def upsert_repair_comment(self, issue: Issue, body: str) -> dict:
+        if app_token := os.environ.get("OIERDB_BOT_TOKEN"):
+            app_slug = os.environ.get("OIERDB_BOT_SLUG")
+            if not app_slug:
+                raise ValueError("缺少 OIERDB_BOT_SLUG")
+            commenter = GitHub(self.repository_name, app_token)
+            try:
+                return self._upsert_repair_comment(commenter.get_issue(issue.number), body, f"{app_slug}[bot]")
+            finally:
+                commenter.close()
+
         author = (
             "github-actions[bot]" if os.environ.get("GITHUB_ACTIONS") == "true" else self.client.get_user().login
         )
+        return self._upsert_repair_comment(issue, body, author)
+
+    @staticmethod
+    def _upsert_repair_comment(issue: Issue, body: str, author: str) -> dict:
         existing = next(
             (
                 comment

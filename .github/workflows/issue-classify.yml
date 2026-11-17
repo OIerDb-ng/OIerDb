@@ -42,15 +42,27 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r generator/requirements.txt
 
+      - name: Create oierdb-bot installation token
+        id: oierdb-bot-token
+        if: github.event_name == 'issues' || !inputs.dry_run
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.OIERDB_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.OIERDB_BOT_PRIVATE_KEY }}
+          permission-issues: write
+
       - name: Classify issue and propose repairs
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          OIERDB_BOT_TOKEN: ${{ steps.oierdb-bot-token.outputs.token }}
+          OIERDB_BOT_SLUG: ${{ steps.oierdb-bot-token.outputs.app-slug }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
           APPLY: ${{ github.event_name == 'issues' || !inputs.dry_run }}
         run: |
           args=(--issue-number "$ISSUE_NUMBER" --plan-repair)
           if [ "$APPLY" = "true" ]; then
+            : "${OIERDB_BOT_TOKEN:?Missing oierdb-bot installation token}"
             args+=(--apply)
           fi
           python generator/tools/issue_classify.py "${args[@]}"
