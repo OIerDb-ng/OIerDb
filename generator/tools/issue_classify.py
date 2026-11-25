@@ -261,14 +261,29 @@ def plan_issue_repair(
 
 
 def update_classification(client: GitHub, issue: Issue, classification: ClassificationResult) -> dict:
+    issue.update()
     data = issue.raw_data
     old_title = data["title"]
     old_labels = label_names(data)
-    title = classification.title or old_title
     labels = sorted({
         *(label for label in old_labels if label.casefold() not in MANAGED_LABELS),
         *(SUBJECT_LABELS[subject] for subject in classification.subjects),
     })
+
+    changes = {}
+    if labels != old_labels:
+        for subject in classification.subjects:
+            client.ensure_label(subject)
+        changes["labels"] = labels
+
+    title = classification.title or old_title
+    if title != old_title:
+        if any(event.event == "renamed" for event in issue.get_events()):
+            log_progress("issue 标题已有修改记录，跳过改名")
+            title = old_title
+        else:
+            changes["title"] = title
+
     report = {
         "old_title": old_title,
         "new_title": title,
@@ -276,13 +291,11 @@ def update_classification(client: GitHub, issue: Issue, classification: Classifi
         "labels_removed": sorted(set(old_labels) - set(labels)),
     }
 
-    if title == old_title and labels == old_labels:
+    if not changes:
         return dict(report, status="unchanged")
 
-    log_progress("更新 issue 标题和标签")
-    for subject in classification.subjects:
-        client.ensure_label(subject)
-    issue.edit(title=title, labels=labels)
+    log_progress("更新 issue 分类结果")
+    issue.edit(**changes)
     return dict(report, status="updated")
 
 
