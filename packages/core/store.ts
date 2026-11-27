@@ -69,13 +69,13 @@ export const SCHEMA = {
   oiers: {
     pk: 'uid',
     indexes: [
-      'name', 'loweredName', 'initials', 'enrollMiddle', 'gender', 'rank', 'provinces',
+      'name', 'initials', 'enrollMiddle', 'gender', 'provinces',
       ['rank', 'uid'], // 复合索引在 IndexRangeQuery 中使用 `+` 拼接，例如 `rank+uid`
     ],
   },
   schools: {
     pk: 'id',
-    indexes: ['name', 'province', 'city', 'rank', ['rank', 'id'], ['province', 'city']],
+    indexes: ['name', 'province', 'city', ['rank', 'id'], ['province', 'city']],
   },
   contests: {
     pk: 'id',
@@ -83,7 +83,7 @@ export const SCHEMA = {
   },
   records: {
     pk: ['contestId', 'uid'],
-    indexes: ['contestId', ['contestId', 'rank'], 'schoolId', 'uid', 'award', 'province'],
+    indexes: ['contestId', ['contestId', 'rank'], 'schoolId', 'uid'],
   },
   meta: {
     pk: 'key',
