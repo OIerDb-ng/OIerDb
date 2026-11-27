@@ -9,6 +9,8 @@ from sys import stderr
 
 getcontext().prec = 64
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# 生成器自用的数据（如繁简字对照表），不属于下发给前端的 data/*.json
+GENERATOR_DIR = Path(__file__).resolve().parent
 
 
 class UnknownReferenceError(ValueError):
@@ -55,6 +57,16 @@ provinces = [
     "台湾",
 ]
 
+# 粤港澳之间往返就读很常见（内地学籍 + 港澳学校，或反之），合并记录时按同一片就读区域看待，
+# 不参与「跨省即不同人」的判定，也不计入跨省惩罚。
+schooling_regions = {"广东": "粤港澳", "香港": "粤港澳", "澳门": "粤港澳"}
+
+
+def schooling_region(province):
+    """返回省份所属的就读区域，没有归并的省份原样返回。"""
+
+    return schooling_regions.get(province, province)
+
 award_levels = [
     "金牌",
     "银牌",
@@ -95,7 +107,7 @@ def load_data(data_dir=DATA_DIR):
     import pypinyin
     from contest import Contest
 
-    global add_contestant, contests, contest_type_coefficient, decay_coefficient, enrollment_middle, get_contest_id, get_grades, get_initials, get_mode, get_weighted_mode, lcs, rank_coefficient
+    global add_contestant, contests, contest_type_coefficient, decay_coefficient, enrollment_middle, get_contest_id, get_grades, get_initials, get_mode, get_weighted_mode, lcs, rank_coefficient, to_simplified
 
     Contest.clear()
     with open(data_dir / "contests.json", encoding="utf-8") as f:
@@ -116,6 +128,9 @@ def load_data(data_dir=DATA_DIR):
 
     with open(data_dir / "name_exceptions.json", encoding="utf-8") as f:
         name_exceptions = json.load(f)
+
+    with open(GENERATOR_DIR / "t2s.json", encoding="utf-8") as f:
+        t2s = json.load(f)
 
     pypinyin.load_single_dict({ ord(k): v for k, v in name_exceptions.items() })
 
@@ -139,6 +154,14 @@ def load_data(data_dir=DATA_DIR):
         name: 姓名。
         """
         return "".join(get_initial_list(name))
+
+    def to_simplified(name):
+        """将姓名中的繁体字（含常见异体字）转换为简体字，用于识别同一姓名的不同写法。
+
+        name: 姓名。
+        """
+
+        return "".join(t2s.get(char, char) for char in name)
 
     def get_initial_list(name):
         initial = pypinyin.lazy_pinyin(name, style=pypinyin.Style.FIRST_LETTER)

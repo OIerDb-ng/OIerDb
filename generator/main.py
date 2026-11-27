@@ -8,13 +8,20 @@ import util
 from contest import Contest
 from oier import OIer
 from loader import parse_raw_line, parse_school_line
+from record import Record
 from school import School
 from sys import argv, stderr, executable
 from tqdm import tqdm
 import subprocess
 
+"合并时的无穷远距离，与 Record.distance 的默认参数一致。"
+__inf__ = 2147483647
+
 
 def __main__():
+    # 生成器用 ../data、dist/ 等相对路径，先切到脚本所在目录，避免从别处启动时读错。
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     new_schools = []
 
     def parse_school():
@@ -108,6 +115,42 @@ def __main__():
             print("=" * 60, file=stderr)
             raise ValueError("数据验证失败，存在未知的省份/奖项/比赛，无法生成最终结果")
 
+    def report_name_merges(recordseqs, threshold):
+        """输出繁简/异体姓名合并的判定详情（--show-name-merges）。"""
+
+        for group in OIer.variant_groups(recordseqs):
+            spellings = sorted({recordseq[0].oier.name for recordseq in group})
+            for index, first in enumerate(spellings):
+                for second in spellings[index + 1 :]:
+                    pairs = [
+                        (a, b)
+                        for a in group
+                        if a[0].oier.name == first
+                        for b in group
+                        if b[0].oier.name == second
+                    ]
+                    locked = any(
+                        a[0].oier.identifier and a[0].oier.identifier == b[0].oier.identifier for a, b in pairs
+                    )
+                    distance = min(
+                        (Record.distance(a, b, __inf__) for a, b in pairs if OIer.can_merge_variants(a, b)),
+                        default=__inf__,
+                    )
+                    if locked:
+                        verdict = "合并（相同标识符）"
+                    elif distance <= threshold:
+                        verdict = "合并"
+                    else:
+                        verdict = "不合并"
+                        raw = min((Record.distance(a, b, __inf__) for a, b in pairs), default=__inf__)
+                        if raw < __inf__:
+                            verdict += f"；仅按距离为 {raw}"
+                    print(
+                        f"\x1b[36m[name distance]\x1b[0m: \x1b[35m{first}\x1b[0m × \x1b[35m{second}\x1b[0m = "
+                        f"\x1b[32m{distance if distance < __inf__ else 'inf'}\x1b[0m（{verdict}）",
+                        file=stderr,
+                    )
+
     def attempt_merge(threshold=OIer.MERGE_THRESHOLD):
         """尝试合并信息。
 
@@ -124,9 +167,34 @@ def __main__():
                     file=stderr,
                 )
             recordseqs.extend(a)
+
+        # 第二遍：合并同一姓名在繁简、异体上的不同写法，规则见 OIer.group_variants。
+        if "--show-name-merges" in argv:
+            report_name_merges(recordseqs, threshold)
+        recordseqs = OIer.group_variants(recordseqs, threshold)
+
+        merged_variants = 0
+        for recordseq in recordseqs:
+            spellings = sorted({record.oier.name for record in recordseq})
+            if len(spellings) < 2:
+                continue
+            merged_variants += 1
+            if "--show-name-merges" in argv:
+                print(
+                    f"\x1b[32m[name variant]\x1b[0m: \x1b[35m{' + '.join(spellings)}\x1b[0m → "
+                    f"\x1b[37m{OIer.choose_name(recordseq)}\x1b[0m（\x1b[32m{len(recordseq)}\x1b[0m 条记录）",
+                    file=stderr,
+                )
+        print(
+            f"\x1b[32m姓名异体合并\x1b[0m：\x1b[32m{merged_variants}\x1b[0m 处"
+            + ("" if "--show-name-merges" in argv else "，用 --show-name-merges 查看详情"),
+            file=stderr,
+        )
+
         OIer.clear()
         for recordseq in tqdm(recordseqs):
-            original = recordseq[0].oier
+            name = OIer.choose_name(recordseq)
+            identifier = OIer.choose_identifier(recordseq, name)
             # UID 定为该 OIer 首次出现的<b>有效</b>行号
             uid = min(recordseq, key=lambda record: record.id).id
             # 入学年份取众数，相同的话取最早的
@@ -134,7 +202,7 @@ def __main__():
             # 性别如果唯一则取之，空或不唯一置空（如跨性别）
             gender = set(record.gender for record in recordseq if record.gender)
             gender = gender.pop() if len(gender) == 1 else 0
-            oier = OIer(original.name, original.identifier, gender, em, uid)
+            oier = OIer(name, identifier, gender, em, uid)
             oier.records = recordseq[:]
             for record in oier.records:
                 record.oier = oier
